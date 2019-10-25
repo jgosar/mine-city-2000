@@ -2,10 +2,13 @@
 MineCity 2000 is a program that converts SimCity 2000 cities into Minecraft worlds
 
 Original discussion topic:
+
 http://www.minecraftforum.net/topic/2669597-making-a-simcity-2000-to-minecraft-converter-volunteers-needed
 
 See it in action:
+
 https://www.youtube.com/watch?v=R6RW6WouGbE
+
 https://www.youtube.com/watch?v=Z3FkM7GLxKo
 
 The repository contains these projects:
