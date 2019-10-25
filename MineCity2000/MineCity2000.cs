@@ -16,7 +16,7 @@ namespace com.mc2k.gui
     {
         String inputFile = null;
         String outputDir = null;
-        String buildingsDir = null;//"C:\\Users\\Jernej\\Documents\\Visual Studio 2010\\Projects\\MinecraftEditor\\buildings";//TODO
+        String buildingsDir = null;
         SCMapper mapper = null;
         private BackgroundWorker bw = new BackgroundWorker();
 
@@ -24,7 +24,6 @@ namespace com.mc2k.gui
         {
             InitializeComponent();
             this.Text = "MineCity 2000 v0.2";
-            //openFileDialog1.DefaultExt = "sc2";
             openFileDialog1.Filter = "SimCity 2000 cities|*.sc2";
             openFileDialog1.InitialDirectory = @"C:\Program Files\Maxis\SimCity 2000\Cities";
             folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\.minecraft";
@@ -42,10 +41,8 @@ namespace com.mc2k.gui
             {
                 workingDir = workingDir.Replace("\\MineCity2000\\bin\\Debug", "");
             }
-            //MessageBox.Show(workingDir);
 
             buildingsDir = workingDir + "\\buildings";
-            //MessageBox.Show(buildingsDir);
             mapper = new SCMapper(buildingsDir);
         }
 
@@ -105,20 +102,6 @@ namespace com.mc2k.gui
             button3.Enabled = false;
         }
 
-        //private void doMapping()
-        //{
-        //    mapper.makeMap(inputFile, outputDir, buildingsDir, 16);
-        //}
-
-        //private void doStatusUpdates()
-        //{
-        //    while (!mapper.Status.Equals("finished"))
-        //    {
-        //        statusLabel.Text = mapper.Status;
-        //        Thread.Sleep(1000);
-        //    }
-        //}
-
         private void bw_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -126,15 +109,6 @@ namespace com.mc2k.gui
             mapper.Worker = worker;
             mapper = new SCMapper(buildingsDir);
             mapper.makeMap(inputFile, outputDir);
-            //int i = 0;
-
-            //while (!mapper.Status.Equals("finished"))
-            //{
-            //    statusLabel.Text = mapper.Status;
-            //    Thread.Sleep(1000);
-            //    i++;
-            //    worker.ReportProgress(i);
-            //}
         }
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {

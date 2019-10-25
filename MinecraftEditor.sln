@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftEditor", "MinecraftEditor\MinecraftEditor.csproj", "{3DA90FF7-6DC6-4668-A4BA-48737A8089B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimCityReader", "..\SimCityReader\SimCityReader\SimCityReader.csproj", "{CC84F582-4F93-4628-83DD-CA36773CE759}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimCityReader", "SimCityReader\SimCityReader.csproj", "{CC84F582-4F93-4628-83DD-CA36773CE759}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000", "MineCity2000\MineCity2000.csproj", "{FCF302D8-FE31-4FE7-A6BB-162ADA516E72}"
 EndProject

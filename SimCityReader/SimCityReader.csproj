@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3DA90FF7-6DC6-4668-A4BA-48737A8089B9}</ProjectGuid>
+    <ProjectGuid>{CC84F582-4F93-4628-83DD-CA36773CE759}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>com.mc2k.MinecraftEditor</RootNamespace>
-    <AssemblyName>MinecraftEditor</AssemblyName>
+    <RootNamespace>com.mc2k.SimCityReader</RootNamespace>
+    <AssemblyName>SimCityReader</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -41,40 +41,16 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="zlib.net">
-      <HintPath>lib\zlib.net.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractRegion.cs" />
-    <Compile Include="BuildingModel.cs" />
-    <Compile Include="Chunk.cs" />
-    <Compile Include="ChunkMetadata.cs" />
-    <Compile Include="Entity.cs" />
-    <Compile Include="Planning\BuildingPart.cs" />
-    <Compile Include="Planning\CityPlan.cs" />
-    <Compile Include="Planning\SquarePlan.cs" />
-    <Compile Include="LevelDat.cs" />
-    <Compile Include="SCMapper.cs" />
-    <Compile Include="Section.cs" />
-    <Compile Include="TileEntity.cs" />
-    <Compile Include="TileTick.cs" />
-    <Compile Include="Util.cs" />
-    <Compile Include="ZLibUtils.cs" />
-    <Compile Include="MCAReader.cs" />
-    <Compile Include="MCAWriter.cs" />
+    <Compile Include="Building.cs" />
+    <Compile Include="BuildingType.cs" />
+    <Compile Include="CityData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\AnvilFile\AnvilFile.csproj">
-      <Project>{56645ABF-CDDD-435E-845F-BF5AA422AF80}</Project>
-      <Name>AnvilFile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SimCityReader\SimCityReader.csproj">
-      <Project>{CC84F582-4F93-4628-83DD-CA36773CE759}</Project>
-      <Name>SimCityReader</Name>
-    </ProjectReference>
+    <Compile Include="Segment.cs" />
+    <Compile Include="Reader.cs" />
+    <Compile Include="SquareData.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
