@@ -49,7 +49,7 @@ namespace com.mc2k.MinecraftEditor
                         ZLibUtils.DecompressData(chunkData, out decompressedChunk);
                     }
 
-                    //System.IO.File.WriteAllBytes(@"C:\Users\jerne\Documents\Visual Studio 2010\Projects\MinecraftEditor\output\\orig.chunk", decompressedChunk);
+                    //System.IO.File.WriteAllBytes(@"..\..\..\output\\orig.chunk", decompressedChunk);
 
                     //byte[] recompressedChunk = new byte[0];
                     //ZLibUtils.CompressData(decompressedChunk, out recompressedChunk);

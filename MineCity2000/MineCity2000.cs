@@ -23,7 +23,7 @@ namespace com.mc2k.gui
         public MineCity2000()
         {
             InitializeComponent();
-            this.Text = "MineCity 2000 v0.2";
+            this.Text = "MineCity 2000 v0.3";
             openFileDialog1.Filter = "SimCity 2000 cities|*.sc2";
             openFileDialog1.InitialDirectory = @"C:\Program Files\Maxis\SimCity 2000\Cities";
             folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\.minecraft";

@@ -17,23 +17,12 @@ namespace com.mc2k.MinecraftEditor
                 return;
             }
 
-            String inputFile = @"F:\Backup\stari disk laptop\Program Files\MAXIS\SimCity 2000\Cities\mesto 1.sc2";
-            String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated";
-            String buildingsDir = @"C:\Users\jerne\Documents\Visual Studio 2010\Projects\MinecraftEditor\buildings";
+            String inputFile = @"..\..\..\input\cities\CENTERVL.SC2";
+            String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated"; // Change this to your Minecraft worlds directory
+            String buildingsDir = @"..\..\..\buildings";
 
             SCMapper mapper = new SCMapper(buildingsDir);
             mapper.makeMap(inputFile, outputDir);
-        }
-
-        static void createMeadow(int height, AbstractRegion targetRegion)
-        {
-            for (int i = 0; i < 512; i++)
-            {
-                for (int j = 0; j < 512; j++)
-                {
-                    targetRegion.putBlock(i, j, height, 2);
-                }
-            }
         }
     }
 }
