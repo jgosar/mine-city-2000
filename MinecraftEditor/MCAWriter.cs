@@ -52,7 +52,7 @@ namespace com.mc2k.MinecraftEditor
             byte[] chunkSize;
             byte compressionType = 2;
 
-            byte[] uncompressed = chunk.NBTTag.toBytes();
+            byte[] uncompressed = chunk.NBTTag.toBytesWithHeader();
             byte[] compressed = new byte[0];
             ZLibUtils.CompressData(uncompressed, out compressed);
 

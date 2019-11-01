@@ -120,7 +120,7 @@ namespace com.mc2k.AnvilFile.Tags
             }
         }
 
-        public abstract byte[] toBytes();
+        public abstract byte[] toBytesWithHeader();
 
         public abstract Object getObjectOnPath(String path);
 

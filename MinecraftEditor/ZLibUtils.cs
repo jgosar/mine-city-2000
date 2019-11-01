@@ -45,9 +45,9 @@ namespace com.mc2k.MinecraftEditor
 
         public static void CopyStream(System.IO.Stream input, System.IO.Stream output)
         {
-            byte[] buffer = new byte[2000];
+            byte[] buffer = new byte[4096];
             int len;
-            while ((len = input.Read(buffer, 0, 2000)) > 0)
+            while ((len = input.Read(buffer, 0, 4096)) > 0)
             {
                 output.Write(buffer, 0, len);
             }

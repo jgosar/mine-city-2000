@@ -22,11 +22,8 @@ namespace com.mc2k.AnvilFile.Tags
             pointer += 4;
 
             byte[] payload = new byte[payloadLength];
-            for (int i = 0; i < payloadLength; i++)
-            {
-                payload[i] = (byte)ByteConverter.readNumber(bytes, pointer, 1);
-                pointer++;
-            }
+            Array.Copy(bytes, pointer, payload, 0, payloadLength);
+            pointer += (int)payloadLength;
 
             _content = payload;
 

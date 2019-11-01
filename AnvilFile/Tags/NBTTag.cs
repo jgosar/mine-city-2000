@@ -85,26 +85,18 @@ namespace com.mc2k.AnvilFile.Tags
             return null;
         }
 
-        public override byte[] toBytes()
+        public override byte[] toBytesWithHeader()
         {
-            return toBytes(true);
-        }
+            byte[] content = contentToBytes();
+            int nameLength = _name.Length;
 
-        public byte[] toBytes(bool includeHeader)
-        {
-            List<byte> bytes = new List<byte>();
+            byte[] bytes = new byte[1 + 2 + nameLength + content.Length];
+            bytes[0] = (byte)_type;
+            shortBytes((short)nameLength).CopyTo(bytes, 1);
+            stringBytes(_name).CopyTo(bytes, 3);
+            content.CopyTo(bytes, 3 + nameLength);
 
-            if (includeHeader)
-            {
-                bytes.Add((byte)_type);
-                int nameLength = _name.Length;
-                bytes.AddRange(shortBytes((short)nameLength));
-                bytes.AddRange(stringBytes(_name));
-            }
-
-            bytes.AddRange(contentToBytes());
-
-            return bytes.ToArray();
+            return bytes;
         }
 
         internal abstract byte[] contentToBytes();

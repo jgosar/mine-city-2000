@@ -60,7 +60,7 @@ namespace com.mc2k.MinecraftEditor
         {
             CompoundNBTTag tag = toNBTTag();
 
-            byte[] output = tag.toBytes();
+            byte[] output = tag.toBytesWithHeader();
 
             Stream outFile = new FileStream(fileName, FileMode.Create);
 

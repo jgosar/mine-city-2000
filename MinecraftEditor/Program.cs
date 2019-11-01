@@ -23,6 +23,7 @@ namespace com.mc2k.MinecraftEditor
 
             SCMapper mapper = new SCMapper(buildingsDir);
             mapper.makeMap(inputFile, outputDir);
+            int x = 0;
         }
     }
 }

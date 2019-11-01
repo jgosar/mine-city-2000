@@ -49,7 +49,7 @@ namespace com.mc2k.AnvilFile.Tags
 
             foreach (AnyNBTTag subTag in subTags)
             {
-                bytes.AddRange(subTag.toBytes());
+                bytes.AddRange(subTag.toBytesWithHeader());
             }
 
             bytes.Add(0);

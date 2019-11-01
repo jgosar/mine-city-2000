@@ -191,7 +191,7 @@ namespace com.mc2k.AnvilFile.Tags
             {
                 for (int i = 0; i < _content.Length; i++)
                 {
-                    bytes.AddRange(((CompoundNBTTag)(object)_content[i]).toBytes(false));
+                    bytes.AddRange(((CompoundNBTTag)(object)_content[i]).contentToBytes());
                 }
             }
 
