@@ -130,3 +130,5 @@ New buildings:
 - Medium Appartments 1
 - Small Appartments 1
 - Corporate Headquarters
+- Abandoned building 1
+- Abandoned building 2
