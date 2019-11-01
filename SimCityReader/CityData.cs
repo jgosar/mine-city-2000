@@ -175,5 +175,10 @@ namespace com.mc2k.SimCityReader
         {
             return _waterLevel;
         }
+
+        public List<Building> getBuildings()
+        {
+            return _buildings;
+        }
     }
 }
