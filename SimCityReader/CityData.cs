@@ -13,14 +13,22 @@ namespace com.mc2k.SimCityReader
         private SquareData[][] _squares;
         private byte _waterLevel;
 
-        public CityData(Dictionary<String, Segment> segments){
+        public CityData(Dictionary<String, Segment> segments, String cityName)
+        {
             initializeSquares();
 
-            interpretCNAM(segments["CNAM"]);
-            interpretALTM(segments["ALTM"]);
-            interpretXBLD(segments["XBLD"]);
-            interpretXTER(segments["XTER"]);
-            interpretMISC(segments["MISC"]);
+            if (segments.ContainsKey("CNAM")) // Read city name from file contents, if it is included in the file, otherwise use the name passed to the constructor
+            {
+                interpretCNAM(segments["CNAM"]);
+            }
+            else
+            {
+                _cityName = cityName;
+            }
+            interpretALTM(segments["ALTM"]); // Read altitude map
+            interpretXBLD(segments["XBLD"]); // Read building positions
+            interpretXTER(segments["XTER"]); // Read positions of groundwater
+            interpretMISC(segments["MISC"]); // Read general water level
 
             setWaterOnCoastalSquares();
         }
@@ -41,7 +49,7 @@ namespace com.mc2k.SimCityReader
         private void interpretCNAM(Segment cnamSegment)
         {
             byte[] content = cnamSegment.getContent();
-            int offset=1;
+            int offset = 1;
             List<byte> stringBytes = new List<byte>();
 
             while (offset < content.Length && content[offset] != 0)
@@ -73,39 +81,53 @@ namespace com.mc2k.SimCityReader
         {
             byte[] content = altmSegment.getContent();
 
+            // Rad 128x128 map of which building type is on which field
             int offset = 0;
 
-            byte[][] tmpMap = new byte[128][];
+            byte[][] buildingTypesMap = new byte[128][];
             for (int i = 0; i < 128; i++)
             {
-                tmpMap[i] = new byte[128];
+                buildingTypesMap[i] = new byte[128];
                 for (int j = 0; j < 128; j++)
                 {
-                    tmpMap[i][j] = content[offset];
-                    offset ++;
+                    buildingTypesMap[i][j] = content[offset];
+                    offset++;
                 }
             }
 
+            // Figure out which building is positioned where.
+            // All buildings have fixed sizes, so once we find the first firld that is part of the building, we can guess where the rest are located
             Building tmpBuilding;
 
             for (byte i = 0; i < 128; i++)
             {
                 for (byte j = 0; j < 128; j++)
                 {
-                    if (tmpMap[i][j] != 0)
+                    if (buildingTypesMap[i][j] != 0)
                     {
-                        tmpBuilding = new Building(i, j, tmpMap[i][j]);
+                        // We have found the upper left corner of a building
+                        tmpBuilding = new Building(i, j, buildingTypesMap[i][j]);
                         _buildings.Add(tmpBuilding);
-                        _squares[i][j].buildingType = tmpMap[i][j];
+                        _squares[i][j].buildingType = buildingTypesMap[i][j];
 
-                        for(byte i2=0;i2<tmpBuilding.getSize();i2++){
-                            for (byte j2 = 0; j2 < tmpBuilding.getSize();j2++ )
+                        // Walk throught the rest of the building's fields and take note of their offsets relative to the upper left corner
+                        for (byte i2 = 0; i2 < tmpBuilding.getSize(); i2++)
+                        {
+                            for (byte j2 = 0; j2 < tmpBuilding.getSize(); j2++)
                             {
-                                _squares[i + i2][j + j2].buildingType = _squares[i][j].buildingType;
-                                _squares[i + i2][j + j2].buildingOffsetX = i2;
-                                _squares[i + i2][j + j2].buildingOffsetZ = j2;
+                                if (i + i2 < 128 && j + j2 < 128)
+                                {
+                                    _squares[i + i2][j + j2].buildingType = _squares[i][j].buildingType;
+                                    _squares[i + i2][j + j2].buildingOffsetX = i2;
+                                    _squares[i + i2][j + j2].buildingOffsetZ = j2;
 
-                                tmpMap[i + i2][j + j2] = 0;
+                                    buildingTypesMap[i + i2][j + j2] = 0; // Mark all of the fields with zeros in the temporary map, so this code will not take note of them again
+                                }
+                                else
+                                {
+                                    // This normally isn't possible, except if somebody used the "Magic Eraser" SimCity 2000 cheat near the edge of the map.
+                                    // But since even the game renders these cases wrong, we don't need to worry about them here, so we can safely do nothing.
+                                }
                             }
                         }
                     }

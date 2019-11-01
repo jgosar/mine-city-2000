@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace com.mc2k.SimCityReader
 {
@@ -16,19 +17,31 @@ namespace com.mc2k.SimCityReader
                 return;
             }
 
-            CityData city = Reader.readFile(@"..\..\..\input\Spurdo.sc2");
+            // Test loading of cities for all cities in the input folder
+            List<CityData> allCities = loadAllCities(@"..\..\..\input\cities");
 
-            printBuildingStats(city);
+            // Count the number of buildings by type in all test maps and print them to console (See building_stats.xlsx)
+            printBuildingStats(allCities);
         }
 
-        static void printBuildingStats(CityData city){
-            List<Building> buildings = city.getBuildings();
+        private static List<CityData> loadAllCities(string citiesDir)
+        {
+            string[] cityFiles = Directory.GetFiles(citiesDir, "*.sc2", SearchOption.TopDirectoryOnly);
+            return cityFiles.ToList().Select(cityFile => Reader.readFile(cityFile)).ToList();
+        }
 
+        private static void printBuildingStats(List<CityData> cities)
+        {
             int[] buildingStats = new int[256];
 
-            buildings.ForEach(building =>
+            cities.ForEach(city =>
             {
-                buildingStats[building.getCode()]++;
+                List<Building> buildings = city.getBuildings();
+
+                buildings.ForEach(building =>
+                {
+                    buildingStats[building.getCode()]++;
+                });
             });
 
             for (int i = 0; i < 256; i++)
