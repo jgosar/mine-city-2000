@@ -99,7 +99,7 @@ namespace com.mc2k.SimCityReader
             }
             //2C-3A: Rails (various directions, slopes; same coding as for 0E-1C)
             //3B-3E: More sloping rails.  These are used as preparation before ascending.
-            //The 2C-3A rail codes are used on the actual sloping square.  This is why
+            //The 2C-3A rail codes are used on the actual sloping code.  This is why
             //rails don't look right when ascending a 1:1 grade.
             //  3B: Top-bottom; slopes upwards towards top
             //  3C: Left-right; slopes upwards towards right
@@ -457,7 +457,7 @@ namespace com.mc2k.SimCityReader
             {
                 return new BuildingType(code, "Mini Mal ", 3);
             }
-            //    B5: Theater square
+            //    B5: Theater code
             else if (code == 181)
             {
                 return new BuildingType(code, "Theater", 3);
@@ -823,6 +823,101 @@ namespace com.mc2k.SimCityReader
             {
                 throw new Exception("Undefined code: " + code);
             }
+        }
+
+        public static bool isRotatable(byte code)
+        {
+            return isBridgePart(code) || code == 221 || code == 223;
+        }
+
+        // Returns true if other code is part of a bridge AND both squares are roads, rails or power lines
+        public static bool isSameKindOfBridgePart(byte thisCode, byte otherCode)
+        {
+            if (isBridgePart(otherCode))
+            {
+                return isSameKindOfPart(thisCode, otherCode);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        // Returns true if both squares are roads, rails or power lines
+        public static bool isSameKindOfPart(byte thisCode, byte otherCode)
+        {
+            return (isRoad(thisCode) && isRoad(otherCode)) || (isPowerline(thisCode) && isPowerline(otherCode)) || (isRail(thisCode) && isRail(otherCode));
+        }
+
+        // Returns true, if building is part of a road or a road bridge
+        public static bool isRoad(byte code)
+        {
+            return (code >= 29 && code <= 43) || // roads
+                (code >= 63 && code <= 66) || // tunnel entrances
+                (code >= 67 && code <= 68) || // road-power crossings
+                (code >= 69 && code <= 70) || // road-rail crossings
+                (code >= 81 && code <= 89); // road bridges
+        }
+
+        // Returns true, if building is part of a power line or raised wires
+        public static bool isPowerline(byte code)
+        {
+            return (code >= 14 && code <= 28) || // power lines
+                (code >= 67 && code <= 68) || // road-power crossings
+                (code >= 71 && code <= 72) || // rail-power crossings
+                (code == 92); // raised wires
+        }
+
+        // Returns true, if building is part of a rail track or a rail bridge
+        public static bool isRail(byte code)
+        {
+            return  (code >= 44 && code <= 62) || // rails
+                (code >= 69 && code <= 70) || // road-rail crossings
+                (code >= 71 && code <= 72) || // rail-power crossings
+                (code >= 90 && code <= 91); // rail bridges
+        }
+
+        public static bool isBridgePart(byte code)
+        {
+            // 81-85 suspension bridge
+            // 86-89 normal bridge, raising bridge
+            // 90-91 rail bridge
+            // 92 raised power lines
+            return code >= 81 && code <= 92;
+        }
+
+        public static Boolean isSloped(byte code)
+        {
+            // 16-19: sloped power lines
+            // 31-34: sloped roads
+            // 46-49: sloped rails
+            return (code >= 16 && code <= 19) || (code >= 31 && code <= 34) || (code >= 46 && code <= 49);
+
+        }
+
+        public static bool isSlopedToTop(byte code)
+        {
+            return code == 16 || code == 31 || code == 46;
+        }
+
+        public static bool isSlopedToRight(byte code)
+        {
+            return code == 17 || code == 32 || code == 47;
+        }
+
+        public static bool isSlopedToBottom(byte code)
+        {
+            return code == 18 || code == 33 || code == 48;
+        }
+
+        public static bool isSlopedToLeft(byte code)
+        {
+            return code == 19 || code == 34 || code == 49;
+        }
+
+        public static bool isTunnelEntrance(byte code)
+        {
+            return code >= 63 && code <= 66;
         }
     }
 }

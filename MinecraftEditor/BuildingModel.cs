@@ -113,7 +113,7 @@ namespace com.mc2k.MinecraftEditor
                                     tmpSectionData[x][z][y][0] = section.getBlocks()[bl];
                                     tmpSectionData[x][z][y][1] = tmpData;
                                 }
-                                else if (((typeCode >= 16 && typeCode <= 19) || (typeCode >= 31 && typeCode <= 34)) && section.getBlocks()[bl] == WOOL_BLOCK)//for sloped blocks, turn wool to sandstone
+                                else if (BuildingType.isSloped(typeCode) && section.getBlocks()[bl] == WOOL_BLOCK)//for sloped blocks, turn wool to sandstone
                                 {
                                     tmpSectionData[x][z][y][0] = SANDSTONE_BLOCK;
                                     tmpSectionData[x][z][y][1] = 0;

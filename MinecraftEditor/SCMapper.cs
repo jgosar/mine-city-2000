@@ -372,7 +372,7 @@ namespace com.mc2k.MinecraftEditor
         {
             Boolean useRotatedModel = false;
 
-            if (isRotatableBuildingType(thisSquare))
+            if (isRotatable(thisSquare))
             {
                 bool bridgeNorth = false;
                 bool bridgeSouth = false;
@@ -394,101 +394,74 @@ namespace com.mc2k.MinecraftEditor
             return useRotatedModel;
         }
 
-        private static bool isRotatableBuildingType(SquareData square)
+        private static bool isRotatable(SquareData square)
         {
-            return isBridgePart(square) || square.buildingType == 221 || square.buildingType == 223;
+            return square != null && BuildingType.isRotatable(square.buildingType);
         }
 
         // Returns true if other square is part of a bridge AND both squares are roads, rails or power lines
         private static bool isSameKindOfBridgePart(SquareData thisSquare, SquareData otherSquare)
         {
-            if (isBridgePart(otherSquare))
-            {
-                return isSameKindOfPart(thisSquare, otherSquare);
-            }
-            else
-            {
-                return false;
-            }
+            return thisSquare != null && otherSquare != null && BuildingType.isSameKindOfBridgePart(thisSquare.buildingType, otherSquare.buildingType);
         }
 
         // Returns true if both squares are roads, rails or power lines
         private static bool isSameKindOfPart(SquareData thisSquare, SquareData otherSquare)
         {
-            return (isRoad(thisSquare) && isRoad(otherSquare)) || (isPowerline(thisSquare) && isPowerline(otherSquare)) || (isRail(thisSquare) && isRail(otherSquare));
+            return thisSquare != null && otherSquare != null && BuildingType.isSameKindOfPart(thisSquare.buildingType, otherSquare.buildingType);
         }
 
         // Returns true, if building is part of a road or a road bridge
         private static bool isRoad(SquareData square)
         {
-            return square != null && (
-                (square.buildingType >= 29 && square.buildingType <= 43) || // roads
-                (square.buildingType >= 63 && square.buildingType <= 66) || // tunnel entrances
-                (square.buildingType >= 67 && square.buildingType <= 68) || // road-power crossings
-                (square.buildingType >= 69 && square.buildingType <= 70) || // road-rail crossings
-                (square.buildingType >= 81 && square.buildingType <= 89)); // road bridges
+            return square != null && BuildingType.isRoad(square.buildingType);
         }
 
         // Returns true, if building is part of a power line or raised wires
         private static bool isPowerline(SquareData square)
         {
-            return square != null && (
-                (square.buildingType >= 14 && square.buildingType <= 28) || // power lines
-                (square.buildingType >= 67 && square.buildingType <= 68) || // road-power crossings
-                (square.buildingType >= 71 && square.buildingType <= 72) || // rail-power crossings
-                (square.buildingType == 92)); // raised wires
+            return square != null && BuildingType.isPowerline(square.buildingType);
         }
 
         // Returns true, if building is part of a rail track or a rail bridge
         private static bool isRail(SquareData square)
         {
-            return square != null && (
-                (square.buildingType >= 44 && square.buildingType <= 62) || // rails
-                (square.buildingType >= 69 && square.buildingType <= 70) || // road-rail crossings
-                (square.buildingType >= 71 && square.buildingType <= 72) || // rail-power crossings
-                (square.buildingType >= 90 && square.buildingType <= 91)); // rail bridges
+            return square != null && BuildingType.isRail(square.buildingType);
         }
 
         private static bool isBridgePart(SquareData square)
         {
-            // 81-85 suspension bridge
-            // 86-89 normal bridge, raising bridge
-            // 90-91 rail bridge
-            // 92 raised power lines
-            return square != null && square.buildingType >= 81 && square.buildingType <= 92;
+            return square != null && BuildingType.isBridgePart(square.buildingType);
         }
 
         private static bool isSloped(SquareData square)
         {
-            // 16-19: sloped power lines
-            // 31-34: sloped roads
-            // 46-49: sloped rails
-            return square != null && ((square.buildingType >= 16 && square.buildingType <= 19) || (square.buildingType >= 31 && square.buildingType <= 34) || (square.buildingType >= 46 && square.buildingType <= 49));
+            return square != null && BuildingType.isSloped(square.buildingType);
         }
 
         private static bool isSlopedToTop(SquareData square)
         {
-            return square != null && square.buildingType == 16 || square.buildingType == 31 || square.buildingType == 46;
+            return square != null && BuildingType.isSlopedToTop(square.buildingType);
         }
 
         private static bool isSlopedToRight(SquareData square)
         {
-            return square != null && square.buildingType == 17 || square.buildingType == 32 || square.buildingType == 47;
+            return square != null && BuildingType.isSlopedToRight(square.buildingType);
         }
 
         private static bool isSlopedToBottom(SquareData square)
         {
-            return square != null && square.buildingType == 18 || square.buildingType == 33 || square.buildingType == 48;
+            return square != null && BuildingType.isSlopedToBottom(square.buildingType);
         }
 
         private static bool isSlopedToLeft(SquareData square)
         {
-            return square != null && square.buildingType == 19 || square.buildingType == 34 || square.buildingType == 49;
+            return square != null && BuildingType.isSlopedToLeft(square.buildingType);
         }
 
         private static bool isTunnelEntrance(SquareData square)
         {
-            return square != null && square.buildingType >= 63 && square.buildingType <= 66;
+            return square != null && BuildingType.isTunnelEntrance(square.buildingType);
         }
 
         private static void fixBridgeSlopes(int[][] terrainHeightsForRegion, SquareData thisSquare, SquareData xMinusSquare, SquareData xPlusSquare, SquareData zMinusSquare, SquareData zPlusSquare, int squareXIndex, int squareZIndex)
