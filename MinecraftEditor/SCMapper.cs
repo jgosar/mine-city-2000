@@ -6,6 +6,7 @@ using com.mc2k.SimCityReader;
 using System.IO;
 using System.ComponentModel;
 using com.mc2k.MinecraftEditor.Planning;
+using static com.mc2k.SimCityReader.BuildingType;
 
 namespace com.mc2k.MinecraftEditor
 {
@@ -227,7 +228,7 @@ namespace com.mc2k.MinecraftEditor
                                                 byte[] thisBlock = tmpChunkData[section][sx][sz][sy];
 
 
-                                                if (isTunnelEntrance(thisSquare))//tunnel entrances - include air, repeat along x or z axis
+                                                if (check(isTunnelEntrance, thisSquare))//tunnel entrances - include air, repeat along x or z axis
                                                 {
                                                     newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), thisBlock);
                                                     if (thisSquare.buildingType == 63)
@@ -372,16 +373,16 @@ namespace com.mc2k.MinecraftEditor
         {
             Boolean useRotatedModel = false;
 
-            if (isRotatable(thisSquare))
+            if (check(isRotatable, thisSquare))
             {
                 bool bridgeNorth = false;
                 bool bridgeSouth = false;
 
-                if (zMinusSquare != null && isSameKindOfPart(thisSquare, zMinusSquare) && (isBridgePart(zMinusSquare) || isSloped(zMinusSquare)))
+                if (zMinusSquare != null && check(isSameKindOfPart, thisSquare, zMinusSquare) && (check(isBridgePart, zMinusSquare) || check(isSloped, zMinusSquare)))
                 {
                     bridgeNorth = true;
                 }
-                if (zPlusSquare != null && isSameKindOfPart(thisSquare, zPlusSquare) && (isBridgePart(zPlusSquare) || isSloped(zPlusSquare)))
+                if (zPlusSquare != null && check(isSameKindOfPart, thisSquare, zPlusSquare) && (check(isBridgePart, zPlusSquare) || check(isSloped, zPlusSquare)))
                 {
                     bridgeSouth = true;
                 }
@@ -394,74 +395,27 @@ namespace com.mc2k.MinecraftEditor
             return useRotatedModel;
         }
 
-        private static bool isRotatable(SquareData square)
+        private static bool check(Func<byte, bool> checkFunction, SquareData square)
         {
-            return square != null && BuildingType.isRotatable(square.buildingType);
+            if (square == null)
+            {
+                return false;
+            }
+            else
+            {
+                return checkFunction(square.buildingType);
+            }
         }
-
-        // Returns true if other square is part of a bridge AND both squares are roads, rails or power lines
-        private static bool isSameKindOfBridgePart(SquareData thisSquare, SquareData otherSquare)
+        private static bool check(Func<byte, byte, bool> checkFunction, SquareData square1, SquareData square2)
         {
-            return thisSquare != null && otherSquare != null && BuildingType.isSameKindOfBridgePart(thisSquare.buildingType, otherSquare.buildingType);
-        }
-
-        // Returns true if both squares are roads, rails or power lines
-        private static bool isSameKindOfPart(SquareData thisSquare, SquareData otherSquare)
-        {
-            return thisSquare != null && otherSquare != null && BuildingType.isSameKindOfPart(thisSquare.buildingType, otherSquare.buildingType);
-        }
-
-        // Returns true, if building is part of a road or a road bridge
-        private static bool isRoad(SquareData square)
-        {
-            return square != null && BuildingType.isRoad(square.buildingType);
-        }
-
-        // Returns true, if building is part of a power line or raised wires
-        private static bool isPowerline(SquareData square)
-        {
-            return square != null && BuildingType.isPowerline(square.buildingType);
-        }
-
-        // Returns true, if building is part of a rail track or a rail bridge
-        private static bool isRail(SquareData square)
-        {
-            return square != null && BuildingType.isRail(square.buildingType);
-        }
-
-        private static bool isBridgePart(SquareData square)
-        {
-            return square != null && BuildingType.isBridgePart(square.buildingType);
-        }
-
-        private static bool isSloped(SquareData square)
-        {
-            return square != null && BuildingType.isSloped(square.buildingType);
-        }
-
-        private static bool isSlopedToTop(SquareData square)
-        {
-            return square != null && BuildingType.isSlopedToTop(square.buildingType);
-        }
-
-        private static bool isSlopedToRight(SquareData square)
-        {
-            return square != null && BuildingType.isSlopedToRight(square.buildingType);
-        }
-
-        private static bool isSlopedToBottom(SquareData square)
-        {
-            return square != null && BuildingType.isSlopedToBottom(square.buildingType);
-        }
-
-        private static bool isSlopedToLeft(SquareData square)
-        {
-            return square != null && BuildingType.isSlopedToLeft(square.buildingType);
-        }
-
-        private static bool isTunnelEntrance(SquareData square)
-        {
-            return square != null && BuildingType.isTunnelEntrance(square.buildingType);
+            if (square1 == null || square2 == null)
+            {
+                return false;
+            }
+            else
+            {
+                return checkFunction(square1.buildingType, square2.buildingType);
+            }
         }
 
         private static void fixBridgeSlopes(int[][] terrainHeightsForRegion, SquareData thisSquare, SquareData xMinusSquare, SquareData xPlusSquare, SquareData zMinusSquare, SquareData zPlusSquare, int squareXIndex, int squareZIndex)
@@ -470,18 +424,11 @@ namespace com.mc2k.MinecraftEditor
             int squareZOffset = squareZIndex * SQUARE_SIZE;
 
             // This tile needs to slope upwards to one side because it is an entrance to a bridge.
-            if (isSloped(thisSquare))
+            if (check(isSloped, thisSquare))
             {
                 // Find out which direction the bridge is going
-                Boolean isBridgeInDirectionX = isSameKindOfBridgePart(thisSquare, xMinusSquare) || isSameKindOfBridgePart(thisSquare, xPlusSquare);
-                Boolean isBridgeInDirectionZ = isSameKindOfBridgePart(thisSquare, zMinusSquare) || isSameKindOfBridgePart(thisSquare, zPlusSquare);
-
-                //There are no bridge parts next to this square. It might be a very short bridge, so we try to look for squares of the same kind which are not bridges
-                /*if (!isBridgeInDirectionX && !isBridgeInDirectionZ)
-                {
-                    isBridgeInDirectionX = isSameKindOfPart(thisSquare, xMinusSquare) || isSameKindOfPart(thisSquare, xPlusSquare);
-                    isBridgeInDirectionZ = isSameKindOfPart(thisSquare, zMinusSquare) || isSameKindOfPart(thisSquare, zPlusSquare);
-                }*/
+                Boolean isBridgeInDirectionX = check(isSameKindOfBridgePart, thisSquare, xMinusSquare) || check(isSameKindOfBridgePart, thisSquare, xPlusSquare);
+                Boolean isBridgeInDirectionZ = check(isSameKindOfBridgePart, thisSquare, zMinusSquare) || check(isSameKindOfBridgePart, thisSquare, zPlusSquare);
 
                 for (int sx = 0; sx < SQUARE_SIZE; sx++)
                 {
@@ -489,19 +436,19 @@ namespace com.mc2k.MinecraftEditor
                     {
                         int blockX = squareXOffset + sx;
                         int blockZ = squareZOffset + sz;
-                        if (isSlopedToTop(thisSquare) && isBridgeInDirectionX)
+                        if (check(isSlopedToTop, thisSquare) && isBridgeInDirectionX)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += 15 - sx;
                         }
-                        else if (isSlopedToRight(thisSquare) && isBridgeInDirectionZ)
+                        else if (check(isSlopedToRight, thisSquare) && isBridgeInDirectionZ)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += 15 - sz;
                         }
-                        else if (isSlopedToBottom(thisSquare) && isBridgeInDirectionX)
+                        else if (check(isSlopedToBottom, thisSquare) && isBridgeInDirectionX)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += sx;
                         }
-                        else if (isSlopedToLeft(thisSquare) && isBridgeInDirectionZ)
+                        else if (check(isSlopedToLeft, thisSquare) && isBridgeInDirectionZ)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += sz;
                         }
