@@ -10,3 +10,4 @@ SimCityReader/bin
 *.user
 *.suo
 .vs
+~$building_stats.xlsx

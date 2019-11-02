@@ -27,7 +27,7 @@ namespace com.mc2k.MinecraftEditor
 
         private String _buildingsDir;
         BuildingModel[] _buildingModels = new BuildingModel[256];
-        BuildingModel[] _rotatedModels = new BuildingModel[256];//bridges 81-89, runway 221, pier 223
+        BuildingModel[] _rotatedModels = new BuildingModel[256];//bridges 81-89, raised power lines 92, runway 221, pier 223
 
         public SCMapper(String buildingsDir)
         {
@@ -400,12 +400,38 @@ namespace com.mc2k.MinecraftEditor
 
         private static bool isBridgePart(SquareData square)
         {
-            return square != null && square.buildingType >= 81 && square.buildingType <= 89;
+            // 81-85 suspension bridge
+            // 86-89 normal bridge, raising bridge
+            // 90-91 rail bridge
+            // 92 raised power lines
+            return square != null && square.buildingType >= 81 && square.buildingType <= 92;
         }
 
-        private static bool isSlopedRoad(SquareData square)
+        private static bool isSloped(SquareData square)
         {
-            return square != null && square.buildingType >= 31 && square.buildingType <= 34;
+            // 16-19: sloped power lines
+            // 31-34: sloped roads
+            return square != null && ((square.buildingType >= 16 && square.buildingType <= 19) || (square.buildingType >= 31 && square.buildingType <= 34));
+        }
+
+        private static bool isSlopedToTop(SquareData square)
+        {
+            return square != null && square.buildingType == 16 || square.buildingType == 31;
+        }
+
+        private static bool isSlopedToRight(SquareData square)
+        {
+            return square != null && square.buildingType == 17 || square.buildingType == 32;
+        }
+
+        private static bool isSlopedToBottom(SquareData square)
+        {
+            return square != null && square.buildingType == 18 || square.buildingType == 33;
+        }
+
+        private static bool isSlopedToLeft(SquareData square)
+        {
+            return square != null && square.buildingType == 19 || square.buildingType == 34;
         }
 
         private static bool isTunnelEntrance(SquareData square)
@@ -418,7 +444,7 @@ namespace com.mc2k.MinecraftEditor
             int squareXOffset = squareXIndex * SQUARE_SIZE;
             int squareZOffset = squareZIndex * SQUARE_SIZE;
             
-            if (isSlopedRoad(thisSquare))
+            if (isSloped(thisSquare))
             {
                 Boolean isBridgeInDirectionX = (xMinusSquare != null && isBridgePart(xMinusSquare)) || (xPlusSquare != null && isBridgePart(xPlusSquare));
                 Boolean isBridgeInDirectionZ = (zMinusSquare != null && isBridgePart(zMinusSquare)) || (zPlusSquare != null && isBridgePart(zPlusSquare));
@@ -429,19 +455,19 @@ namespace com.mc2k.MinecraftEditor
                     {
                         int blockX = squareXOffset + sx;
                         int blockZ = squareZOffset + sz;
-                        if (thisSquare.buildingType == 31 && isBridgeInDirectionX)
+                        if (isSlopedToTop(thisSquare) && isBridgeInDirectionX)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += 15 - sx;
                         }
-                        else if (thisSquare.buildingType == 32 && isBridgeInDirectionZ)
+                        else if (isSlopedToRight(thisSquare) && isBridgeInDirectionZ)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += 15 - sz;
                         }
-                        else if (thisSquare.buildingType == 33 && isBridgeInDirectionX)
+                        else if (isSlopedToBottom(thisSquare) && isBridgeInDirectionX)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += sx;
                         }
-                        else if (thisSquare.buildingType == 34 && isBridgeInDirectionZ)
+                        else if (isSlopedToLeft(thisSquare) && isBridgeInDirectionZ)
                         {
                             terrainHeightsForRegion[blockX][blockZ] += sz;
                         }
