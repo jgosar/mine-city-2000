@@ -9,11 +9,17 @@ Into this:
 
 ![](https://raw.githubusercontent.com/jgosar/mine-city-2000/master/screens/mc2k-b.PNG)
 
+## Overview
+
+The program works by reading a *.sc2 city file created by SimCity 2000. It then maps the terrain and places all the buildings into a Minecraft world.
+
 See it in action:
 
 https://www.youtube.com/watch?v=R6RW6WouGbE
 
 https://www.youtube.com/watch?v=Z3FkM7GLxKo
+
+## Projects
 
 The repository contains these projects:
 - SimCityReader: Reads information about the city map from a *.sc2 city file
@@ -21,21 +27,21 @@ The repository contains these projects:
 - MinecraftEditor: Creates the Minecraft world with terrain and buildings
 - MineCity2000: A rudimentary GUI for running the program
 
-First of all, you need .NET Framework 4 in order for MineCity 2000 to run.
+You need .NET Framework 4 in order for MineCity 2000 to run. I have checked that the project compiles and runs in Visual Studio 2010 and Visual Studio 2019.
 
 This is a development version, so do not be surprised if something doesn't work.
-If you come across any interesting bugs, tell me about them.
 
 At the current stage, not all buildings are supported, so there will be some holes between the buildings in a generated world.
 
 Stuff that does NOT work yet:
 - Subways
-- Highways
+- Highways (mostly)
 - Underwater pipes?
 - ???
 
+## Running the compiled program
 
-Run the program using MineCity2000.exe.
+Run the compiled program using MineCity2000.exe.
 
 With the first browse button, choose your *.sc2 city file. A good place to look for it would be "C:\Program Files\Maxis\SimCity 2000\Cities". But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
 
@@ -43,11 +49,18 @@ With the second browse button, choose your Minecraft install directory. It might
 
 After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
 
-
 Your antivirus program might think that MineCity 2000 is a virus. It's not.
 
+## If you would like to help
 
-Changelog:
+Let me know about any bugs or other problems you encounter.
+
+If you know a community that might be interested in this project, tell them about it.
+
+If you have the time, patience and skills, you can design a few more of the missing buildings. I have a very specific process that i follow to design them, but i am not going to describe it here unless somebody volunteers to help. 
+
+## Changelog:
+
 The minecraftforums version:
 v0.1:
 Buildings:
@@ -132,3 +145,7 @@ New buildings:
 - Corporate Headquarters
 - Abandoned building 1
 - Abandoned building 2
+
+## Contact
+
+<minecity.2000@gmail.com>
