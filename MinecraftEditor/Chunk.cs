@@ -16,10 +16,10 @@ namespace com.mc2k.MinecraftEditor
                 List<AnyNBTTag> subTags = new List<AnyNBTTag>();
 
                 if (_heightMap != null) { subTags.Add(new IntArrayNBTTag("HeightMap", _heightMap)); }
-                if (_terrainPopulated != null) { subTags.Add(new ByteNBTTag("TerrainPopulated", (byte)(_terrainPopulated ? 1 : 0))); }
-                if (_xPos != null) { subTags.Add(new IntNBTTag("xPos", _xPos)); }
-                if (_zPos != null) { subTags.Add(new IntNBTTag("zPos", _zPos)); }
-                if (_lastUpdate != null) { subTags.Add(new LongNBTTag("LastUpdate", _lastUpdate)); }
+                subTags.Add(new ByteNBTTag("TerrainPopulated", (byte)(_terrainPopulated ? 1 : 0)));
+                subTags.Add(new IntNBTTag("xPos", _xPos));
+                subTags.Add(new IntNBTTag("zPos", _zPos));
+                subTags.Add(new LongNBTTag("LastUpdate", _lastUpdate));
                 if (_entities != null) { subTags.Add(AnyNBTTag.makeListTag("Entities", _entities)); }
                 else { subTags.Add(new ListNBTTag<byte>("Entities", new byte[0])); }
                 if (_tileEntities != null) { subTags.Add(AnyNBTTag.makeListTag("TileEntities", _tileEntities)); }

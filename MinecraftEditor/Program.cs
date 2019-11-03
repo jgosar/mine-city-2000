@@ -17,13 +17,12 @@ namespace com.mc2k.MinecraftEditor
                 return;
             }
 
-            String inputFile = @"..\..\..\input\cities\test.sc2";
+            String inputFile = @"..\..\..\input\cities\CENTERVL.SC2";
             String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated"; // Change this to your Minecraft worlds directory
             String buildingsDir = @"..\..\..\buildings";
 
             SCMapper mapper = new SCMapper(buildingsDir);
             mapper.makeMap(inputFile, outputDir);
-            int x = 0;
         }
     }
 }

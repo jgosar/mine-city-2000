@@ -7,9 +7,6 @@ namespace com.mc2k.AnvilFile.Tags
 {
     public class CompoundNBTTag : NBTTag<List<AnyNBTTag>>
     {
-        private string p;
-        private List<AnyNBTTag> subTags;
-
         public CompoundNBTTag(String name, List<AnyNBTTag> content) : base(name, content)
         {
             _type = Type.COMPOUND;

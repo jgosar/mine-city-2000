@@ -49,9 +49,7 @@
     <Compile Include="AbstractRegion.cs" />
     <Compile Include="BuildingModel.cs" />
     <Compile Include="Chunk.cs" />
-    <Compile Include="ChunkMetadata.cs" />
     <Compile Include="Entity.cs" />
-    <Compile Include="Planning\BuildingPart.cs" />
     <Compile Include="Planning\CityPlan.cs" />
     <Compile Include="Planning\SquarePlan.cs" />
     <Compile Include="LevelDat.cs" />

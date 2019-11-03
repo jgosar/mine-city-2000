@@ -9,7 +9,6 @@ namespace com.mc2k.MinecraftEditor.Planning
     {
         byte[][] heights;
         bool[][] water;
-        List<BuildingPart> buildingParts;
 
         public SquarePlan(byte heightNE, byte heightNW, byte heightSE, byte heightSW)
         {

@@ -11,7 +11,6 @@ namespace com.mc2k.MinecraftEditor.Planning
         private const int SQUARES_IN_CITY = 128;//How many squares are in a city
 
         SquarePlan[][] _squares;
-        byte _waterLevel;
 
         public CityPlan(CityData data)
         {
