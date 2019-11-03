@@ -145,6 +145,7 @@ New buildings:
 - Corporate Headquarters
 - Abandoned building 1
 - Abandoned building 2
+- Big Park
 
 ## Contact
 
