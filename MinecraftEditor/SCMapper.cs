@@ -231,13 +231,16 @@ namespace com.mc2k.MinecraftEditor
                                                 if (check(isTunnelEntrance, thisSquare))//tunnel entrances - include air, repeat along x or z axis
                                                 {
                                                     newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), thisBlock);
-                                                    if (thisSquare.buildingType == 63)
+                                                    if (section == 0 || sy < SECTION_HEIGHT - 2) // Omit the top two levels of blocks above the underground tunnel sections in order not to erase the ground above
                                                     {
-                                                        repeatBlockUntilTunnelEndsX(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
-                                                    }
-                                                    if (thisSquare.buildingType == 64)
-                                                    {
-                                                        repeatBlockUntilTunnelEndsZ(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                        if (thisSquare.buildingType == 63)
+                                                        {
+                                                            repeatBlockUntilTunnelEndsX(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                        }
+                                                        if (thisSquare.buildingType == 64)
+                                                        {
+                                                            repeatBlockUntilTunnelEndsZ(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                        }
                                                     }
                                                 }
                                                 else if (thisBlock[0] != AIR_BLOCK)
