@@ -1,11 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29424.173
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftEditor", "MinecraftEditor\MinecraftEditor.csproj", "{3DA90FF7-6DC6-4668-A4BA-48737A8089B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimCityReader", "SimCityReader\SimCityReader.csproj", "{CC84F582-4F93-4628-83DD-CA36773CE759}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000", "MineCity2000\MineCity2000.csproj", "{FCF302D8-FE31-4FE7-A6BB-162ADA516E72}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000-GUI", "MineCity2000-GUI\MineCity2000-GUI.csproj", "{FCF302D8-FE31-4FE7-A6BB-162ADA516E72}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnvilFile", "AnvilFile\AnvilFile.csproj", "{56645ABF-CDDD-435E-845F-BF5AA422AF80}"
 EndProject
@@ -62,5 +64,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A6729EC2-EAA0-44C2-8198-F50B45354C14}
 	EndGlobalSection
 EndGlobal
