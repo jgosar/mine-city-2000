@@ -6,7 +6,7 @@ using com.mc2k.AnvilFile.Tags;
 
 namespace com.mc2k.MinecraftEditor
 {
-    class MCAReader
+    public class MCAReader
     {
         public static List<Chunk> readFile(String fileName)
         {

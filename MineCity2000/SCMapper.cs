@@ -5,10 +5,11 @@ using System.Text;
 using com.mc2k.SimCityReader;
 using System.IO;
 using System.ComponentModel;
-using com.mc2k.MinecraftEditor.Planning;
+using com.mc2k.MineCity2000.Planning;
 using static com.mc2k.SimCityReader.BuildingType;
+using com.mc2k.MinecraftEditor;
 
-namespace com.mc2k.MinecraftEditor
+namespace com.mc2k.MineCity2000
 {
     public class SCMapper
     {
@@ -87,11 +88,6 @@ namespace com.mc2k.MinecraftEditor
             //_status = "finished";
             _progress = 100;
             reportProgress();
-        }
-
-        private void createCityRegions(string outputDir, CityPlan cityPlan)
-        {
-            throw new NotImplementedException();
         }
 
         private void createCityRegions(String outputDir, CityData data, int[][] terrainHeights)

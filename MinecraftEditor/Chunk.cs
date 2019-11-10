@@ -7,7 +7,7 @@ using com.mc2k.AnvilFile;
 
 namespace com.mc2k.MinecraftEditor
 {
-    class Chunk: NBTConvertible
+    public class Chunk: NBTConvertible
     {
         public override CompoundNBTTag NBTTag
         {

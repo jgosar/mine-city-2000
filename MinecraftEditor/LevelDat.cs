@@ -8,7 +8,7 @@ using com.mc2k.AnvilFile.Tags;
 
 namespace com.mc2k.MinecraftEditor
 {
-    class LevelDat
+    public class LevelDat
     {
         private String _levelName;
         private double[] _playerPos;

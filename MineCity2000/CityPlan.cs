@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using com.mc2k.MinecraftEditor;
 using com.mc2k.SimCityReader;
 
-namespace com.mc2k.MinecraftEditor.Planning
+namespace com.mc2k.MineCity2000.Planning
 {
     class CityPlan
     {

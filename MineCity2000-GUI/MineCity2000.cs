@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
-using com.mc2k.MinecraftEditor;
 using System.Threading;
+using com.mc2k.MineCity2000;
 
 namespace com.mc2k.gui
 {
@@ -37,9 +37,9 @@ namespace com.mc2k.gui
 
             String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            if (workingDir.Contains("\\MineCity2000\\bin\\Debug"))
+            if (workingDir.Contains("\\MineCity2000-GUI\\bin\\Debug"))
             {
-                workingDir = workingDir.Replace("\\MineCity2000\\bin\\Debug", "");
+                workingDir = workingDir.Replace("\\MineCity2000-GUI\\bin\\Debug", "");
             }
 
             buildingsDir = workingDir + "\\buildings";

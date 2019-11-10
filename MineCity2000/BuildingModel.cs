@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using com.mc2k.SimCityReader;
 using System.IO;
+using com.mc2k.SimCityReader;
+using com.mc2k.MinecraftEditor;
 
-namespace com.mc2k.MinecraftEditor
+namespace com.mc2k.MineCity2000
 {
     class BuildingModel
     {

@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000-GUI", "MineCit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnvilFile", "AnvilFile\AnvilFile.csproj", "{56645ABF-CDDD-435E-845F-BF5AA422AF80}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000", "MineCity2000\MineCity2000.csproj", "{79BB814A-ADA6-4C32-9760-87D9A822DEAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,18 @@ Global
 		{56645ABF-CDDD-435E-845F-BF5AA422AF80}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{56645ABF-CDDD-435E-845F-BF5AA422AF80}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{56645ABF-CDDD-435E-845F-BF5AA422AF80}.Release|x86.ActiveCfg = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Debug|x86.Build.0 = Debug|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|x86.ActiveCfg = Release|Any CPU
+		{79BB814A-ADA6-4C32-9760-87D9A822DEAA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

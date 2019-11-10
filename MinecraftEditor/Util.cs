@@ -5,7 +5,7 @@ using System.Text;
 
 namespace com.mc2k.MinecraftEditor
 {
-    class Util
+    public class Util
     {
         public static int positiveMod(int arg1, int arg2)
         {
@@ -40,7 +40,7 @@ namespace com.mc2k.MinecraftEditor
             }
         }
 
-        internal static bool isBetween(int number, int min, int max)
+        public static bool isBetween(int number, int min, int max)
         {
             return number >= min && number <= max;
         }

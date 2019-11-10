@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 
-namespace com.mc2k.MinecraftEditor
+namespace com.mc2k.MineCity2000
 {
     class Program
     {
