@@ -25,7 +25,7 @@ The repository contains these projects:
 - SimCityReader: Reads information about the city map from a *.sc2 city file
 - AnvilFile: Contains utility classes for working with Minecraft's Anvil file format
 - MinecraftEditor: Creates the Minecraft world with terrain and buildings
-- MineCity2000: A rudimentary GUI for running the program
+- MineCity2000-GUI: A rudimentary GUI for running the program
 
 You need .NET Framework 4 in order for MineCity 2000 to run. I have checked that the project compiles and runs in Visual Studio 2010 and Visual Studio 2019.
 
