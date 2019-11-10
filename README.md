@@ -146,6 +146,7 @@ New buildings:
 - Abandoned building 1
 - Abandoned building 2
 - Big Park
+- Small Appartments 2
 
 ## Contact
 
