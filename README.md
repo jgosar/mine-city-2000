@@ -1,5 +1,5 @@
 # mine-city-2000
-MineCity 2000 is a program that converts SimCity 2000 cities into Minecraft worlds
+MineCity 2000 is a program that converts SimCity 2000 cities into Minecraft (Java Edition) worlds
 
 From this:
 
