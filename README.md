@@ -19,6 +19,13 @@ https://www.youtube.com/watch?v=R6RW6WouGbE
 
 https://www.youtube.com/watch?v=Z3FkM7GLxKo
 
+## Opening generated worlds on the current versions of Minecraft
+
+Unfortunately, since this project was started quite some time ago (2014), it only generates Minecraft Java Edition worlds.
+I currently don't have the time to change the inner workings of the project in order to support Minecraft for Windows 10.
+See the instructions for converting old worlds into new ones here: https://github.com/jgosar/mine-city-2000/wiki/How-to-open-generated-worlds-on-the-current-versions-of-Minecraft
+
+
 ## Projects
 
 The repository contains these projects:
