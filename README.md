@@ -156,6 +156,7 @@ New buildings:
 - Big Park
 - Small Appartments 2
 - Small Appartments 3
+- Statue
 
 ## Contact
 
