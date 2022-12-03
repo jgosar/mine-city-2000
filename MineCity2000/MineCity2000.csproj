@@ -45,11 +45,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildingModel.cs" />
-    <Compile Include="CityPlan.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SCMapper.cs" />
-    <Compile Include="SquarePlan.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
