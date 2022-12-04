@@ -77,9 +77,9 @@ namespace com.mc2k.SimCityReader
             }
         }
 
-        private void interpretXBLD(Segment altmSegment)
+        private void interpretXBLD(Segment xbldSegment)
         {
-            byte[] content = altmSegment.getContent();
+            byte[] content = xbldSegment.getContent();
 
             // Rad 128x128 map of which building type is on which field
             int offset = 0;
@@ -135,9 +135,9 @@ namespace com.mc2k.SimCityReader
             }
         }
 
-        private void interpretXTER(Segment altmSegment)
+        private void interpretXTER(Segment xterSegment)
         {
-            byte[] content = altmSegment.getContent();
+            byte[] content = xterSegment.getContent();
 
             int offset = 0;
             byte tmp;

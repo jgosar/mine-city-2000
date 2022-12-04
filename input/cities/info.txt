@@ -1,1 +1,0 @@
-To test loading of *.sc2 files and print statistics of the types of buildings in them, put the files in this folder and run the SimCityReader project with the argument "thisisatestrun".
