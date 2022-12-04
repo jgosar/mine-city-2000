@@ -290,7 +290,7 @@ namespace com.mc2k.MineCity2000
 
             for (int tl = 1; tl <= tunnelLength; tl++)
             {
-                if (blockZ - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one reagion to another
+                if (blockZ - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
                 {
                     newRegion.putBlockData(blockX, blockZ - (SQUARE_SIZE * tl), fixedBlockY, blockData);
                 }
@@ -313,7 +313,7 @@ namespace com.mc2k.MineCity2000
 
             for (int tl = 1; tl <= tunnelLength; tl++)
             {
-                if (blockX - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one reagion to another
+                if (blockX - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
                 {
                     newRegion.putBlockData(blockX - (SQUARE_SIZE * tl), blockZ, fixedBlockY, blockData);
                 }
