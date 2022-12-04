@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using com.mc2k.SimCityReader;
 using System.IO;
 using System.ComponentModel;
-using com.mc2k.MineCity2000.Planning;
 using static com.mc2k.SimCityReader.BuildingType;
 using com.mc2k.MinecraftEditor;
 
@@ -13,7 +9,6 @@ namespace com.mc2k.MineCity2000
 {
     public class SCMapper
     {
-        private String _status = "";
         private BackgroundWorker _worker;
         private int _progress;
         private const int CITY_WIDTH_IN_REGIONS = 4;//How many Minecraft regions are in a SimCity city
@@ -22,6 +17,7 @@ namespace com.mc2k.MineCity2000
         private const int SQUARES_IN_REGION = REGION_SIZE / SQUARE_SIZE;//How many SimCity squares are in a Minecraft region
         private const int SECTIONS_IN_CHUNK = 16;//How many Minecraft sections are in a Minecraft chunk (by height)
         private const int SECTION_HEIGHT = 16;//How many pixels/blocks are in a Minecraft section (by height)
+        private const int SQUARES_IN_CITY = 128; // How many squares wide and long is a SimCity 2000 city
         private const int AIR_BLOCK = 0;
         private const int WATER_BLOCK = 9;
         private const int SANDSTONE_BLOCK = 24;
@@ -34,11 +30,6 @@ namespace com.mc2k.MineCity2000
         public SCMapper(String buildingsDir)
         {
             _buildingsDir = buildingsDir;
-        }
-
-        public String Status
-        {
-            get { return _status; }
         }
 
         public BackgroundWorker Worker
@@ -70,22 +61,14 @@ namespace com.mc2k.MineCity2000
             double[] playerPosition = new double[] { 128.0, terrainHeights[128][128] + 20, 128.0 };
             createLevelDat(outputDir, data.getCityName(), playerPosition);
 
-            //_progress = 12;
-            //reportProgress();
-
-            //CityPlan cityPlan = new CityPlan(data);
-
             _progress = 16;
             reportProgress();
 
             //map
             createCityRegions(outputDir, data, terrainHeights);
-            //createCityRegions(outputDir, cityPlan);
 
             createBorderRegions(outputDir);
 
-
-            //_status = "finished";
             _progress = 100;
             reportProgress();
         }
@@ -307,7 +290,7 @@ namespace com.mc2k.MineCity2000
 
             for (int tl = 1; tl <= tunnelLength; tl++)
             {
-                if (blockZ - (SQUARE_SIZE * tl) >= 0)//TODO: To ni ok, zdaj se tuneli ne morejo nadaljevati iz ene regije v drugo
+                if (blockZ - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
                 {
                     newRegion.putBlockData(blockX, blockZ - (SQUARE_SIZE * tl), fixedBlockY, blockData);
                 }
@@ -330,7 +313,7 @@ namespace com.mc2k.MineCity2000
 
             for (int tl = 1; tl <= tunnelLength; tl++)
             {
-                if (blockX - (SQUARE_SIZE * tl) >= 0)//TODO: To ni ok, zdaj se tuneli ne morejo nadaljevati iz ene regije v drugo
+                if (blockX - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
                 {
                     newRegion.putBlockData(blockX - (SQUARE_SIZE * tl), blockZ, fixedBlockY, blockData);
                 }
@@ -523,7 +506,7 @@ namespace com.mc2k.MineCity2000
 
         private static int[][] reticulateSplines(CityData data)
         {
-            byte[][] basePoints = CityPlan.readCityHeightmap(data);
+            byte[][] basePoints = readCityHeightmap(data);
 
             int[][] interpolatedPoints = Util.new2DArray<int>(128 * SQUARE_SIZE + 1, 128 * SQUARE_SIZE + 1);
 
@@ -543,6 +526,37 @@ namespace com.mc2k.MineCity2000
             }
 
             return interpolatedPoints;
+        }
+
+        private static byte[][] readCityHeightmap(CityData data)
+        {
+            byte[][] heightmap = Util.new2DArray<byte>(SQUARES_IN_CITY + 1, SQUARES_IN_CITY + 1);
+
+            for (int i = 0; i < SQUARES_IN_CITY; i++)
+            {
+                for (int j = 0; j < SQUARES_IN_CITY; j++)
+                {
+                    byte squareHeight = data.getSquare(i, j).altitude;
+
+                    if (heightmap[i][j] < squareHeight)
+                    {
+                        heightmap[i][j] = squareHeight;
+                    }
+                    if (heightmap[i + 1][j] < squareHeight)
+                    {
+                        heightmap[i + 1][j] = squareHeight;
+                    }
+                    if (heightmap[i][j + 1] < squareHeight)
+                    {
+                        heightmap[i][j + 1] = squareHeight;
+                    }
+                    if (heightmap[i + 1][j + 1] < squareHeight)
+                    {
+                        heightmap[i + 1][j + 1] = squareHeight;
+                    }
+                }
+            }
+            return heightmap;
         }
 
         private static int[][] interpolateTriangles(int p1, int p2, int p3, int p4)

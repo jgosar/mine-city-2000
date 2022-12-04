@@ -17,8 +17,8 @@ namespace com.mc2k.SimCityReader
                 return;
             }
 
-            // Test loading of cities for all cities in the input folder
-            List<CityData> allCities = loadAllCities(@"..\..\..\input\cities");
+            // Test loading of cities for all cities in the cities folder
+            List<CityData> allCities = loadAllCities(@"C:\Program Files\Maxis\SimCity 2000\CITIES");
 
             // Count the number of buildings by type in all test maps and print them to console (See building_stats.xlsx)
             printBuildingStats(allCities);
