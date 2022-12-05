@@ -24,7 +24,7 @@ https://www.youtube.com/watch?v=EhIF_1SuZLs
 ## Download link for the compiled app
 
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
-Download link: https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
+https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
 
 ## Running the compiled app
 
