@@ -30,9 +30,9 @@ https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-rele
 
 Run the compiled app using MineCity2000-GUI.exe.
 
-With the first browse button, choose your *.sc2 city file. A good place to look for it would be "C:\Program Files\Maxis\SimCity 2000\Cities". But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
+With the first browse button, choose your *.sc2 city file. A good place to look for it would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
 
-With the second browse button, choose your Minecraft install directory. It might be "C:\Users\[username]\AppData\Roaming\.minecraft" or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
+With the second browse button, choose your Minecraft install directory. It might be `C:\Users\[username]\AppData\Roaming\.minecraft` or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
 
 After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
 
