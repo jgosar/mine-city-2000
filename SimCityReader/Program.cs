@@ -12,7 +12,7 @@ namespace com.mc2k.SimCityReader
         {
             if (args.Length != 1 || !args[0].Equals("thisisatestrun"))
             {
-                Console.WriteLine("Please use MineCity2000.exe to run the program");
+                Console.WriteLine("Please use MineCity2000-GUI.exe to run the program");
                 Console.ReadLine();
                 return;
             }

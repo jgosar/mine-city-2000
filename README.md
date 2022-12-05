@@ -19,7 +19,27 @@ https://www.youtube.com/watch?v=R6RW6WouGbE
 
 https://www.youtube.com/watch?v=Z3FkM7GLxKo
 
-## Opening generated worlds on the current versions of Minecraft
+https://www.youtube.com/watch?v=EhIF_1SuZLs
+
+## Download link for the compiled app
+
+This is a link to the compiled app, so you don't have to build it from the source code yourself:
+Download link: https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
+
+## Running the compiled app
+
+Run the compiled app using MineCity2000-GUI.exe.
+
+With the first browse button, choose your *.sc2 city file. A good place to look for it would be "C:\Program Files\Maxis\SimCity 2000\Cities". But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
+
+With the second browse button, choose your Minecraft install directory. It might be "C:\Users\[username]\AppData\Roaming\.minecraft" or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
+
+After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
+
+Your antivirus might think that MineCity 2000 is a virus. It's not.
+
+
+## Opening generated worlds in Minecraft Bedrock Edition
 
 Unfortunately, since this project was started quite some time ago (2014), it only generates Minecraft Java Edition worlds.
 I currently don't have the time to change the inner workings of the project in order to support Minecraft for Windows 10.
@@ -46,18 +66,6 @@ Stuff that does NOT work yet:
 - Highways (mostly)
 - Underwater pipes?
 - ???
-
-## Running the compiled program
-
-Run the compiled program using MineCity2000.exe.
-
-With the first browse button, choose your *.sc2 city file. A good place to look for it would be "C:\Program Files\Maxis\SimCity 2000\Cities". But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
-
-With the second browse button, choose your Minecraft install directory. It might be "C:\Users\[username]\AppData\Roaming\.minecraft" or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
-
-After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
-
-Your antivirus program might think that MineCity 2000 is a virus. It's not.
 
 ## If you would like to help
 
