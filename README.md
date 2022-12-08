@@ -51,6 +51,8 @@ But as you can see in the screenshot below, the draw distance in Bedrock Edition
 <a target="_blank" rel="noopener noreferrer nofollow" href="https://user-images.githubusercontent.com/36840705/206261457-3b6266d3-07da-4b7a-b6c6-0c6c4264a4aa.png"><img src="https://user-images.githubusercontent.com/36840705/206261457-3b6266d3-07da-4b7a-b6c6-0c6c4264a4aa.png" alt="image" width=45%></a>
 <a target="_blank" rel="noopener noreferrer nofollow" href="https://user-images.githubusercontent.com/36840705/206260351-4b5b4f91-d983-4505-ab00-50c6c76d537a.jpg"><img src="https://user-images.githubusercontent.com/36840705/206260351-4b5b4f91-d983-4505-ab00-50c6c76d537a.jpg" alt="mc2k-bedrock-4K" width=45%></a>
 
+Here's a video from this city in Minecraft Bedrock Edition: https://youtu.be/w_fU_Cy6xCA
+
 
 ## Projects
 
