@@ -48,7 +48,7 @@ namespace com.mc2k.MinecraftEditor
       }
       dir.CreateSubdirectory("region");
 
-      LevelDat ld = new LevelDat("Generated world", new double[] { 0.0, 0.0, 0.0 });
+      LevelDat ld = new LevelDat("Generated world", new double[] { 0.0, 0.0, 0.0 }, false);
       ld.saveToFile(outputDir + "\\level.dat");
 
       for (int i = 0; i < _regions.Length; i++)
