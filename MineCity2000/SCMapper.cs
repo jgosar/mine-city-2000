@@ -37,7 +37,7 @@ namespace com.mc2k.MineCity2000
             set { _worker = value; }
         }
 
-        public void makeMap(String inputFile, String outputDir)
+        public void makeMap(String inputFile, String outputDir, MapperOptions options)
         {
             _progress = 0;
             reportProgress();
@@ -65,7 +65,7 @@ namespace com.mc2k.MineCity2000
             reportProgress();
 
             //map
-            createCityRegions(outputDir, data, terrainHeights);
+            createCityRegions(outputDir, data, terrainHeights, options);
 
             createBorderRegions(outputDir);
 
@@ -73,14 +73,14 @@ namespace com.mc2k.MineCity2000
             reportProgress();
         }
 
-        private void createCityRegions(String outputDir, CityData data, int[][] terrainHeights)
+        private void createCityRegions(String outputDir, CityData data, int[][] terrainHeights, MapperOptions options)
         {
             for (int regionX = 0; regionX < CITY_WIDTH_IN_REGIONS; regionX++)
             {
                 for (int regionZ = 0; regionZ < CITY_WIDTH_IN_REGIONS; regionZ++)
                 {
                     int[][] terrainHeightsForRegion = getTerrainHeightsForRegion(terrainHeights, regionX, regionZ);
-                    AbstractRegion newRegion = mapRegion(data, terrainHeightsForRegion, regionX, regionZ);
+                    AbstractRegion newRegion = mapRegion(data, terrainHeightsForRegion, regionX, regionZ, options);
 
                     saveRegion(newRegion, outputDir);
 
@@ -145,7 +145,7 @@ namespace com.mc2k.MineCity2000
             }
         }
 
-        private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ)
+        private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ, MapperOptions options)
         {
             AbstractRegion newRegion;
             byte[][][][][] tmpChunkData;
@@ -153,7 +153,7 @@ namespace com.mc2k.MineCity2000
             byte waterLevel = data.getWaterLevel();
             newRegion = new AbstractRegion(regionX, regionZ);
 
-            mapRegionLandscape(newRegion, terrainHeightsForRegion, waterLevel);
+            mapRegionLandscape(newRegion, terrainHeightsForRegion, waterLevel, options.fillUnderground);
 
             int regionXOffset = regionX * SQUARES_IN_REGION;
             int regionZOffset = regionZ * SQUARES_IN_REGION;
@@ -245,14 +245,17 @@ namespace com.mc2k.MineCity2000
             return newRegion;
         }
 
-        private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel)
+        private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel, Boolean fillUnderground)
         {
             for (int x = 0; x < REGION_SIZE; x++)
             {
                 for (int z = 0; z < REGION_SIZE; z++)
                 {
-                    newRegion.putBlock(x, z, terrainHeightsForRegion[x][z], SANDSTONE_BLOCK);
-                    newRegion.putBlock(x, z, terrainHeightsForRegion[x][z] + 1, SANDSTONE_BLOCK);
+                    int bottomOfFilledGround = fillUnderground ? 0 : terrainHeightsForRegion[x][z];
+                    for (int y=terrainHeightsForRegion[x][z] + 1;y>= bottomOfFilledGround; y--)
+                    {
+                        newRegion.putBlock(x, z, y, SANDSTONE_BLOCK);
+                    }
 
                     fillWithWaterUpToWaterLevel(terrainHeightsForRegion, newRegion, waterLevel, x, z);
                 }
