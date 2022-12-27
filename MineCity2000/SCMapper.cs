@@ -608,9 +608,15 @@ namespace com.mc2k.MineCity2000
                             result[i][j] = p4 * SECTION_HEIGHT + (j - i) * diffLowerLeft;
                         }
                     }
-                    else//wtf
+                    else //Irregular terrain shapes, usually at the start of bridges
                     {
-                        result[i][j] = (((SQUARE_SIZE - j) * (i * p2 + (SQUARE_SIZE - i) * p1) + j * (i * p4 + (SQUARE_SIZE - i) * p3)) * SECTION_HEIGHT) / SQUARE_SIZE * SQUARE_SIZE;
+                        int remainderI = SQUARE_SIZE - 1 - i;
+                        int remainderJ = SQUARE_SIZE - 1 - j;
+                        int weightP1 = remainderI* remainderJ;
+                        int weightP2 = i* remainderJ;
+                        int weightP3 = remainderI * j;
+                        int weightP4 = i * j;
+                        result[i][j] = SECTION_HEIGHT*(p1 * weightP1 + p2 * weightP2 + p3 * weightP3 + p4 * weightP4) / ((SQUARE_SIZE-1) * (SQUARE_SIZE - 1));
                     }
                 }
             }
