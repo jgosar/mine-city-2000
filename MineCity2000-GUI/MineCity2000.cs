@@ -106,12 +106,13 @@ namespace com.mc2k.gui
         {
             BackgroundWorker worker = sender as BackgroundWorker;
 
-            mapper.Worker = worker;
             mapper = new SCMapper(buildingsDir);
+            mapper.Worker = worker;
             mapper.makeMap(inputFile, outputDir);
         }
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            button3.Enabled = true;
             if ((e.Cancelled == true))
             {
                 statusLabel.Text = "Canceled!";
