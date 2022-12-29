@@ -37,10 +37,14 @@ namespace com.mc2k.gui
             bw.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bw_RunWorkerCompleted);
 
             String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            String[] debugPaths = new string[2] { "\\MineCity2000-GUI\\bin\\Debug", "\\MineCity2000-GUI\\bin\\x64\\Debug" };
 
-            if (workingDir.Contains("\\MineCity2000-GUI\\bin\\Debug"))
+            foreach (string debugPath in debugPaths)
             {
-                workingDir = workingDir.Replace("\\MineCity2000-GUI\\bin\\Debug", "");
+                if (workingDir.Contains(debugPath))
+                {
+                    workingDir = workingDir.Replace(debugPath, "");
+                }
             }
 
             buildingsDir = workingDir + "\\buildings";

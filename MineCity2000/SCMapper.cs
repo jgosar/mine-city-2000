@@ -148,7 +148,7 @@ namespace com.mc2k.MineCity2000
         private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ, MapperOptions options)
         {
             AbstractRegion newRegion;
-            byte[][][][][] tmpChunkData;
+            byte[][][][][] buildingChunkData;
 
             byte waterLevel = data.getWaterLevel();
             newRegion = new AbstractRegion(regionX, regionZ);
@@ -184,15 +184,16 @@ namespace com.mc2k.MineCity2000
                         fixBridgeSlopes(terrainHeightsForRegion, thisSquare, xMinusSquare, xPlusSquare, zMinusSquare, zPlusSquare, squareXIndex, squareZIndex);
 
                         bool useRotatedModel = shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare);
+                        bool squareIsTunnelEntrance = isTunnelEntrance(thisSquare.buildingType);
 
                         BuildingModel buildingModel = loadBuildingModel(thisSquare.buildingType, useRotatedModel);
 
                         if (buildingModel != null)
                         {
-                            tmpChunkData = buildingModel.getChunkData(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ);
+                            buildingChunkData = buildingModel.getChunkData(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ);
                             for (int section = 0; section < SECTIONS_IN_CHUNK; section++)
                             {
-                                if (tmpChunkData[section] != null)
+                                if (buildingChunkData[section] != null)
                                 {
                                     for (int sx = 0; sx < SQUARE_SIZE; sx++)
                                     {
@@ -204,33 +205,33 @@ namespace com.mc2k.MineCity2000
                                                 int blockZ = squareZIndex * SQUARE_SIZE + sz;
                                                 int blockY = section * SECTION_HEIGHT + sy + 2 - SECTION_HEIGHT;
 
-                                                byte[] thisBlock = tmpChunkData[section][sx][sz][sy];
+                                                byte[] buildingBlock = buildingChunkData[section][sx][sz][sy];
 
 
-                                                if (check(isTunnelEntrance, thisSquare))//tunnel entrances - include air, repeat along x or z axis
+                                                if (squareIsTunnelEntrance)//tunnel entrances - include air, repeat along x or z axis
                                                 {
-                                                    newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), thisBlock);
+                                                    newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
                                                     if (section == 0 || sy < SECTION_HEIGHT - 2) // Omit the top two levels of blocks above the underground tunnel sections in order not to erase the ground above
                                                     {
                                                         if (thisSquare.buildingType == 63)
                                                         {
-                                                            repeatBlockUntilTunnelEndsX(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                            repeatBlockUntilTunnelEndsX(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                                                         }
                                                         if (thisSquare.buildingType == 64)
                                                         {
-                                                            repeatBlockUntilTunnelEndsZ(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                            repeatBlockUntilTunnelEndsZ(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                                                         }
                                                     }
                                                 }
-                                                else if (thisBlock[0] != AIR_BLOCK)
+                                                else if (buildingBlock[0] != AIR_BLOCK)
                                                 {
                                                     if (terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT)) //on ground
                                                     {
-                                                        newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], thisBlock);
+                                                        newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
                                                     }
                                                     else //on water
                                                     {
-                                                        newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), thisBlock);
+                                                        newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
                                                     }
                                                 }
                                             }
