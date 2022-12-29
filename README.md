@@ -34,6 +34,8 @@ With the first browse button, choose your *.sc2 city file. A good place to look 
 
 With the second browse button, choose your Minecraft install directory. It might be `C:\Users\[username]\AppData\Roaming\.minecraft` or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
 
+If you want the underground area to be filled instead of empty (So you don't fall into the ground after digging for a bit), select the "Fill underground area" checkbox. But be warned that this also increases the conversion time and RAM requirements.
+
 After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
 
 Your antivirus might think that MineCity 2000 is a virus. It's not.
