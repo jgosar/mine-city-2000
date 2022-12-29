@@ -37,7 +37,7 @@ namespace com.mc2k.MineCity2000
             set { _worker = value; }
         }
 
-        public void makeMap(String inputFile, String outputDir)
+        public void makeMap(String inputFile, String outputDir, MapperOptions options)
         {
             _progress = 0;
             reportProgress();
@@ -65,7 +65,7 @@ namespace com.mc2k.MineCity2000
             reportProgress();
 
             //map
-            createCityRegions(outputDir, data, terrainHeights);
+            createCityRegions(outputDir, data, terrainHeights, options);
 
             createBorderRegions(outputDir);
 
@@ -73,14 +73,14 @@ namespace com.mc2k.MineCity2000
             reportProgress();
         }
 
-        private void createCityRegions(String outputDir, CityData data, int[][] terrainHeights)
+        private void createCityRegions(String outputDir, CityData data, int[][] terrainHeights, MapperOptions options)
         {
             for (int regionX = 0; regionX < CITY_WIDTH_IN_REGIONS; regionX++)
             {
                 for (int regionZ = 0; regionZ < CITY_WIDTH_IN_REGIONS; regionZ++)
                 {
                     int[][] terrainHeightsForRegion = getTerrainHeightsForRegion(terrainHeights, regionX, regionZ);
-                    AbstractRegion newRegion = mapRegion(data, terrainHeightsForRegion, regionX, regionZ);
+                    AbstractRegion newRegion = mapRegion(data, terrainHeightsForRegion, regionX, regionZ, options);
 
                     saveRegion(newRegion, outputDir);
 
@@ -145,15 +145,15 @@ namespace com.mc2k.MineCity2000
             }
         }
 
-        private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ)
+        private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ, MapperOptions options)
         {
             AbstractRegion newRegion;
-            byte[][][][][] tmpChunkData;
+            byte[][][][][] buildingChunkData;
 
             byte waterLevel = data.getWaterLevel();
             newRegion = new AbstractRegion(regionX, regionZ);
 
-            mapRegionLandscape(newRegion, terrainHeightsForRegion, waterLevel);
+            mapRegionLandscape(newRegion, terrainHeightsForRegion, waterLevel, options.fillUnderground);
 
             int regionXOffset = regionX * SQUARES_IN_REGION;
             int regionZOffset = regionZ * SQUARES_IN_REGION;
@@ -184,15 +184,16 @@ namespace com.mc2k.MineCity2000
                         fixBridgeSlopes(terrainHeightsForRegion, thisSquare, xMinusSquare, xPlusSquare, zMinusSquare, zPlusSquare, squareXIndex, squareZIndex);
 
                         bool useRotatedModel = shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare);
+                        bool squareIsTunnelEntrance = isTunnelEntrance(thisSquare.buildingType);
 
                         BuildingModel buildingModel = loadBuildingModel(thisSquare.buildingType, useRotatedModel);
 
                         if (buildingModel != null)
                         {
-                            tmpChunkData = buildingModel.getChunkData(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ);
+                            buildingChunkData = buildingModel.getChunkData(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ);
                             for (int section = 0; section < SECTIONS_IN_CHUNK; section++)
                             {
-                                if (tmpChunkData[section] != null)
+                                if (buildingChunkData[section] != null)
                                 {
                                     for (int sx = 0; sx < SQUARE_SIZE; sx++)
                                     {
@@ -204,33 +205,33 @@ namespace com.mc2k.MineCity2000
                                                 int blockZ = squareZIndex * SQUARE_SIZE + sz;
                                                 int blockY = section * SECTION_HEIGHT + sy + 2 - SECTION_HEIGHT;
 
-                                                byte[] thisBlock = tmpChunkData[section][sx][sz][sy];
+                                                byte[] buildingBlock = buildingChunkData[section][sx][sz][sy];
 
 
-                                                if (check(isTunnelEntrance, thisSquare))//tunnel entrances - include air, repeat along x or z axis
+                                                if (squareIsTunnelEntrance)//tunnel entrances - include air, repeat along x or z axis
                                                 {
-                                                    newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), thisBlock);
+                                                    newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
                                                     if (section == 0 || sy < SECTION_HEIGHT - 2) // Omit the top two levels of blocks above the underground tunnel sections in order not to erase the ground above
                                                     {
                                                         if (thisSquare.buildingType == 63)
                                                         {
-                                                            repeatBlockUntilTunnelEndsX(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                            repeatBlockUntilTunnelEndsX(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                                                         }
                                                         if (thisSquare.buildingType == 64)
                                                         {
-                                                            repeatBlockUntilTunnelEndsZ(data, newRegion, thisBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                                                            repeatBlockUntilTunnelEndsZ(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                                                         }
                                                     }
                                                 }
-                                                else if (thisBlock[0] != AIR_BLOCK)
+                                                else if (buildingBlock[0] != AIR_BLOCK)
                                                 {
                                                     if (terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT)) //on ground
                                                     {
-                                                        newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], thisBlock);
+                                                        newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
                                                     }
                                                     else //on water
                                                     {
-                                                        newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), thisBlock);
+                                                        newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
                                                     }
                                                 }
                                             }
@@ -245,14 +246,17 @@ namespace com.mc2k.MineCity2000
             return newRegion;
         }
 
-        private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel)
+        private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel, Boolean fillUnderground)
         {
             for (int x = 0; x < REGION_SIZE; x++)
             {
                 for (int z = 0; z < REGION_SIZE; z++)
                 {
-                    newRegion.putBlock(x, z, terrainHeightsForRegion[x][z], SANDSTONE_BLOCK);
-                    newRegion.putBlock(x, z, terrainHeightsForRegion[x][z] + 1, SANDSTONE_BLOCK);
+                    int bottomOfFilledGround = fillUnderground ? 0 : terrainHeightsForRegion[x][z];
+                    for (int y=terrainHeightsForRegion[x][z] + 1;y>= bottomOfFilledGround; y--)
+                    {
+                        newRegion.putBlock(x, z, y, SANDSTONE_BLOCK);
+                    }
 
                     fillWithWaterUpToWaterLevel(terrainHeightsForRegion, newRegion, waterLevel, x, z);
                 }

@@ -18,7 +18,8 @@ namespace com.mc2k.MineCity2000
             String buildingsDir = @"..\..\..\buildings";
 
             SCMapper mapper = new SCMapper(buildingsDir);
-            mapper.makeMap(inputFile, outputDir);
+            MapperOptions options = new MapperOptions(true);
+            mapper.makeMap(inputFile, outputDir, options);
         }
     }
 }

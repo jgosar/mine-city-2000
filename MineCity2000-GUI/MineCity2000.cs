@@ -16,6 +16,7 @@ namespace com.mc2k.gui
     {
         String inputFile = null;
         String outputDir = null;
+        Boolean fillUnderground = false;
         String buildingsDir = null;
         SCMapper mapper = null;
         private BackgroundWorker bw = new BackgroundWorker();
@@ -36,10 +37,14 @@ namespace com.mc2k.gui
             bw.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bw_RunWorkerCompleted);
 
             String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            String[] debugPaths = new string[2] { "\\MineCity2000-GUI\\bin\\Debug", "\\MineCity2000-GUI\\bin\\x64\\Debug" };
 
-            if (workingDir.Contains("\\MineCity2000-GUI\\bin\\Debug"))
+            foreach (string debugPath in debugPaths)
             {
-                workingDir = workingDir.Replace("\\MineCity2000-GUI\\bin\\Debug", "");
+                if (workingDir.Contains(debugPath))
+                {
+                    workingDir = workingDir.Replace(debugPath, "");
+                }
             }
 
             buildingsDir = workingDir + "\\buildings";
@@ -108,7 +113,8 @@ namespace com.mc2k.gui
 
             mapper = new SCMapper(buildingsDir);
             mapper.Worker = worker;
-            mapper.makeMap(inputFile, outputDir);
+            MapperOptions options = new MapperOptions(fillUnderground);
+            mapper.makeMap(inputFile, outputDir, options);
         }
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -131,6 +137,11 @@ namespace com.mc2k.gui
         private void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             statusLabel.Text = (e.ProgressPercentage.ToString() + "%");
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            fillUnderground = ((CheckBox)sender).Checked;
         }
     }
 }
