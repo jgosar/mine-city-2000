@@ -36,7 +36,7 @@ With the second browse button, choose your Minecraft install directory. It might
 
 If you want the underground area to be filled instead of empty (So you don't fall into the ground after digging for a bit), select the "Fill underground area" checkbox. But be warned that this also increases the conversion time and RAM requirements.
 
-If you want Minecraft to automatically generate its own terrain around the city instead of an obsidian wall, select the "Generate terrain around the city" option.
+If you want Minecraft to automatically generate its own terrain around the city instead of having an obsidian wall, select the "Generate terrain around the city" option.
 
 After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
 
