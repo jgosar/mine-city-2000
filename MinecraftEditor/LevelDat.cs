@@ -11,18 +11,21 @@ namespace com.mc2k.MinecraftEditor
     public class LevelDat
     {
         private String _levelName;
+        private String _generatorName;
         private double[] _playerPos;
 
-        public LevelDat(String levelName, double[] playerPosition)
+        public LevelDat(String levelName, double[] playerPosition, Boolean generateTerrain)
         {
             _levelName = levelName;
             _playerPos = playerPosition;
+            _generatorName = generateTerrain ? "default" : "flat";
         }
 
         public CompoundNBTTag toNBTTag()
         {
             TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
             long timestamp = (long)t.TotalSeconds;
+            Random random = new Random();
 
             List<AnyNBTTag> subTags = new List<AnyNBTTag>();
 
@@ -31,7 +34,7 @@ namespace com.mc2k.MinecraftEditor
             subTags.Add(new LongNBTTag("LastPlayed", timestamp * 1000));
             subTags.Add(new PlayerData(_playerPos).toNBTTag());
             subTags.Add(new ByteNBTTag("initialized", (byte)1));
-            subTags.Add(new LongNBTTag("RandomSeed", 0L));
+            subTags.Add(new LongNBTTag("RandomSeed", (long)random.Next()));
             subTags.Add(new IntNBTTag("GameType", 1));
             subTags.Add(new ByteNBTTag("MapFeatures", (byte)0));
             subTags.Add(new IntNBTTag("version", 19133));
@@ -44,7 +47,7 @@ namespace com.mc2k.MinecraftEditor
             subTags.Add(new IntNBTTag("SpawnY", (int)_playerPos[1]));
             subTags.Add(new IntNBTTag("SpawnZ", (int)_playerPos[2]));
             subTags.Add(new StringNBTTag("LevelName",_levelName));
-            subTags.Add(new StringNBTTag("generatorName", "flat"));
+            subTags.Add(new StringNBTTag("generatorName",_generatorName));
             subTags.Add(new LongNBTTag("SizeOnDisk", 0L));
             subTags.Add(new IntNBTTag("rainTime", int.MaxValue));
             subTags.Add(new IntNBTTag("generatorVersion", 0));

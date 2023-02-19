@@ -17,6 +17,7 @@ namespace com.mc2k.gui
         String inputFile = null;
         String outputDir = null;
         Boolean fillUnderground = false;
+        Boolean generateTerrain = false;
         String buildingsDir = null;
         SCMapper mapper = null;
         private BackgroundWorker bw = new BackgroundWorker();
@@ -113,7 +114,7 @@ namespace com.mc2k.gui
 
             mapper = new SCMapper(buildingsDir);
             mapper.Worker = worker;
-            MapperOptions options = new MapperOptions(fillUnderground);
+            MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
             mapper.makeMap(inputFile, outputDir, options);
         }
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -139,9 +140,14 @@ namespace com.mc2k.gui
             statusLabel.Text = (e.ProgressPercentage.ToString() + "%");
         }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private void fillUndergroundCB_CheckedChanged(object sender, EventArgs e)
         {
             fillUnderground = ((CheckBox)sender).Checked;
+        }
+
+        private void generateTerrainCB_CheckedChanged(object sender, EventArgs e)
+        {
+            generateTerrain = ((CheckBox)sender).Checked;
         }
     }
 }
