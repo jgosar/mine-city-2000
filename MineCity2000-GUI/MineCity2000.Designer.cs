@@ -39,7 +39,8 @@
             this.button3 = new System.Windows.Forms.Button();
             this.sCFileLabel = new System.Windows.Forms.Label();
             this.mCDirLabel = new System.Windows.Forms.Label();
-            this.fillUndergroundArea = new System.Windows.Forms.CheckBox();
+            this.fillUndergroundCB = new System.Windows.Forms.CheckBox();
+            this.generateTerrainCB = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -89,7 +90,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(14, 159);
+            this.label3.Location = new System.Drawing.Point(102, 471);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(60, 20);
             this.label3.TabIndex = 4;
@@ -98,14 +99,14 @@
             // statusLabel
             // 
             this.statusLabel.AutoSize = true;
-            this.statusLabel.Location = new System.Drawing.Point(80, 159);
+            this.statusLabel.Location = new System.Drawing.Point(162, 471);
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(0, 20);
             this.statusLabel.TabIndex = 5;
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(18, 126);
+            this.button3.Location = new System.Drawing.Point(12, 467);
             this.button3.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(84, 29);
@@ -130,23 +131,35 @@
             this.mCDirLabel.Size = new System.Drawing.Size(0, 20);
             this.mCDirLabel.TabIndex = 8;
             // 
-            // fillUndergroundArea
+            // fillUndergroundCB
             // 
-            this.fillUndergroundArea.AutoSize = true;
-            this.fillUndergroundArea.Location = new System.Drawing.Point(18, 95);
-            this.fillUndergroundArea.Name = "fillUndergroundArea";
-            this.fillUndergroundArea.Size = new System.Drawing.Size(185, 24);
-            this.fillUndergroundArea.TabIndex = 9;
-            this.fillUndergroundArea.Text = "Fill underground area";
-            this.fillUndergroundArea.UseVisualStyleBackColor = true;
-            this.fillUndergroundArea.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            this.fillUndergroundCB.AutoSize = true;
+            this.fillUndergroundCB.Location = new System.Drawing.Point(18, 95);
+            this.fillUndergroundCB.Name = "fillUndergroundCB";
+            this.fillUndergroundCB.Size = new System.Drawing.Size(185, 24);
+            this.fillUndergroundCB.TabIndex = 9;
+            this.fillUndergroundCB.Text = "Fill underground area";
+            this.fillUndergroundCB.UseVisualStyleBackColor = true;
+            this.fillUndergroundCB.CheckedChanged += new System.EventHandler(this.fillUndergroundCB_CheckedChanged);
+            // 
+            // generateTerrainCB
+            // 
+            this.generateTerrainCB.AutoSize = true;
+            this.generateTerrainCB.Location = new System.Drawing.Point(18, 132);
+            this.generateTerrainCB.Name = "generateTerrainCB";
+            this.generateTerrainCB.Size = new System.Drawing.Size(260, 24);
+            this.generateTerrainCB.TabIndex = 10;
+            this.generateTerrainCB.Text = "Generate terrain around the city";
+            this.generateTerrainCB.UseVisualStyleBackColor = true;
+            this.generateTerrainCB.CheckedChanged += new System.EventHandler(this.generateTerrainCB_CheckedChanged);
             // 
             // MineCity2000
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(717, 509);
-            this.Controls.Add(this.fillUndergroundArea);
+            this.Controls.Add(this.generateTerrainCB);
+            this.Controls.Add(this.fillUndergroundCB);
             this.Controls.Add(this.mCDirLabel);
             this.Controls.Add(this.sCFileLabel);
             this.Controls.Add(this.button3);
@@ -177,7 +190,8 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Label sCFileLabel;
         private System.Windows.Forms.Label mCDirLabel;
-        private System.Windows.Forms.CheckBox fillUndergroundArea;
+        private System.Windows.Forms.CheckBox fillUndergroundCB;
+        private System.Windows.Forms.CheckBox generateTerrainCB;
     }
 }
 

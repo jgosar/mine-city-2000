@@ -59,7 +59,7 @@ namespace com.mc2k.MineCity2000
             reportProgress();
 
             double[] playerPosition = new double[] { 128.0, terrainHeights[128][128] + 20, 128.0 };
-            createLevelDat(outputDir, data.getCityName(), playerPosition);
+            createLevelDat(outputDir, data.getCityName(), playerPosition, options);
 
             _progress = 16;
             reportProgress();
@@ -67,7 +67,10 @@ namespace com.mc2k.MineCity2000
             //map
             createCityRegions(outputDir, data, terrainHeights, options);
 
-            createBorderRegions(outputDir);
+            if (!options.generateTerrain)
+            {
+                createBorderRegions(outputDir);
+            }
 
             _progress = 100;
             reportProgress();
@@ -677,9 +680,9 @@ namespace com.mc2k.MineCity2000
             dir.CreateSubdirectory("region");
         }
 
-        public static void createLevelDat(String outputDir, String cityName, double[] playerPos)
+        public static void createLevelDat(String outputDir, String cityName, double[] playerPos, MapperOptions options)
         {
-            LevelDat ld = new LevelDat(cityName, playerPos);
+            LevelDat ld = new LevelDat(cityName, playerPos, options.generateTerrain);
             ld.saveToFile(outputDir + "\\level.dat");
         }
 
