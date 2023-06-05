@@ -85,7 +85,7 @@ Let me know about any bugs or other problems you encounter.
 
 If you know a community that might be interested in this project, tell them about it.
 
-If you have the time, patience and skills, you can design a few more of the missing buildings. I have a very specific process that i follow to design them, but i am not going to describe it here unless somebody volunteers to help. 
+If you have the time, patience and skills, you can design a few more of the missing buildings. The instructions are available here: https://github.com/jgosar/mine-city-2000/wiki/How-to-design-and-add-new-buildings-to-the-project. Please let me know if anything is unclear.
 
 ## Changelog:
 
