@@ -1,8 +1,8 @@
 ﻿<maui:MauiWinUIApplication
-    x:Class="MineCity2000GUI.WinUI.App"
+    x:Class="com.mc2k.gui.WinUI.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:maui="using:Microsoft.Maui"
-    xmlns:local="using:MineCity2000GUI.WinUI">
+    xmlns:local="using:com.mc2k.gui.WinUI">
 
 </maui:MauiWinUIApplication>

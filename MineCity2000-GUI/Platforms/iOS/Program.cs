@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace MineCity2000GUI;
+namespace com.mc2k.gui;
 
 public class Program
 {

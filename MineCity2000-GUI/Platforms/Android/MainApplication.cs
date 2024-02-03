@@ -1,7 +1,7 @@
 ﻿using Android.App;
 using Android.Runtime;
 
-namespace MineCity2000GUI;
+namespace com.mc2k.gui;
 
 [Application]
 public class MainApplication : MauiApplication

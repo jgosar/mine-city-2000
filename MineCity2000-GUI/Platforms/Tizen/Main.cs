@@ -2,7 +2,7 @@ using System;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
-namespace MineCity2000GUI;
+namespace com.mc2k.gui;
 
 class Program : MauiApplication
 {

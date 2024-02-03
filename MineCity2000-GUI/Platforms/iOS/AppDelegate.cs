@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace MineCity2000GUI;
+namespace com.mc2k.gui;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

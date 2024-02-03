@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace MineCity2000GUI;
+namespace com.mc2k.gui;
 
 public static class MauiProgram
 {
