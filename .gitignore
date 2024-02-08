@@ -12,6 +12,5 @@ SimCityReader/bin
 *.user
 *.suo
 .vs
-.vscode
 ~$building_stats.xlsx
 
