@@ -8,6 +8,22 @@ public partial class MainPage : ContentPage
     InitializeComponent();
   }
 
+  private void OnSimCityFileClicked(object sender, EventArgs e)
+  {
+  }
+
+  private void OnMinecraftDirectoryClicked(object sender, EventArgs e)
+  {
+  }
+
+  private void OnFillUndergroundCheckBoxCheckedChanged(object sender, CheckedChangedEventArgs e)
+  {
+  }
+
+  private void OnGenerateTerrainCheckBoxCheckedChanged(object sender, CheckedChangedEventArgs e)
+  {
+  }
+
   private void OnConvertClicked(object sender, EventArgs e)
   {
     Boolean fillUnderground = false;

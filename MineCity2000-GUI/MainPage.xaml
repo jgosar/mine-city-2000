@@ -4,26 +4,82 @@
              x:Class="com.mc2k.gui.MainPage">
 
     <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Image
-                Source="dotnet_bot.png"
-                HeightRequest="185"
-                Aspect="AspectFit"
-                SemanticProperties.Description="dot net bot in a race car number eight" />
-
-            <Label
-                Text="Select a SimCity 2000 file (*.sc2) below."
-                Style="{StaticResource Headline}"
-                SemanticProperties.HeadingLevel="Level1" />
-
-            <Button
-                x:Name="ConvertBtn"
+      <FlexLayout Direction="Column"
+                JustifyContent="SpaceBetween"
+                Margin="10,30,10,10">
+        <FlexLayout Direction="Row"
+                  AlignItems="Center"
+                  JustifyContent="SpaceBetween">
+          <Label Text="Choose a SimCity 2000 file to convert:"/>
+          <Button
+              x:Name="simCityFileButton"
+              Text="Browse" 
+              Clicked="OnSimCityFileClicked" />
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center"
+                  JustifyContent="SpaceBetween">
+          <Label Text="Select output directory:"/>
+          <Button
+              x:Name="minecraftDirectoryButton"
+              Text="Browse" 
+              Clicked="OnMinecraftDirectoryClicked"/>
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center">
+          <CheckBox x:Name="fillUndergroundCheckBox"
+          CheckedChanged="OnFillUndergroundCheckBoxCheckedChanged" />
+          <Label Text="Fill underground area"/>
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center">
+          <CheckBox x:Name="generateTerrainCheckBox"
+          CheckedChanged="OnGenerateTerrainCheckBoxCheckedChanged" />
+          <Label Text="Generate terrain around the city"/>
+        </FlexLayout>
+        <Button
+                x:Name="ConvertButton"
                 Text="Convert!" 
                 Clicked="OnConvertClicked"
-                HorizontalOptions="Fill" />
-        </VerticalStackLayout>
+                HorizontalOptions="Fill" VerticalOptions="Center" />
+      </FlexLayout>
+
+        <!--VerticalStackLayout Padding="10">
+
+            <HorizontalStackLayout Margin="10" HorizontalOptions="Fill">
+              <Label Text="Choose a SimCity 2000 file to convert:" HorizontalOptions="Fill" VerticalOptions="Center"/>
+              <Button
+                  x:Name="simCityFileButton"
+                  Text="Browse" 
+                  Clicked="OnSimCityFileClicked" HorizontalOptions="End" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Margin="10" HorizontalOptions="Fill">
+              <Label Text="Select output directory:" HorizontalOptions="Fill" VerticalOptions="Center"/>
+              <Button
+                  x:Name="minecraftDirectoryButton"
+                  Text="Browse" 
+                  Clicked="OnMinecraftDirectoryClicked" HorizontalOptions="End" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Margin="10" HorizontalOptions="Start">
+              <CheckBox x:Name="fillUndergroundCheckBox" VerticalOptions="Center"
+              CheckedChanged="OnFillUndergroundCheckBoxCheckedChanged" />
+              <Label Text="Fill underground area" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Margin="10" HorizontalOptions="Start">
+              <CheckBox x:Name="generateTerrainCheckBox"
+              CheckedChanged="OnGenerateTerrainCheckBoxCheckedChanged" VerticalOptions="Center" />
+              <Label Text="Generate terrain around the city" VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+            
+            <Button
+                x:Name="ConvertButton"
+                Text="Convert!" 
+                Clicked="OnConvertClicked"
+                HorizontalOptions="Fill" VerticalOptions="Center" />
+        </VerticalStackLayout-->
     </ScrollView>
 
 </ContentPage>
