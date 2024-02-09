@@ -40,46 +40,16 @@
         <Button
                 x:Name="ConvertButton"
                 Text="Convert!" 
-                Clicked="OnConvertClicked"
-                HorizontalOptions="Fill" VerticalOptions="Center" />
+                Clicked="OnConvertClicked" />
+        <FlexLayout x:Name="ProgressBarContainer"
+          IsVisible="false"
+          Direction="Row"
+          AlignItems="Center">
+          <Label Text="Progress:" Margin="0,0,10,0"/>
+          <ProgressBar x:Name="ConversionProgressBar" WidthRequest="288" />
+        </FlexLayout>
+        <Label x:Name="StatusLabel"/>
       </FlexLayout>
-
-        <!--VerticalStackLayout Padding="10">
-
-            <HorizontalStackLayout Margin="10" HorizontalOptions="Fill">
-              <Label Text="Choose a SimCity 2000 file to convert:" HorizontalOptions="Fill" VerticalOptions="Center"/>
-              <Button
-                  x:Name="simCityFileButton"
-                  Text="Browse" 
-                  Clicked="OnSimCityFileClicked" HorizontalOptions="End" VerticalOptions="Center" />
-            </HorizontalStackLayout>
-
-            <HorizontalStackLayout Margin="10" HorizontalOptions="Fill">
-              <Label Text="Select output directory:" HorizontalOptions="Fill" VerticalOptions="Center"/>
-              <Button
-                  x:Name="minecraftDirectoryButton"
-                  Text="Browse" 
-                  Clicked="OnMinecraftDirectoryClicked" HorizontalOptions="End" VerticalOptions="Center"/>
-            </HorizontalStackLayout>
-
-            <HorizontalStackLayout Margin="10" HorizontalOptions="Start">
-              <CheckBox x:Name="fillUndergroundCheckBox" VerticalOptions="Center"
-              CheckedChanged="OnFillUndergroundCheckBoxCheckedChanged" />
-              <Label Text="Fill underground area" VerticalOptions="Center"/>
-            </HorizontalStackLayout>
-
-            <HorizontalStackLayout Margin="10" HorizontalOptions="Start">
-              <CheckBox x:Name="generateTerrainCheckBox"
-              CheckedChanged="OnGenerateTerrainCheckBoxCheckedChanged" VerticalOptions="Center" />
-              <Label Text="Generate terrain around the city" VerticalOptions="Center"/>
-            </HorizontalStackLayout>
-            
-            <Button
-                x:Name="ConvertButton"
-                Text="Convert!" 
-                Clicked="OnConvertClicked"
-                HorizontalOptions="Fill" VerticalOptions="Center" />
-        </VerticalStackLayout-->
     </ScrollView>
 
 </ContentPage>
