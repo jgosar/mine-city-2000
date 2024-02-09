@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (console)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/MineCity2000-GUI/bin/Debug/net8.0-windows10.0.19041.0/win10-x64/MineCity2000-GUI.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/MineCity2000-GUI",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

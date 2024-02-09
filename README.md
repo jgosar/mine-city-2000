@@ -26,6 +26,9 @@ https://www.youtube.com/watch?v=EhIF_1SuZLs
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
 https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
 
+If for some reason the app above doesn't work, please try the old version:
+https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release-legacy.rar
+
 ## Running the compiled app
 
 Run the compiled app using MineCity2000-GUI.exe.

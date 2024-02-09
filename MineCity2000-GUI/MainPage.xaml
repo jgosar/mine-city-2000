@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="com.mc2k.gui.MainPage">
+
+    <ScrollView>
+      <FlexLayout Direction="Column"
+                JustifyContent="SpaceBetween"
+                Margin="10,30,10,10">
+        <FlexLayout Direction="Row"
+                  AlignItems="Center">
+          <Label Text="Choose a SimCity 2000 file to convert:"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select the SimCity 2000 (*.sc2) city file that you want to convert. It could be in a location similar to 'C:\Program Files\Maxis\SimCity 2000\Cities'."/>
+          <Button
+              Text="Browse" 
+              Clicked="OnSimCityFileClicked" />
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center"
+                  JustifyContent="SpaceBetween">
+          <Label Text="Select output directory:"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select the Minecraft saves directory. It could be in a location similar to C:\Users\[username]\AppData\Roaming\.minecraft\saves'."/>
+          <Button
+              Text="Browse" 
+              Clicked="OnMinecraftDirectoryClicked"/>
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center">
+          <CheckBox x:Name="FillUndergroundCheckBox"/>
+          <Label Text="Fill underground area"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select this if you want the area under the city to be filled with sandstone instead of empty, so you can't fall through when digging down."/>
+        </FlexLayout>
+        <FlexLayout Direction="Row"
+                  AlignItems="Center">
+          <CheckBox x:Name="GenerateTerrainCheckBox" />
+          <Label Text="Generate terrain around the city"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select this if you want Minecraft to generate its normal terrain outside of the city."/>
+        </FlexLayout>
+        <Button
+                x:Name="ConvertButton"
+                Text="Convert!" 
+                Clicked="OnConvertClicked" />
+        <FlexLayout x:Name="ProgressBarContainer"
+          IsVisible="false"
+          Direction="Row"
+          AlignItems="Center">
+          <Label Text="Progress:" Margin="0,0,10,0"/>
+          <ProgressBar x:Name="ConversionProgressBar" WidthRequest="288" />
+        </FlexLayout>
+        <Label x:Name="StatusLabel"/>
+      </FlexLayout>
+    </ScrollView>
+
+</ContentPage>

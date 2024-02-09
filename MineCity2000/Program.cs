@@ -2,24 +2,24 @@
 
 namespace com.mc2k.MineCity2000
 {
-    class Program
+  class Program
+  {
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            if (args.Length != 1 || !args[0].Equals("thisisatestrun"))
-            {
-                Console.WriteLine("Please use MineCity2000-GUI.exe to run the program");
-                Console.ReadLine();
-                return;
-            }
+      if (args.Length != 1 || !args[0].Equals("thisisatestrun"))
+      {
+        Console.WriteLine("Please use MineCity2000-GUI.exe to run the program.");
+        Console.ReadLine();
+        return;
+      }
 
-            String inputFile = @"..\..\..\input\cities\CENTERVL.SC2";
-            String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated"; // Change this to your Minecraft worlds directory
-            String buildingsDir = @"..\..\..\buildings";
+      String inputFile = @"C:\Games\Simcity 2000\SC2K\CITIES\CENTERVL.SC2";
+      String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated"; // Change this to your Minecraft worlds directory
+      String buildingsDir = @".\buildings";
 
-            SCMapper mapper = new SCMapper(buildingsDir);
-            MapperOptions options = new MapperOptions(false, false);
-            mapper.makeMap(inputFile, outputDir, options);
-        }
+      SCMapper mapper = new SCMapper(buildingsDir);
+      MapperOptions options = new MapperOptions(false, false);
+      mapper.makeMap(inputFile, outputDir, options);
     }
+  }
 }
