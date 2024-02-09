@@ -34,6 +34,10 @@
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
     <ProjectReference Include="..\MineCity2000\MineCity2000.csproj" />
+    <BuildingFiles Include="..\buildings\*.mca" />
 	</ItemGroup>
+  <Target Name="CopyBuildingsAfterBuild" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\buildings" />
+  </Target>
 
 </Project>

@@ -28,20 +28,6 @@ public partial class MainPage : ContentPage
     bw.DoWork += new DoWorkEventHandler(bw_DoWork);
     bw.ProgressChanged += new ProgressChangedEventHandler(bw_ProgressChanged);
     bw.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bw_RunWorkerCompleted);
-
-    String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    String[] debugPaths = new string[2] { "\\MineCity2000-GUI\\bin\\Debug", "\\MineCity2000-GUI\\bin\\x64\\Debug" };
-
-    foreach (string debugPath in debugPaths)
-    {
-      if (workingDir.Contains(debugPath))
-      {
-        workingDir = workingDir.Replace(debugPath, "");
-      }
-    }
-
-    buildingsDir = workingDir + "\\buildings";
-    mapper = new SCMapper(buildingsDir);
   }
 
   private async void OnSimCityFileClicked(object sender, EventArgs e)
@@ -103,16 +89,6 @@ public partial class MainPage : ContentPage
 
   private void OnConvertClicked(object sender, EventArgs e)
   {
-    /*Boolean fillUnderground = false;
-    Boolean generateTerrain = false;
-    string inputFile = "C:\\Program Files\\Maxis\\SimCity 2000\\CITIES\\zabnca.sc2";
-    string buildingsDir = "C:\\Users\\jerne\\Documents\\Dev stuff\\GitHub\\mine-city-2000\\buildings";
-    string outputDir = "C:\\Users\\jerne\\Documents\\Dev stuff\\GitHub\\mine-city-2000\\donotcommit";
-    SCMapper mapper = new SCMapper(buildingsDir);
-    //mapper.Worker = worker;
-    MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
-    mapper.makeMap(inputFile, outputDir, options);*/
-
     if (inputFile == null)
     {
       StatusLabel.Text = "Please select a SimCity 2000 file";
@@ -135,7 +111,8 @@ public partial class MainPage : ContentPage
   {
     BackgroundWorker worker = sender as BackgroundWorker;
 
-    mapper = new SCMapper(buildingsDir);
+    String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+    mapper = new SCMapper(workingDir + "\\buildings");
     mapper.Worker = worker;
     MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
     mapper.makeMap(inputFile, outputDir, options);
