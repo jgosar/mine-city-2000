@@ -15,7 +15,7 @@ namespace com.mc2k.MineCity2000
 
       String inputFile = @"C:\Games\Simcity 2000\SC2K\CITIES\CENTERVL.SC2";
       String outputDir = @"C:\Users\jerne\AppData\Roaming\.minecraft\saves\generated"; // Change this to your Minecraft worlds directory
-      String buildingsDir = @"..\buildings";
+      String buildingsDir = @".\buildings";
 
       SCMapper mapper = new SCMapper(buildingsDir);
       MapperOptions options = new MapperOptions(false, false);

@@ -14,7 +14,6 @@
               FlexLayout.Grow="1"
               ToolTipProperties.Text="Select the SimCity 2000 (*.sc2) city file that you want to convert. It could be in a location similar to 'C:\Program Files\Maxis\SimCity 2000\Cities'."/>
           <Button
-              x:Name="simCityFileButton"
               Text="Browse" 
               Clicked="OnSimCityFileClicked" />
         </FlexLayout>
@@ -26,14 +25,12 @@
               FlexLayout.Grow="1"
               ToolTipProperties.Text="Select the Minecraft saves directory. It could be in a location similar to C:\Users\[username]\AppData\Roaming\.minecraft\saves'."/>
           <Button
-              x:Name="minecraftDirectoryButton"
               Text="Browse" 
               Clicked="OnMinecraftDirectoryClicked"/>
         </FlexLayout>
         <FlexLayout Direction="Row"
                   AlignItems="Center">
-          <CheckBox x:Name="fillUndergroundCheckBox"
-          CheckedChanged="OnFillUndergroundCheckBoxCheckedChanged" />
+          <CheckBox x:Name="FillUndergroundCheckBox"/>
           <Label Text="Fill underground area"/>
           <Label Text=" ❔"
               FlexLayout.Grow="1"
@@ -41,8 +38,7 @@
         </FlexLayout>
         <FlexLayout Direction="Row"
                   AlignItems="Center">
-          <CheckBox x:Name="generateTerrainCheckBox"
-          CheckedChanged="OnGenerateTerrainCheckBoxCheckedChanged" />
+          <CheckBox x:Name="GenerateTerrainCheckBox" />
           <Label Text="Generate terrain around the city"/>
           <Label Text=" ❔"
               FlexLayout.Grow="1"

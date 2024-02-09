@@ -10,8 +10,6 @@ public partial class MainPage : ContentPage
 {
   String? inputFile = null;
   String? outputDir = null;
-  Boolean fillUnderground = false;
-  Boolean generateTerrain = false;
   private BackgroundWorker bw = new BackgroundWorker();
 
   public MainPage()
@@ -54,10 +52,10 @@ public partial class MainPage : ContentPage
   {
     var result = await FolderPicker.Default.PickAsync();
 
-    var selectedPath = result.Folder.Path;
+    String selectedPath = result.Folder.Path;
+    String selectedDirName = result.Folder.Name;
 
-    String[] tmp = selectedPath.Split(new char[] { '\\' });
-    if (tmp[tmp.Length - 1].Equals(".minecraft"))
+    if (selectedDirName.Equals(".minecraft"))
     {
       if (!File.Exists(selectedPath + "\\saves"))
       {
@@ -66,7 +64,7 @@ public partial class MainPage : ContentPage
 
       outputDir = selectedPath + "\\saves\\MineCity2000";
     }
-    else if (tmp[tmp.Length - 1].Equals("saves"))
+    else if (selectedDirName.Equals("saves"))
     {
       outputDir = selectedPath + "\\MineCity2000";
     }
@@ -76,16 +74,6 @@ public partial class MainPage : ContentPage
     }
 
     StatusLabel.Text = "";
-  }
-
-  private void OnFillUndergroundCheckBoxCheckedChanged(object sender, CheckedChangedEventArgs e)
-  {
-    fillUnderground = e.Value;
-  }
-
-  private void OnGenerateTerrainCheckBoxCheckedChanged(object sender, CheckedChangedEventArgs e)
-  {
-    generateTerrain = e.Value;
   }
 
   private void OnConvertClicked(object sender, EventArgs e)
@@ -115,7 +103,7 @@ public partial class MainPage : ContentPage
     String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
     SCMapper mapper = new SCMapper(workingDir + "\\buildings");
     mapper.Worker = worker;
-    MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
+    MapperOptions options = new MapperOptions(FillUndergroundCheckBox.IsChecked, GenerateTerrainCheckBox.IsChecked);
     mapper.makeMap(inputFile, outputDir, options);
   }
   private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
