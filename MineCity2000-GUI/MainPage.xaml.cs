@@ -8,20 +8,20 @@ using CommunityToolkit.Maui.Storage;
 
 public partial class MainPage : ContentPage
 {
-  String inputFile = null;
-  String outputDir = null;
+  String? inputFile = null;
+  String? outputDir = null;
   Boolean fillUnderground = false;
   Boolean generateTerrain = false;
-  String buildingsDir = null;
-  SCMapper mapper = null;
   private BackgroundWorker bw = new BackgroundWorker();
 
   public MainPage()
   {
     InitializeComponent();
-    //openFileDialog1.InitialDirectory = @"C:\Program Files\Maxis\SimCity 2000\Cities";
-    //folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\.minecraft";
+    InitializeBackgroundWorker();
+  }
 
+  private void InitializeBackgroundWorker()
+  {
     bw = new BackgroundWorker();
     bw.WorkerReportsProgress = true;
     bw.WorkerSupportsCancellation = true;
@@ -53,6 +53,7 @@ public partial class MainPage : ContentPage
   private async void OnMinecraftDirectoryClicked(object sender, EventArgs e)
   {
     var result = await FolderPicker.Default.PickAsync();
+
     var selectedPath = result.Folder.Path;
 
     String[] tmp = selectedPath.Split(new char[] { '\\' });
@@ -112,7 +113,7 @@ public partial class MainPage : ContentPage
     BackgroundWorker worker = sender as BackgroundWorker;
 
     String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    mapper = new SCMapper(workingDir + "\\buildings");
+    SCMapper mapper = new SCMapper(workingDir + "\\buildings");
     mapper.Worker = worker;
     MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
     mapper.makeMap(inputFile, outputDir, options);
