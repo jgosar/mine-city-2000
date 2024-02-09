@@ -8,9 +8,11 @@
                 JustifyContent="SpaceBetween"
                 Margin="10,30,10,10">
         <FlexLayout Direction="Row"
-                  AlignItems="Center"
-                  JustifyContent="SpaceBetween">
+                  AlignItems="Center">
           <Label Text="Choose a SimCity 2000 file to convert:"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select the SimCity 2000 (*.sc2) city file that you want to convert. It could be in a location similar to 'C:\Program Files\Maxis\SimCity 2000\Cities'."/>
           <Button
               x:Name="simCityFileButton"
               Text="Browse" 
@@ -20,6 +22,9 @@
                   AlignItems="Center"
                   JustifyContent="SpaceBetween">
           <Label Text="Select output directory:"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select the Minecraft saves directory. It could be in a location similar to C:\Users\[username]\AppData\Roaming\.minecraft\saves'."/>
           <Button
               x:Name="minecraftDirectoryButton"
               Text="Browse" 
@@ -30,12 +35,18 @@
           <CheckBox x:Name="fillUndergroundCheckBox"
           CheckedChanged="OnFillUndergroundCheckBoxCheckedChanged" />
           <Label Text="Fill underground area"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select this if you want the area under the city to be filled with sandstone instead of empty, so you can't fall through when digging down."/>
         </FlexLayout>
         <FlexLayout Direction="Row"
                   AlignItems="Center">
           <CheckBox x:Name="generateTerrainCheckBox"
           CheckedChanged="OnGenerateTerrainCheckBoxCheckedChanged" />
           <Label Text="Generate terrain around the city"/>
+          <Label Text=" ❔"
+              FlexLayout.Grow="1"
+              ToolTipProperties.Text="Select this if you want Minecraft to generate its normal terrain outside of the city."/>
         </FlexLayout>
         <Button
                 x:Name="ConvertButton"
