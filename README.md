@@ -70,7 +70,7 @@ The repository contains these projects:
 - MineCity2000: Creates the Minecraft world with terrain and buildings
 - MineCity2000-GUI: A rudimentary GUI for running the program
 
-You need .NET Framework 4 in order for MineCity 2000 to run. I have checked that the project compiles and runs in Visual Studio 2010 and Visual Studio 2019.
+For building the app from the source code you need .NET Core framework 8.0. The projects are set up for development with Visual Studio Code.
 
 This is a development version, so do not be surprised if something doesn't work.
 
