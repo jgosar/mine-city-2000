@@ -35,9 +35,11 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
     <ProjectReference Include="..\MineCity2000\MineCity2000.csproj" />
     <BuildingFiles Include="..\buildings\*.mca" />
+    <DefaultArgsFile Include="..\MineCity2000\default_args.txt" />
 	</ItemGroup>
   <Target Name="CopyBuildingsAfterBuild" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\buildings" />
+    <Copy SourceFiles="@(DefaultArgsFile)" DestinationFolder="$(OutDir)" />
   </Target>
 
 </Project>

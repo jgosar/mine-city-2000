@@ -9,7 +9,7 @@ namespace com.mc2k.MineCity2000
 {
   public class SCMapper
   {
-    private BackgroundWorker? _worker;
+    private ProgressCallback? _progressCallback;
     private int _progress;
     private const int CITY_WIDTH_IN_REGIONS = 4;//How many Minecraft regions are in a SimCity city
     private const int REGION_SIZE = 512;//How many pixels/blocks are in a Minecraft region
@@ -27,14 +27,12 @@ namespace com.mc2k.MineCity2000
     BuildingModel[] _buildingModels = new BuildingModel[256];
     BuildingModel[] _rotatedModels = new BuildingModel[256];//bridges 81-89, rail bridges 90-91, raised power lines 92, runway 221, pier 223
 
-    public SCMapper(String buildingsDir)
+    public delegate void ProgressCallback(int progress);
+
+    public SCMapper(String buildingsDir, ProgressCallback? progressCallback)
     {
       _buildingsDir = buildingsDir;
-    }
-
-    public BackgroundWorker Worker
-    {
-      set { _worker = value; }
+      _progressCallback = progressCallback;
     }
 
     public void makeMap(String inputFile, String outputDir, MapperOptions options)
@@ -693,9 +691,9 @@ namespace com.mc2k.MineCity2000
 
     private void reportProgress()
     {
-      if (_worker != null)
+      if (_progressCallback != null)
       {
-        _worker.ReportProgress(_progress);
+        _progressCallback(_progress);
       }
     }
   }

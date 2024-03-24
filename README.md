@@ -26,6 +26,9 @@ https://www.youtube.com/watch?v=EhIF_1SuZLs
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
 https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
 
+You can download a smaller version here if you only want to use MineCity 2000 CLI (Command-line interface)
+https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release.rar
+
 If for some reason the app above doesn't work, please try the old version:
 https://raw.githubusercontent.com/jgosar/mine-city-2000/master/release/mc2k-release-legacy.rar
 
@@ -44,6 +47,10 @@ If you want Minecraft to automatically generate its own terrain around the city 
 After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
 
 Your antivirus might think that MineCity 2000 is a virus. It's not.
+
+## Running the CLI (Command-line interface)
+
+You can also run MineCity 2000 as a CLI, which can be useful if you want to call it from a script or from another app, here are the instructions: https://github.com/jgosar/mine-city-2000/wiki/CLI-usage
 
 
 ## Opening generated worlds in Minecraft Bedrock Edition
@@ -71,8 +78,10 @@ The repository contains these projects:
 - MineCity2000-GUI: A rudimentary GUI for running the program
 
 For building the app from the source code you need .NET Core framework 8.0. The projects are set up for development with Visual Studio Code.
+In order to develop the GUI, you will also need the dotnet MAUI workload.
+If you open the project with Visual Studio Code, you can launch it using the "Launch GUI" or "Launch CLI" commands under the "Run and Debug" menu.
 
-This is a development version, so do not be surprised if something doesn't work.
+This is a development version, so do not be surprised if something doesn't work. Please open an issue on GitHub if you encounter any problems.
 
 At the current stage, not all buildings are supported, so there will be some holes between the buildings in a generated world.
 

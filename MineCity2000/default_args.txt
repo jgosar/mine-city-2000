@@ -1,0 +1,2 @@
+#Modify the arguments below to add them to calls of MineCity2000.exe by default
+-o C:\Users\jerne\AppData\Roaming\.minecraft\saves

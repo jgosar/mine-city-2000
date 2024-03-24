@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": ".NET Core Launch (console)",
+      "name": "Launch GUI",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
@@ -13,9 +13,15 @@
       "stopAtEntry": false
     },
     {
-      "name": ".NET Core Attach",
+      "name": "Launch CLI",
       "type": "coreclr",
-      "request": "attach"
+      "request": "launch",
+      "preLaunchTask": "build-cli",
+      "program": "${workspaceFolder}/MineCity2000/bin/Debug/net8.0-windows10.0.19041.0/MineCity2000.exe",
+      "args": ["C:\\Games\\Simcity 2000\\SC2K\\CITIES\\CENTERVL.SC2", "-c"], //Change this on your dev environment
+      "cwd": "${workspaceFolder}/MineCity2000",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
     }
   ]
 }

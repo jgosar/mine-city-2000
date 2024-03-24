@@ -4,9 +4,11 @@
     <ProjectReference Include="..\SimCityReader\SimCityReader.csproj" />
     <ProjectReference Include="..\MinecraftEditor\MinecraftEditor.csproj" />
     <BuildingFiles Include="..\buildings\*.mca" />
+    <DefaultArgsFile Include="default_args.txt" />
   </ItemGroup>
   <Target Name="CopyBuildingsAfterBuild" AfterTargets="AfterBuild">
-    <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\..\buildings" />
+    <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\buildings" />
+    <Copy SourceFiles="@(DefaultArgsFile)" DestinationFolder="$(OutDir)" />
   </Target>
 
   <PropertyGroup>
