@@ -14,6 +14,18 @@
       "problemMatcher": "$msCompile"
     },
     {
+      "label": "build-cli",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/MineCity2000/MineCity2000.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
       "label": "publish",
       "command": "dotnet",
       "type": "process",

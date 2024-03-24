@@ -55,6 +55,8 @@ public partial class MainPage : ContentPage
     String selectedPath = result.Folder.Path;
     String selectedDirName = result.Folder.Name;
 
+    outputDir = selectedPath;
+
     if (selectedDirName.Equals(".minecraft"))
     {
       if (!File.Exists(selectedPath + "\\saves"))
@@ -62,15 +64,7 @@ public partial class MainPage : ContentPage
         Directory.CreateDirectory(selectedPath + "\\saves");
       }
 
-      outputDir = selectedPath + "\\saves\\MineCity2000";
-    }
-    else if (selectedDirName.Equals("saves"))
-    {
-      outputDir = selectedPath + "\\MineCity2000";
-    }
-    else
-    {
-      outputDir = selectedPath + "\\MineCity2000";
+      outputDir = outputDir + "\\saves";
     }
 
     StatusLabel.Text = "";
@@ -101,10 +95,11 @@ public partial class MainPage : ContentPage
     BackgroundWorker worker = sender as BackgroundWorker;
 
     String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    SCMapper mapper = new SCMapper(workingDir + "\\buildings");
-    mapper.Worker = worker;
+    SCMapper mapper = new SCMapper(workingDir + "\\buildings", progressCallback);
     MapperOptions options = new MapperOptions(FillUndergroundCheckBox.IsChecked, GenerateTerrainCheckBox.IsChecked);
-    mapper.makeMap(inputFile, outputDir, options);
+
+    String cityName = inputFile.ToLower().Split('\\').Last().Replace(".sc2", "");
+    mapper.makeMap(inputFile, @$"{outputDir}\{cityName}", options);
   }
   private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
   {
@@ -130,6 +125,11 @@ public partial class MainPage : ContentPage
   {
     ProgressBarContainer.IsVisible = true;
     ConversionProgressBar.Progress = e.ProgressPercentage / 100.0;
+  }
+
+  private void progressCallback(int progressPercentage)
+  {
+    bw.ReportProgress(progressPercentage);
   }
 }
 
