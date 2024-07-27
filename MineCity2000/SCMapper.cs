@@ -186,6 +186,7 @@ namespace com.mc2k.MineCity2000
 
             bool useRotatedModel = shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare);
             bool squareIsTunnelEntrance = isTunnelEntrance(thisSquare.buildingType);
+            bool overridesSlope = squareIsTunnelEntrance || isHydroPower(thisSquare.buildingType);
 
             BuildingModel buildingModel = loadBuildingModel(thisSquare.buildingType, useRotatedModel);
 
@@ -208,10 +209,29 @@ namespace com.mc2k.MineCity2000
 
                         byte[] buildingBlock = buildingChunkData[section][sx][sz][sy];
 
+                        if (overridesSlope)
+                        {
+                          // Structures that override slopes, such as hydro power and tunnel entrances should not conform to the landscape like sloped roads do
+                          // Also their air blocks should override whatever terrain was defined in the same place previously
+                          newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
+                        }
+                        else if (buildingBlock[0] != AIR_BLOCK) // For all other structures ignore air blocks from the building model
+                        {
+                          bool isAboveWaterLevel = terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT);
+
+                          if (isAboveWaterLevel) // Adjust placement of blocks to height of terrain below the building
+                          {
+                            newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
+                          }
+                          else // This structure is built on water (e.g. bridge or marina), place it on the water's surface
+                          {
+                            newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
+                          }
+                        }
+
 
                         if (squareIsTunnelEntrance)//tunnel entrances - include air, repeat along x or z axis
                         {
-                          newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
                           if (section == 0 || sy < SECTION_HEIGHT - 2) // Omit the top two levels of blocks above the underground tunnel sections in order not to erase the ground above
                           {
                             if (thisSquare.buildingType == 63)
@@ -222,17 +242,6 @@ namespace com.mc2k.MineCity2000
                             {
                               repeatBlockUntilTunnelEndsZ(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                             }
-                          }
-                        }
-                        else if (buildingBlock[0] != AIR_BLOCK)
-                        {
-                          if (terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT)) //on ground
-                          {
-                            newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
-                          }
-                          else //on water
-                          {
-                            newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
                           }
                         }
                       }
