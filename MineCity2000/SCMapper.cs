@@ -223,7 +223,7 @@ namespace com.mc2k.MineCity2000
                           {
                             newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
                           }
-                          else // This structure is built on water (e.g. bridge or marina), place it on the water's surfac
+                          else // This structure is built on water (e.g. bridge or marina), place it on the water's surface
                           {
                             newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
                           }
