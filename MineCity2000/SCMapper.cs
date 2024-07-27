@@ -209,18 +209,21 @@ namespace com.mc2k.MineCity2000
 
                         byte[] buildingBlock = buildingChunkData[section][sx][sz][sy];
 
-
-                        if (overridesSlope) // Structures that override slopes, such as hydro power and tunnel entrances should not conform to the landscape like sloped roads do
+                        if (overridesSlope)
                         {
+                          // Structures that override slopes, such as hydro power and tunnel entrances should not conform to the landscape like sloped roads do
+                          // Also their air blocks should override whatever terrain was defined in the same place previously
                           newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
                         }
-                        else if (buildingBlock[0] != AIR_BLOCK)
+                        else if (buildingBlock[0] != AIR_BLOCK) // For all other structures ignore air blocks from the building model
                         {
-                          if (terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT)) //Adjust placement of blocks to terrain below (e.g. road on a slope)
+                          bool isAboveWaterLevel = terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT);
+
+                          if (isAboveWaterLevel) // Adjust placement of blocks to height of terrain below the building
                           {
                             newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
                           }
-                          else //on water
+                          else // This structure is built on water (e.g. bridge or marina), place it on the water's surfac
                           {
                             newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
                           }
