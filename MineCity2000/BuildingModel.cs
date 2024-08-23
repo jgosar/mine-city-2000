@@ -19,19 +19,12 @@ namespace com.mc2k.MineCity2000
     private byte[][][][][][][] _blockDatas;
     BuildingType _type;
 
-    public static bool modelFileExists(byte typeCode, String folder, bool rotated)
+    public static bool modelFileExists(String folder, byte typeCode, String modelVariant)
     {
-      if (rotated)
-      {
-        return File.Exists(folder + "\\" + typeCode + "r.mca");
-      }
-      else
-      {
-        return File.Exists(folder + "\\" + typeCode + ".mca");
-      }
+      return File.Exists(folder + "\\" + typeCode + modelVariant + ".mca");
     }
 
-    public BuildingModel(byte typeCode, String folder, bool rotated)
+    public BuildingModel(String folder, byte typeCode, String modelVariant)
     {
       _type = BuildingType.getByCode(typeCode);
 
@@ -45,15 +38,7 @@ namespace com.mc2k.MineCity2000
         }
       }
 
-      List<Chunk> chunks;
-      if (rotated)
-      {
-        chunks = MCAReader.readFile(folder + "\\" + typeCode + "r.mca");
-      }
-      else
-      {
-        chunks = MCAReader.readFile(folder + "\\" + typeCode + ".mca");
-      }
+      List<Chunk> chunks = MCAReader.readFile(folder + "\\" + typeCode + modelVariant + ".mca");
 
       byte[][][][] tmpSectionData;
 

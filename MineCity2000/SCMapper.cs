@@ -24,8 +24,7 @@ namespace com.mc2k.MineCity2000
     private const int OBSIDIAN_BLOCK = 49;
 
     private String _buildingsDir;
-    BuildingModel[] _buildingModels = new BuildingModel[256];
-    BuildingModel[] _rotatedModels = new BuildingModel[256];//bridges 81-89, rail bridges 90-91, raised power lines 92, runway 221, pier 223
+    Dictionary<string, BuildingModel> _buildingModels = new Dictionary<string, BuildingModel>();
 
     public delegate void ProgressCallback(int progress);
 
@@ -184,11 +183,19 @@ namespace com.mc2k.MineCity2000
           {
             fixBridgeSlopes(terrainHeightsForRegion, thisSquare, xMinusSquare, xPlusSquare, zMinusSquare, zPlusSquare, squareXIndex, squareZIndex);
 
-            bool useRotatedModel = shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare);
+            String modelVariant = "";
+            if (shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare))
+            {
+              modelVariant = "r";
+            }
+            else if (isHydroPower(thisSquare.buildingType))
+            {
+              modelVariant = getHydropowerVariant(terrainHeightsForRegion, squareXIndex, squareZIndex, thisSquare.buildingType);
+            }
             bool squareIsTunnelEntrance = isTunnelEntrance(thisSquare.buildingType);
             bool overridesSlope = squareIsTunnelEntrance || isHydroPower(thisSquare.buildingType);
 
-            BuildingModel buildingModel = loadBuildingModel(thisSquare.buildingType, useRotatedModel);
+            BuildingModel buildingModel = loadBuildingModel(thisSquare.buildingType, modelVariant);
 
             if (buildingModel != null)
             {
@@ -254,6 +261,38 @@ namespace com.mc2k.MineCity2000
         }
       }
       return newRegion;
+    }
+
+    private string getHydropowerVariant(int[][] terrainHeightsForRegion, int squareXIndex, int squareZIndex, byte buildingType)
+    {
+      // If terrain is higher in the back and sloping down towards the viewer, use model variant "a", which has water at the back
+      // Otherwise use model variant "b", which has water at the front
+      int rearBlockHeight = terrainHeightsForRegion[squareXIndex * SQUARE_SIZE][squareZIndex * SQUARE_SIZE];
+      int frontBlockHeight = terrainHeightsForRegion[(squareXIndex + 1) * SQUARE_SIZE - 1][(squareZIndex + 1) * SQUARE_SIZE - 1];
+
+      if (rearBlockHeight > frontBlockHeight)
+      {
+        return "a";
+      }
+      else if (rearBlockHeight < frontBlockHeight)
+      {
+        return "b";
+      }
+      else
+      {
+        int rightBlockHeight = terrainHeightsForRegion[(squareXIndex + 1) * SQUARE_SIZE - 1][squareZIndex * SQUARE_SIZE];
+        int leftBlockHeight = terrainHeightsForRegion[squareXIndex * SQUARE_SIZE][(squareZIndex + 1) * SQUARE_SIZE - 1];
+
+        if (rightBlockHeight > leftBlockHeight)
+        {
+          // Model 199a slopes up to the rear-right and model 198b slopes up to the front-right,
+          // so if the slope is going up towards the right, those are the ones we should use
+          return buildingType == 199 ? "a" : "b";
+        }
+
+        // If the slope is going up to the left, we should use 198a or 199b
+        return buildingType == 198 ? "a" : "b";
+      }
     }
 
     private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel, Boolean fillUnderground)
@@ -334,35 +373,23 @@ namespace com.mc2k.MineCity2000
       }
     }
 
-    private BuildingModel loadBuildingModel(byte buildingType, bool useRotatedModel)
+    private BuildingModel loadBuildingModel(byte buildingType, String modelVariant)
     {
-      Boolean modelLoaded;
-      BuildingModel? buildingModel = null;
-      if (useRotatedModel)
+      String modelKey = buildingType + modelVariant;
+
+      if (!_buildingModels.ContainsKey(modelKey))
       {
-        modelLoaded = _rotatedModels[buildingType] != null;
-
-        if (!modelLoaded && BuildingModel.modelFileExists(buildingType, _buildingsDir, true))
+        if (BuildingModel.modelFileExists(_buildingsDir, buildingType, modelVariant))
         {
-          _rotatedModels[buildingType] = new BuildingModel(buildingType, _buildingsDir, true);
-          modelLoaded = _rotatedModels[buildingType] != null;
+          _buildingModels[modelKey] = new BuildingModel(_buildingsDir, buildingType, modelVariant);
         }
-
-        buildingModel = _rotatedModels[buildingType];
-      }
-      else
-      {
-        modelLoaded = _buildingModels[buildingType] != null;
-
-        if (!modelLoaded && BuildingModel.modelFileExists(buildingType, _buildingsDir, false))
+        else
         {
-          _buildingModels[buildingType] = new BuildingModel(buildingType, _buildingsDir, false);
-          modelLoaded = _buildingModels[buildingType] != null;
+          return null;
         }
-
-        buildingModel = _buildingModels[buildingType];
       }
-      return buildingModel;
+
+      return _buildingModels[modelKey];
     }
 
     private static Boolean shouldUseRotatedModel(SquareData thisSquare, SquareData? zMinusSquare, SquareData? zPlusSquare)
