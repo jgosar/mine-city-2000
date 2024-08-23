@@ -190,7 +190,7 @@ namespace com.mc2k.MineCity2000
             }
             else if (isHydroPower(thisSquare.buildingType))
             {
-              modelVariant = getHydropowerVariant(terrainHeightsForRegion, squareXIndex, squareZIndex);
+              modelVariant = getHydropowerVariant(terrainHeightsForRegion, squareXIndex, squareZIndex, thisSquare.buildingType);
             }
             bool squareIsTunnelEntrance = isTunnelEntrance(thisSquare.buildingType);
             bool overridesSlope = squareIsTunnelEntrance || isHydroPower(thisSquare.buildingType);
@@ -263,7 +263,7 @@ namespace com.mc2k.MineCity2000
       return newRegion;
     }
 
-    private string getHydropowerVariant(int[][] terrainHeightsForRegion, int squareXIndex, int squareZIndex)
+    private string getHydropowerVariant(int[][] terrainHeightsForRegion, int squareXIndex, int squareZIndex, byte buildingType)
     {
       // If terrain is higher in the back and sloping down towards the viewer, use model variant "a", which has water at the back
       // Otherwise use model variant "b", which has water at the front
@@ -274,9 +274,24 @@ namespace com.mc2k.MineCity2000
       {
         return "a";
       }
-      else
+      else if (rearBlockHeight < frontBlockHeight)
       {
         return "b";
+      }
+      else
+      {
+        int rightBlockHeight = terrainHeightsForRegion[(squareXIndex + 1) * SQUARE_SIZE - 1][squareZIndex * SQUARE_SIZE];
+        int leftBlockHeight = terrainHeightsForRegion[squareXIndex * SQUARE_SIZE][(squareZIndex + 1) * SQUARE_SIZE - 1];
+
+        if (rightBlockHeight > leftBlockHeight)
+        {
+          // Model 199a slopes up to the rear-right and model 198b slopes up to the front-right,
+          // so if the slope is going up towards the right, those are the ones we should use
+          return buildingType == 199 ? "a" : "b";
+        }
+
+        // If the slope is going up to the left, we should use 198a or 199b
+        return buildingType == 198 ? "a" : "b";
       }
     }
 
