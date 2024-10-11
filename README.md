@@ -24,12 +24,15 @@ https://www.youtube.com/watch?v=EhIF_1SuZLs
 ## Download link for the compiled app
 
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
+
 https://github.com/jgosar/mine-city-2000/releases/latest/download/mc2k-release.rar
 
-You can download a smaller version here if you only want to use MineCity 2000 CLI (Command-line interface)
+You can download a smaller version here if you only want to use MineCity 2000 CLI (Command-line interface):
+
 https://github.com/jgosar/mine-city-2000/releases/latest/download/mc2k-release-cli.rar
 
 If for some reason the app above doesn't work, please try the old version:
+
 https://github.com/jgosar/mine-city-2000/releases/download/v0.3.0/mc2k-release-legacy.rar
 
 ## Running the compiled app
