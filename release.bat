@@ -1,3 +1,5 @@
+rmdir release /S /Q
+mkdir release
 cd release
 del mc2k-release.rar
 del mc2k-release-cli.rar

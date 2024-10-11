@@ -1,4 +1,3 @@
-
 AnvilFile/obj
 AnvilFile/bin
 MineCity2000/obj
@@ -9,6 +8,7 @@ MinecraftEditor/obj
 MinecraftEditor/bin
 SimCityReader/obj
 SimCityReader/bin
+release
 *.user
 *.suo
 .vs
