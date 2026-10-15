@@ -1,2 +1,4 @@
-#Modify the arguments below to add them to calls of MineCity2000.exe by default
--o C:\Users\jerne\AppData\Roaming\.minecraft\saves
+# Options in this file are added to every MineCity2000 call. One option per line, e.g.:
+#   -o C:\Users\you\AppData\Roaming\.minecraft\saves
+# If no -o is given, the Minecraft saves folder of the current user is used when it exists,
+# otherwise a "generated" folder next to the program.

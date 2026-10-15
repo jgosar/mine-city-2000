@@ -59,12 +59,12 @@ public partial class MainPage : ContentPage
 
     if (selectedDirName.Equals(".minecraft"))
     {
-      if (!File.Exists(selectedPath + "\\saves"))
+      if (!File.Exists(Path.Combine(selectedPath, "saves")))
       {
-        Directory.CreateDirectory(selectedPath + "\\saves");
+        Directory.CreateDirectory(Path.Combine(selectedPath, "saves"));
       }
 
-      outputDir = outputDir + "\\saves";
+      outputDir = Path.Combine(outputDir, "saves");
     }
 
     StatusLabel.Text = "";
@@ -94,12 +94,12 @@ public partial class MainPage : ContentPage
   {
     BackgroundWorker worker = sender as BackgroundWorker;
 
-    String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    SCMapper mapper = new SCMapper(workingDir + "\\buildings", progressCallback);
+    String workingDir = AppContext.BaseDirectory;
+    SCMapper mapper = new SCMapper(Path.Combine(workingDir, "buildings"), progressCallback);
     MapperOptions options = new MapperOptions(FillUndergroundCheckBox.IsChecked, GenerateTerrainCheckBox.IsChecked);
 
-    String cityName = inputFile.ToLower().Split('\\').Last().Replace(".sc2", "");
-    mapper.makeMap(inputFile, @$"{outputDir}\{cityName}", options);
+    String cityName = Path.GetFileNameWithoutExtension(inputFile).ToLower();
+    mapper.makeMap(inputFile, Path.Combine(outputDir, cityName), options);
   }
   private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
   {

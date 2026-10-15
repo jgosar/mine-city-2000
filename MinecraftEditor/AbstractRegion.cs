@@ -158,7 +158,7 @@ namespace com.mc2k.MinecraftEditor
                 }
             }
 
-            MCAWriter.writeToFile(chunks, outputFolder + "\\" + fileName);
+            MCAWriter.writeToFile(chunks, Path.Combine(outputFolder, fileName));
         }
 
         private void fillSection(Section tmpSection, byte[][][][] blockDatas)
