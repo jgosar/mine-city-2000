@@ -13,10 +13,9 @@ namespace com.mc2k.MineCity2000
     private const int BEDROCK_BLOCK = 7;
     private const int WOOL_BLOCK = 35;
     private const int SANDSTONE_BLOCK = 24;
-    //_blockDatas=sizexsizex16 sections
-    //Section=16x16x16 blockDatas
-    //blockData=block+data
-    private byte[][][][][][][] _blockDatas;
+    //_sections=sizexsizex16 sections, null where the model has nothing
+    //Section=16x16x16 blocks, each with a data nibble
+    private Section?[,,] _sections;
     BuildingType _type;
 
     public static bool modelFileExists(String folder, byte typeCode, String modelVariant)
@@ -28,19 +27,9 @@ namespace com.mc2k.MineCity2000
     {
       _type = BuildingType.getByCode(typeCode);
 
-      _blockDatas = new byte[_type.getSize()][][][][][][];
-      for (int i = 0; i < _type.getSize(); i++)
-      {
-        _blockDatas[i] = new byte[_type.getSize()][][][][][];
-        for (int j = 0; j < _type.getSize(); j++)
-        {
-          _blockDatas[i][j] = new byte[16][][][][];
-        }
-      }
+      _sections = new Section?[_type.getSize(), _type.getSize(), 16];
 
       List<Chunk> chunks = MCAReader.readFile(Path.Combine(folder, typeCode + modelVariant + ".mca"));
-
-      byte[][][][] tmpSectionData;
 
       foreach (Chunk chunk in chunks)
       {
@@ -48,36 +37,26 @@ namespace com.mc2k.MineCity2000
         {
           foreach (Section section in chunk.getSections())
           {
-            for (int bl = 0; bl < section.getBlocks().Length; bl++)
+            byte[] sourceBlocks = section.getBlocks();
+            byte[] sourceData = section.getData();
+            Section? target = _sections[chunk.getXPos(), chunk.getZPos(), section.getY()];
+
+            for (int bl = 0; bl < sourceBlocks.Length; bl++)
             {
-              if (section.getBlocks()[bl] != 0 || section.getData()[bl / 2] != 0)
+              if (sourceBlocks[bl] != 0 || sourceData[bl / 2] != 0)
               {
-                tmpSectionData = _blockDatas[chunk.getXPos()][chunk.getZPos()][section.getY()];
-
-                if (tmpSectionData == null)
+                // a section exists as soon as the source section holds anything non-zero, even if every block of it is filtered out below
+                if (target == null)
                 {
-                  tmpSectionData = new byte[16][][][];
-                  for (int i = 0; i < 16; i++)
-                  {
-                    tmpSectionData[i] = new byte[16][][];
-                    for (int j = 0; j < 16; j++)
-                    {
-                      tmpSectionData[i][j] = new byte[16][];
-                      for (int k = 0; k < 16; k++)
-                      {
-                        tmpSectionData[i][j][k] = new byte[2];
-                      }
-                    }
-                  }
-
-                  _blockDatas[chunk.getXPos()][chunk.getZPos()][section.getY()] = tmpSectionData;
+                  target = new Section(section.getY());
+                  _sections[chunk.getXPos(), chunk.getZPos(), section.getY()] = target;
                 }
 
                 int x = bl % 16;
                 int y = bl / 256;
                 int z = (bl - (256 * y)) / 16;
 
-                byte tmpData = section.getData()[bl / 2];
+                byte tmpData = sourceData[bl / 2];
 
                 if (bl % 2 == 1)
                 {
@@ -90,20 +69,17 @@ namespace com.mc2k.MineCity2000
                 }
 
                 //ignore wool and bedrock below the top layer of the bottom section
-                if (section.getY() > 0 || y == 15 || (section.getBlocks()[bl] != WOOL_BLOCK && section.getBlocks()[bl] != BEDROCK_BLOCK))
+                if (section.getY() > 0 || y == 15 || (sourceBlocks[bl] != WOOL_BLOCK && sourceBlocks[bl] != BEDROCK_BLOCK))
                 {
-                  tmpSectionData[x][z][y][0] = section.getBlocks()[bl];
-                  tmpSectionData[x][z][y][1] = tmpData;
+                  target.putBlock(x: x, y: y, z: z, sourceBlocks[bl], tmpData);
                 }
-                else if (section.getY() == 0 && section.getBlocks()[bl] == WOOL_BLOCK && tmpData != 0 && tmpData != 15)//except colored wool
+                else if (section.getY() == 0 && sourceBlocks[bl] == WOOL_BLOCK && tmpData != 0 && tmpData != 15)//except colored wool
                 {
-                  tmpSectionData[x][z][y][0] = section.getBlocks()[bl];
-                  tmpSectionData[x][z][y][1] = tmpData;
+                  target.putBlock(x: x, y: y, z: z, sourceBlocks[bl], tmpData);
                 }
-                else if (BuildingType.isSloped(typeCode) && section.getBlocks()[bl] == WOOL_BLOCK)//for sloped blocks, turn wool to sandstone
+                else if (BuildingType.isSloped(typeCode) && sourceBlocks[bl] == WOOL_BLOCK)//for sloped blocks, turn wool to sandstone
                 {
-                  tmpSectionData[x][z][y][0] = SANDSTONE_BLOCK;
-                  tmpSectionData[x][z][y][1] = 0;
+                  target.putBlock(x: x, y: y, z: z, SANDSTONE_BLOCK, 0);
                 }
               }
             }
@@ -112,9 +88,12 @@ namespace com.mc2k.MineCity2000
       }
     }
 
-    public byte[][][][][] getChunkData(int x, int z)
+    /// <summary>
+    /// The section of chunk (chunkX, chunkZ) at height index sectionY (0..15), or null if the model has nothing there.
+    /// </summary>
+    public Section? getSection(int chunkX, int chunkZ, int sectionY)
     {
-      return _blockDatas[x][z];
+      return _sections[chunkX, chunkZ, sectionY];
     }
   }
 }

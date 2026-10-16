@@ -6,12 +6,20 @@ using com.mc2k.AnvilFile.Tags;
 
 namespace com.mc2k.MinecraftEditor
 {
+    /// <summary>
+    /// One Minecraft region (32x32 chunks, 512x512 blocks, 256 high) held in memory as 32x32x16 lazily created
+    /// <see cref="Section"/>s. Positions are given as (x, z, y) with x and z relative to the region (0..511) and
+    /// y the height (0..255); this historical order differs from <see cref="Section"/>, which takes (x, y, z).
+    /// Coordinates are not range-checked (only y >= 256 is tolerated): callers must guard, and an out-of-range x or z
+    /// aliases another position or throws. Data values are 0..15; higher bits are masked off.
+    /// Negative y is not supported: it throws for most operations, or is silently ignored when the write equals the
+    /// section's fill value.
+    /// </summary>
     public class AbstractRegion
     {
         //Region=32x32x16 sections
-        //Section=16x16x16 blockDatas
-        //blockData=block+data
-        private byte[][][][][][][] _blockDatas;
+        //Section=16x16x16 blocks, each with a data nibble; null until something is written
+        private Section?[,,] _sections = new Section?[32, 32, 16];
         private int _regionX;
         private int _regionZ;
 
@@ -19,113 +27,78 @@ namespace com.mc2k.MinecraftEditor
         {
             _regionX = regionX;
             _regionZ = regionZ;
-
-            _blockDatas = new byte[32][][][][][][];
-            for (int i = 0; i < 32; i++)
-            {
-                _blockDatas[i] = new byte[32][][][][][];
-                for (int j = 0; j < 32; j++)
-                {
-                    _blockDatas[i][j] = new byte[16][][][][];
-                }
-            }
         }
 
+        /// <summary>
+        /// Block id at (x, z, y). Air for y >= 256 and for sections that were never written; never allocates.
+        /// </summary>
         public byte getBlock(int x, int z, int y)
         {
-            return getBlockData(x,z,y)[0];
+            if (y >= 256)
+            {
+                return 0;
+            }
+
+            Section? section = _sections[x / 16, z / 16, y / 16];
+            return section == null ? (byte)0 : section.getBlock(x % 16, y % 16, z % 16);
         }
 
-        public byte[] getBlockData(int x, int z, int y)
+        /// <summary>
+        /// Data nibble (0..15) at (x, z, y). 0 for y >= 256 and for sections that were never written; never allocates.
+        /// </summary>
+        public byte getData(int x, int z, int y)
         {
             if (y >= 256)
             {
-                return new byte[2];
+                return 0;
             }
 
-            byte[][][][] section = _blockDatas[x / 16][z / 16][y / 16];
-
-            if (section == null)
-            {
-                section = new byte[16][][][];
-                for (int i = 0; i < 16; i++)
-                {
-                    section[i] = new byte[16][][];
-                    for (int j = 0; j < 16; j++)
-                    {
-                        section[i][j] = new byte[16][];
-                        for (int k = 0; k < 16; k++)
-                        {
-                            section[i][j][k] = new byte[2];
-                        }
-                    }
-                }
-            }
-
-            return section[x % 16][y % 16][z % 16];
+            Section? section = _sections[x / 16, z / 16, y / 16];
+            return section == null ? (byte)0 : section.getData(x % 16, y % 16, z % 16);
         }
 
+        /// <summary>
+        /// Sets the block at (x, z, y) and resets its data nibble to 0. Ignored for y >= 256.
+        /// </summary>
         public void putBlock(int x, int z, int y, byte block)
         {
-            if (y >= 256)
-            {
-                return;
-            }
-
-            byte[][][][] section = _blockDatas[x / 16][z / 16][y / 16];
-
-            if (section == null)
-            {
-                section = new byte[16][][][];
-                for (int i = 0; i < 16; i++)
-                {
-                    section[i] = new byte[16][][];
-                    for (int j = 0; j < 16; j++)
-                    {
-                        section[i][j] = new byte[16][];
-                        for (int k = 0; k < 16; k++)
-                        {
-                            section[i][j][k] = new byte[2];
-                        }
-                    }
-                }
-
-                _blockDatas[x / 16][z / 16][y / 16] = section;
-            }
-
-            section[x % 16][z % 16][y % 16][0] = block;
-            section[x % 16][z % 16][y % 16][1] = 0;
+            putBlock(x, z, y, block, 0);
         }
 
-        public void putBlockData(int x, int z, int y, byte[] block)
+        /// <summary>
+        /// Sets block id and data nibble (0..15) at (x, z, y). Ignored for y >= 256.
+        /// </summary>
+        public void putBlock(int x, int z, int y, byte block, byte data)
         {
             if (y >= 256)
             {
                 return;
             }
 
-            byte[][][][] section = _blockDatas[x / 16][z / 16][y / 16];
+            Section? section = _sections[x / 16, z / 16, y / 16];
 
             if (section == null)
             {
-                section = new byte[16][][][];
-                for (int i = 0; i < 16; i++)
-                {
-                    section[i] = new byte[16][][];
-                    for (int j = 0; j < 16; j++)
-                    {
-                        section[i][j] = new byte[16][];
-                        for (int k = 0; k < 16; k++)
-                        {
-                            section[i][j][k] = new byte[2];
-                        }
-                    }
-                }
-
-                _blockDatas[x / 16][z / 16][y / 16] = section;
+                section = new Section((byte)(y / 16));
+                _sections[x / 16, z / 16, y / 16] = section;
             }
 
-            section[x % 16][z % 16][y % 16] = block;
+            section.putBlock(x % 16, y % 16, z % 16, block, data);
+        }
+
+        /// <summary>
+        /// Replaces the whole 16x16x16 section of chunk (chunkX, chunkZ) at height index sectionY (0..15) with
+        /// a uniform fill of <paramref name="block"/> (data 0), without allocating block arrays.
+        /// </summary>
+        public void fillSection(int chunkX, int chunkZ, int sectionY, byte block)
+        {
+            _sections[chunkX, chunkZ, sectionY] = new Section((byte)sectionY, block);
+        }
+
+        /// <summary>The section of chunk (chunkX, chunkZ) at height index sectionY, or null if never written.</summary>
+        internal Section? getSection(int chunkX, int chunkZ, int sectionY)
+        {
+            return _sections[chunkX, chunkZ, sectionY];
         }
 
         public void saveToFolder(String outputFolder)
@@ -145,12 +118,14 @@ namespace com.mc2k.MinecraftEditor
                     List<Section> chunkSections = new List<Section>();
                     for (byte k = 0; k < 16; k++)
                     {
-                        if (_blockDatas[i][j][k] != null)
+                        // Every section that was ever written is saved, including one that only received air:
+                        // the pre-flat-storage implementation allocated a section on any write and saved all
+                        // allocated sections, and the generated worlds must stay byte-identical. Sections that
+                        // were never touched are null here and are skipped.
+                        Section? section = _sections[i, j, k];
+                        if (section != null)
                         {
-                            Section tmpSection = new Section(k);
-                            fillSection(tmpSection, _blockDatas[i][j][k]);
-
-                            chunkSections.Add(tmpSection);
+                            chunkSections.Add(section);
                         }
                     }
 
@@ -164,39 +139,6 @@ namespace com.mc2k.MinecraftEditor
             }
 
             MCAWriter.writeToFile(chunks, Path.Combine(outputFolder, fileName), timestamp);
-        }
-
-        private void fillSection(Section tmpSection, byte[][][][] blockDatas)
-        {
-            byte[] blockBytes = tmpSection.getBlocks();
-            byte[] dataBytes = tmpSection.getData();
-
-            for (int i = 0; i < 16; i++)
-            {
-                for (int j = 0; j < 16; j++)
-                {
-                    for (int k = 0; k < 16; k++)
-                    {
-                        blockBytes[i + 16 * j + 256 * k] = blockDatas[i][j][k][0];
-
-                        byte dataValue = dataBytes[(i + 16 * j + 256 * k)/2];
-                        if (i % 2 == 1)
-                        {
-                            dataValue <<= 4;
-                            dataValue >>= 4;
-                            dataValue += (byte)(blockDatas[i][j][k][1] * 16);
-                        }
-                        else
-                        {
-                            dataValue >>= 4;
-                            dataValue <<= 4;
-                            dataValue += blockDatas[i][j][k][1];
-                        }
-
-                        dataBytes[(i + 16 * j + 256 * k) / 2] = dataValue;
-                    }
-                }
-            }
         }
     }
 }

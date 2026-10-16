@@ -9,22 +9,18 @@ public class AbstractRegionTests
   public void putBlock_thenGetBlock_returnsSameValue()
   {
     var r = new AbstractRegion(0, 0);
-    // z % 16 == y % 16 and z / 16 == y / 16 here, which sidesteps the z/y mix-up documented in
-    // getBlock_readsZAndYSwappedWithinSection_currentBehaviour below.
     r.putBlock(17, 40, 40, 24);
     Assert.Equal(24, r.getBlock(17, 40, 40));
   }
 
   [Fact]
-  public void getBlock_readsZAndYSwappedWithinSection_currentBehaviour()
+  public void putBlock_thenGetBlock_readsTheSameIndexWhenZAndYDiffer()
   {
-    // Characterises a real inconsistency: putBlock/putBlockData index a section as [x % 16][z % 16][y % 16]
-    // but getBlockData indexes it as [x % 16][y % 16][z % 16]. So within one section a block put at
-    // (x, z, y) is read back at (x, y, z) (the arguments are x, z, y), not at (x, z, y). Not fixed in PR 3.
+    // Asymmetric on purpose: z and y differ within the section, so a read that swapped them would miss.
     var r = new AbstractRegion(0, 0);
     r.putBlock(1, 2, 3, 24);
-    Assert.Equal(0, r.getBlock(1, 2, 3));
-    Assert.Equal(24, r.getBlock(1, 3, 2));
+    Assert.Equal(24, r.getBlock(1, 2, 3));
+    Assert.Equal(0, r.getBlock(1, 3, 2));
   }
 
   [Fact]
@@ -43,20 +39,53 @@ public class AbstractRegionTests
   }
 
   [Fact]
-  public void putBlock_resetsDataNibble()
+  public void getBlock_onUntouchedSection_allocatesNothing()
   {
     var r = new AbstractRegion(0, 0);
-    r.putBlockData(1, 1, 1, new byte[] { 35, 14 });
-    r.putBlock(1, 1, 1, 35);
-    Assert.Equal(new byte[] { 35, 0 }, r.getBlockData(1, 1, 1));
+    Assert.Equal(0, r.getBlock(5, 5, 5));
+    Assert.Equal(0, r.getData(5, 5, 5));
+    Assert.Null(r.getSection(0, 0, 0));
   }
 
   [Fact]
-  public void putBlockData_storesDataNibble()
+  public void putBlock_resetsDataNibble()
   {
     var r = new AbstractRegion(0, 0);
-    r.putBlockData(3, 5, 5, new byte[] { 35, 14 });
-    Assert.Equal(new byte[] { 35, 14 }, r.getBlockData(3, 5, 5));
+    r.putBlock(1, 1, 1, 35, 14);
+    r.putBlock(1, 1, 1, 35);
+    Assert.Equal(35, r.getBlock(1, 1, 1));
+    Assert.Equal(0, r.getData(1, 1, 1));
+  }
+
+  [Fact]
+  public void putBlockWithData_storesDataNibble()
+  {
+    var r = new AbstractRegion(0, 0);
+    r.putBlock(3, 5, 5, 35, 14);
+    Assert.Equal(35, r.getBlock(3, 5, 5));
+    Assert.Equal(14, r.getData(3, 5, 5));
+  }
+
+  [Fact]
+  public void fillSection_fillsAllSixteenCubedBlocksOfThatSectionOnly()
+  {
+    var r = new AbstractRegion(0, 0);
+    r.fillSection(1, 2, 3, 24);
+    Assert.Equal(24, r.getBlock(16, 32, 48));
+    Assert.Equal(24, r.getBlock(31, 47, 63));
+    Assert.Equal(0, r.getBlock(15, 32, 48));
+    Assert.Equal(0, r.getBlock(16, 32, 47));
+    Assert.Equal(0, r.getBlock(16, 32, 64));
+  }
+
+  [Fact]
+  public void putBlock_intoFilledSection_overridesOnlyThatBlock()
+  {
+    var r = new AbstractRegion(0, 0);
+    r.fillSection(0, 0, 0, 24);
+    r.putBlock(3, 4, 5, 9);
+    Assert.Equal(9, r.getBlock(3, 4, 5));
+    Assert.Equal(24, r.getBlock(3, 5, 4));
   }
 
   [Fact]
@@ -85,6 +114,30 @@ public class AbstractRegionTests
         Assert.Equal(0, section.getY());
         Assert.Equal(24, chunk.getXPos() == 0 ? section.getBlocks()[0] : section.getBlocks()[15 + 16 * 15]);
       }
+    }
+    finally
+    {
+      TempDirs.deleteBestEffort(dir);
+    }
+  }
+
+  [Fact]
+  public void saveToFolder_savesSectionThatOnlyReceivedAir()
+  {
+    string dir = Path.Combine(Path.GetTempPath(), "mc2k-test-" + Guid.NewGuid());
+    Directory.CreateDirectory(dir);
+    try
+    {
+      var r = new AbstractRegion(0, 0);
+      r.putBlock(0, 0, 0, 0);
+      r.saveToFolder(dir, 7);
+
+      List<Chunk> chunks = MCAReader.readFile(Path.Combine(dir, "r.0.0.mca"));
+      Chunk chunk = Assert.Single(chunks);
+      Assert.Equal(0, chunk.getXPos());
+      Assert.Equal(0, chunk.getZPos());
+      Section section = Assert.Single(chunk.getSections());
+      Assert.Equal(0, section.getY());
     }
     finally
     {
