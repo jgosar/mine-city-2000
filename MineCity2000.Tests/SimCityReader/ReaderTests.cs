@@ -86,4 +86,13 @@ public class ReaderTests
     var ex = Assert.Throws<InvalidDataException>(() => Reader.read(bytes, "x"));
     Assert.Contains("truncated", ex.Message);
   }
+
+  [Fact]
+  public void shortSegment_throwsInvalidData()
+  {
+    byte[] bytes = new IffBuilder().altmLength(100).build();
+    var ex = Assert.Throws<InvalidDataException>(() => Reader.read(bytes, "x"));
+    Assert.Contains("truncated or corrupt", ex.Message);
+    Assert.NotNull(ex.InnerException);
+  }
 }

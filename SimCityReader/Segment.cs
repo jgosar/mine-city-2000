@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -54,7 +55,7 @@ namespace com.mc2k.SimCityReader
                 }
                 else
                 {
-                    throw new Exception("Unexpected decompressor state");
+                    throw new InvalidDataException("City file is truncated or corrupt");
                 }
             }
 

@@ -20,9 +20,15 @@ namespace com.mc2k.SimCityReader
         {
             Dictionary<String, Segment> segments = readSegmentsFromBytes(fileBytes);
 
-            CityData result = new CityData(segments, cityName);
-
-            return result;
+            try
+            {
+                return new CityData(segments, cityName);
+            }
+            catch (Exception ex) when (ex is IndexOutOfRangeException || ex is ArgumentException || ex is OverflowException)
+            {
+                // a well-formed segment whose body is too short for the fixed 128x128 maps
+                throw new InvalidDataException("City file is truncated or corrupt", ex);
+            }
         }
 
         private static Dictionary<String, Segment> readSegmentsFromBytes(byte[] fileBytes)

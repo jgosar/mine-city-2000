@@ -9,7 +9,8 @@ namespace com.mc2k.MineCity2000
   public static class WebConverter
   {
     /// <summary>
-    /// Converts the city and returns the world as a zip (entries "level.dat" and "region/r.X.Z.mca").
+    /// Converts the city and returns the world as a zip with the world folder as its top-level entry
+    /// (entries "&lt;city&gt;/level.dat" and "&lt;city&gt;/region/r.X.Z.mca", where &lt;city&gt; is the sanitised city name).
     /// </summary>
     /// <param name="sc2">The contents of the .sc2 file.</param>
     /// <param name="cityName">Used as the file name of the city and the folder name of the world inside <paramref name="workDir"/>.
@@ -38,7 +39,7 @@ namespace com.mc2k.MineCity2000
         new SCMapper(buildings, progress).makeMap(cityPath, worldDir, options);
 
         using var buffer = new MemoryStream();
-        ZipFile.CreateFromDirectory(worldDir, buffer, CompressionLevel.Fastest, includeBaseDirectory: false);
+        ZipFile.CreateFromDirectory(worldDir, buffer, CompressionLevel.Fastest, includeBaseDirectory: true);
         return buffer.ToArray();
       }
       finally

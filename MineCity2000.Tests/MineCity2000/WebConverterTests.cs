@@ -29,11 +29,12 @@ public class WebConverterTests
 
       using (var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read))
       {
-        Assert.Contains(archive.Entries, e => e.FullName == "level.dat");
-        Assert.Contains(archive.Entries, e => e.FullName == "region/r.1.1.mca");
+        Assert.Contains(archive.Entries, e => e.FullName == "test/level.dat");
+        Assert.Contains(archive.Entries, e => e.FullName == "test/region/r.1.1.mca");
+        Assert.All(archive.Entries, e => Assert.StartsWith("test/", e.FullName));
         archive.ExtractToDirectory(extracted);
       }
-      WorldComparer.assertWorldsEqual(Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", "default.zip"), extracted);
+      WorldComparer.assertWorldsEqual(Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", "default.zip"), Path.Combine(extracted, "test"));
     }
     finally
     {
@@ -72,9 +73,9 @@ public class WebConverterTests
   }
 
   [Theory]
-  [InlineData("../evil/..")]
-  [InlineData("")]
-  public void convertToZip_sanitisesCityName(string cityName)
+  [InlineData("../evil/..", "city")]
+  [InlineData("", "city")]
+  public void convertToZip_sanitisesCityName(string cityName, string expectedFolder)
   {
     string parent = Path.Combine(Path.GetTempPath(), "mc2k-web-parent-" + Guid.NewGuid());
     string workDir = Path.Combine(parent, "work");
@@ -86,6 +87,11 @@ public class WebConverterTests
       byte[] zip = WebConverter.convertToZip(File.ReadAllBytes(FixtureCity), cityName, new DirectoryBuildingSource(TestPaths.buildingsDir()), options, null, workDir);
 
       Assert.NotEmpty(zip);
+      using (var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read))
+      {
+        Assert.All(archive.Entries, e => Assert.StartsWith(expectedFolder + "/", e.FullName));
+        Assert.Contains(archive.Entries, e => e.FullName == expectedFolder + "/level.dat");
+      }
       Assert.False(Directory.Exists(workDir), "workDir should be deleted");
       Assert.False(Directory.Exists(Path.Combine(parent, "evil")));
       Assert.Empty(Directory.GetFileSystemEntries(parent));
