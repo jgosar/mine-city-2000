@@ -99,18 +99,6 @@ namespace com.mc2k.MinecraftEditor
             return _sections[chunkX, chunkZ, sectionY];
         }
 
-        /// <summary>TEMPORARY, removed in 5b: use <see cref="putBlock(int, int, int, byte, byte)"/>.</summary>
-        public void putBlockData(int x, int z, int y, byte[] blockData)
-        {
-            putBlock(x, z, y, blockData[0], blockData[1]);
-        }
-
-        /// <summary>TEMPORARY, removed in 5b: use <see cref="getBlock"/> and <see cref="getData"/>.</summary>
-        public byte[] getBlockData(int x, int z, int y)
-        {
-            return new byte[] { getBlock(x, z, y), getData(x, z, y) };
-        }
-
         public void saveToFolder(String outputFolder)
         {
             saveToFolder(outputFolder, (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
