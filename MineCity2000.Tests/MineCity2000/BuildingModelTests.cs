@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using com.mc2k.MineCity2000;
+using com.mc2k.SimCityReader;
 
 namespace MineCity2000.Tests;
 
@@ -16,15 +17,82 @@ public class BuildingModelTests
     }
   }
 
-  [Theory]
-  [MemberData(nameof(modelFiles))]
-  public void allModels_loadWithoutError(byte code, string variant)
+  // Pins the content of every building model. The hash is representation independent: for each (cx, cz, sy) in
+  // ascending nested order, every non-null section contributes 4096 block bytes (index x + 16 * z + 256 * y)
+  // followed by 2048 packed data bytes (low nibble for even indexes, high nibble for odd ones).
+  // Regenerate with MC2K_UPDATE_BASELINE=1 (only ever on purpose: the models must not change).
+  [Fact]
+  public void allModels_matchBaselineHashes()
   {
     string dir = TestPaths.buildingsDir();
+    var actual = new List<string>();
 
-    Assert.True(BuildingModel.modelFileExists(dir, code, variant), "missing " + code + variant);
-    var model = new BuildingModel(dir, code, variant);
-    Assert.Equal(16, model.getChunkData(0, 0).Length);
+    foreach (string file in Directory.GetFiles(dir, "*.mca").OrderBy(f => f, StringComparer.Ordinal))
+    {
+      string name = Path.GetFileName(file);
+      Match m = Regex.Match(name, @"^(\d+)(\D*)\.mca$");
+      Assert.True(m.Success, "Unexpected building file name: " + file);
+      byte code = byte.Parse(m.Groups[1].Value);
+      string variant = m.Groups[2].Value;
+
+      Assert.True(BuildingModel.modelFileExists(dir, code, variant), "missing " + name);
+      var model = new BuildingModel(dir, code, variant);
+      actual.Add(name + "\t" + hashModel(model, BuildingType.getByCode(code).getSize()));
+    }
+
+    string baselineName = "building_model_hashes.txt";
+    if (Environment.GetEnvironmentVariable("MC2K_UPDATE_BASELINE") == "1")
+    {
+      File.WriteAllLines(Path.Combine(TestPaths.repoRoot(), "MineCity2000.Tests", "Fixtures", baselineName), actual);
+    }
+    else
+    {
+      string[] expected = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "Fixtures", baselineName));
+      Assert.Equal(expected.Length, actual.Count);
+      for (int i = 0; i < expected.Length; i++)
+      {
+        Assert.Equal(expected[i], actual[i]);
+      }
+    }
+  }
+
+  private static string hashModel(BuildingModel model, int size)
+  {
+    using var sha = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+    for (int cx = 0; cx < size; cx++)
+    {
+      for (int cz = 0; cz < size; cz++)
+      {
+        byte[][][][][] chunk = model.getChunkData(cx, cz);
+        for (int sy = 0; sy < 16; sy++)
+        {
+          byte[][][][]? section = chunk[sy];
+          if (section == null)
+          {
+            continue;
+          }
+
+          var blocks = new byte[4096];
+          var data = new byte[2048];
+          for (int x = 0; x < 16; x++)
+          {
+            for (int z = 0; z < 16; z++)
+            {
+              for (int y = 0; y < 16; y++)
+              {
+                int index = x + 16 * z + 256 * y;
+                blocks[index] = section[x][z][y][0];
+                int nibble = section[x][z][y][1] & 0xF;
+                data[index / 2] |= (byte)(index % 2 == 0 ? nibble : nibble << 4);
+              }
+            }
+          }
+          sha.AppendData(blocks);
+          sha.AppendData(data);
+        }
+      }
+    }
+    return Convert.ToHexString(sha.GetHashAndReset()).ToLowerInvariant();
   }
 
   [Fact]
