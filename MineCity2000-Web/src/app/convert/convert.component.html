@@ -1,0 +1,46 @@
+<main>
+  <h1>MineCity 2000</h1>
+  <p>
+    Turn a SimCity 2000 city into a Minecraft world. The conversion runs entirely in your browser; your
+    file is never uploaded.
+    <a href="https://github.com/jgosar/mine-city-2000">Source on GitHub</a>
+  </p>
+
+  <div
+    class="drop-zone"
+    [class.dragging]="dragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="onDrop($event)"
+  >
+    <p>{{ file() ? file()!.name : 'Drop a .sc2 file here' }}</p>
+    <label>
+      or choose a file
+      <input type="file" accept=".sc2" [disabled]="converting()" (change)="onFileInput($event)" />
+    </label>
+  </div>
+
+  <div class="options">
+    <label title="The area under the city is filled with sandstone instead of left empty, so you cannot fall through when digging down.">
+      <input type="checkbox" [checked]="fill()" (change)="fill.set(!fill())" />
+      Fill underground area
+    </label>
+    <label title="Minecraft generates its normal terrain outside of the city.">
+      <input type="checkbox" [checked]="terrain()" (change)="terrain.set(!terrain())" />
+      Generate terrain around the city
+    </label>
+  </div>
+
+  <button type="button" [disabled]="!canConvert()" (click)="convert()">Convert</button>
+
+  @if (converting()) {
+    <progress max="100" [attr.value]="percent()"></progress>
+  }
+  <p class="status" role="status">{{ status() }}</p>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (downloadUrl()) {
+    <a class="download" [href]="downloadUrl()" [attr.download]="downloadName()">Download {{ downloadName() }}</a>
+  }
+</main>
