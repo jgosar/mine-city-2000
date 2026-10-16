@@ -44,7 +44,7 @@
 
 ## Review Focus
 
-1. A `.sc2` whose embedded CNAM name is empty or garbage → world folder and `LevelName` must fall back to the file name without extension (test in PR 3, `CityDataTests.cityName_fallsBackToFileName`).
+1. A `.sc2` whose embedded CNAM name is empty or whitespace-only → `LevelName` must fall back to the file name without extension (the world folder already comes from the file name) (tests in PR 3, `CityDataTests.cityName_*_fallsBackToFileName`). Non-printable "garbage" names are not detected; revisit in PR 6, where browser uploads make odd files likelier.
 2. An output path containing spaces on any OS → must be used verbatim (test in PR 1 `DefaultArgsTests.value_with_spaces_is_kept`).
 3. A region file produced on Windows and one produced on macOS from the same city → identical decompressed chunk NBT (golden test runs on all 3 CI OSes in PR 3).
 4. A building model `.mca` with a section containing only data nibbles (block id 0, data ≠ 0) → must still be loaded as an existing section (PR 5 `BuildingModelTests.allModels_matchBaselineHashes` covers all 162 real models; the differential test covers synthetic cases).
