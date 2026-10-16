@@ -2,6 +2,7 @@ using System.IO.Compression;
 using com.mc2k.MineCity2000;
 using com.mc2k.MinecraftEditor;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace MineCity2000.Tests;
 
@@ -28,8 +29,8 @@ public class GoldenWorldTests
   public void fillUndergroundConversion_matchesBaseline(bool fill, string baselineName) => run(fill, baselineName);
 
   // Guards against a baseline that only holds terrain: the city centre region must contain building blocks.
+  // Deliberately not tagged Golden: it reads only the committed baseline, so it must not run while the baseline is being regenerated.
   [Fact]
-  [Trait("Category", "Golden")]
   public void defaultBaseline_cityCentreContainsBuildingBlocks()
   {
     string baseline = Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", "default.zip");
@@ -49,6 +50,7 @@ public class GoldenWorldTests
     }
 
     output.WriteLine("non-terrain blocks in r.1.1.mca: " + buildingBlocks);
+    // The real count is about 893,906; a terrain-only world has 0, so 100,000 is a generous floor.
     Assert.True(buildingBlocks > 100000, "only " + buildingBlocks + " non-terrain blocks in r.1.1.mca");
   }
 
@@ -56,18 +58,34 @@ public class GoldenWorldTests
   {
     string outDir = Path.Combine(Path.GetTempPath(), "mc2k-golden-" + Guid.NewGuid());
     var options = new MapperOptions(fill, generateTerrain: false, timestamp: 1700000000, randomSeed: 12345);
-    new SCMapper(BuildingsDir, null).makeMap(FixtureCity, outDir, options);
-
-    string baseline = Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", baselineName);
-    if (Environment.GetEnvironmentVariable("MC2K_UPDATE_BASELINE") == "1")
+    bool succeeded = false;
+    try
     {
-      string repoBaseline = Path.Combine(TestPaths.repoRoot(), "MineCity2000.Tests", "Fixtures", "baseline", baselineName);
-      File.Delete(repoBaseline);
-      ZipFile.CreateFromDirectory(outDir, repoBaseline, CompressionLevel.Optimal, includeBaseDirectory: false);
-      Directory.Delete(outDir, true);
-      return;
+      new SCMapper(BuildingsDir, null).makeMap(FixtureCity, outDir, options);
+
+      string baseline = Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", baselineName);
+      if (Environment.GetEnvironmentVariable("MC2K_UPDATE_BASELINE") == "1")
+      {
+        string repoBaseline = Path.Combine(TestPaths.repoRoot(), "MineCity2000.Tests", "Fixtures", "baseline", baselineName);
+        File.Delete(repoBaseline);
+        ZipFile.CreateFromDirectory(outDir, repoBaseline, CompressionLevel.Optimal, includeBaseDirectory: false);
+      }
+      else
+      {
+        WorldComparer.assertWorldsEqual(baseline, outDir);
+      }
+      succeeded = true;
     }
-    WorldComparer.assertWorldsEqual(baseline, outDir);
-    Directory.Delete(outDir, true);
+    catch (Exception ex)
+    {
+      throw new XunitException(ex.Message + "\nActual world kept at: " + outDir, ex);
+    }
+    finally
+    {
+      if (succeeded)
+      {
+        Directory.Delete(outDir, true);
+      }
+    }
   }
 }

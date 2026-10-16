@@ -51,7 +51,7 @@ public static class WorldComparer
     }
     else if (name == "level.dat")
     {
-      compareBytes(name, gunzip(expected), gunzip(actual));
+      compareBytes(name, gunzip(name, expected), gunzip(name, actual));
     }
     else
     {
@@ -84,7 +84,11 @@ public static class WorldComparer
     var result = new Dictionary<(int, int), byte[]>();
     foreach (Chunk chunk in MCAReader.read(regionBytes))
     {
-      result[(chunk.getXPos(), chunk.getZPos())] = chunk.NBTTag.toBytesWithHeader();
+      var key = (chunk.getXPos(), chunk.getZPos());
+      if (!result.TryAdd(key, chunk.NBTTag.toBytesWithHeader()))
+      {
+        throw new XunitException("region file contains duplicate chunk " + coords(key));
+      }
     }
     return result;
   }
@@ -120,12 +124,19 @@ public static class WorldComparer
     return buffer.ToArray();
   }
 
-  private static byte[] gunzip(byte[] bytes)
+  private static byte[] gunzip(string name, byte[] bytes)
   {
-    using var input = new MemoryStream(bytes);
-    using var gzip = new GZipStream(input, CompressionMode.Decompress);
-    using var output = new MemoryStream();
-    gzip.CopyTo(output);
-    return output.ToArray();
+    try
+    {
+      using var input = new MemoryStream(bytes);
+      using var gzip = new GZipStream(input, CompressionMode.Decompress);
+      using var output = new MemoryStream();
+      gzip.CopyTo(output);
+      return output.ToArray();
+    }
+    catch (InvalidDataException ex)
+    {
+      throw new XunitException(name + " is not valid gzip: " + ex.Message);
+    }
   }
 }
