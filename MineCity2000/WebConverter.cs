@@ -60,10 +60,12 @@ namespace com.mc2k.MineCity2000
     private static string sanitiseCityName(string cityName)
     {
       string name = Path.GetFileName(cityName);
+      // On Linux (and so in wasm) only '/' is in GetInvalidFileNameChars, but the zip is unpacked on Windows too.
       foreach (char invalid in Path.GetInvalidFileNameChars())
       {
         name = name.Replace(invalid, '_');
       }
+      name = name.Replace('\\', '_');
       name = name.Trim();
       return name.Length == 0 || name == "." || name == ".." ? "city" : name;
     }

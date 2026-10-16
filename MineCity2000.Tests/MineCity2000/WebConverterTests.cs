@@ -75,6 +75,7 @@ public class WebConverterTests
   [Theory]
   [InlineData("../evil/..", "city")]
   [InlineData("", "city")]
+  [InlineData("a\\b", "a_b")]
   public void convertToZip_sanitisesCityName(string cityName, string expectedFolder)
   {
     string parent = Path.Combine(Path.GetTempPath(), "mc2k-web-parent-" + Guid.NewGuid());
