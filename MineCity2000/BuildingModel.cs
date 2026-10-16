@@ -18,18 +18,52 @@ namespace com.mc2k.MineCity2000
     private Section?[,,] _sections;
     BuildingType _type;
 
+    /// <summary>
+    /// The name of the model file for a building type and variant, e.g. "198a.mca".
+    /// </summary>
+    public static String modelFileName(byte typeCode, String modelVariant)
+    {
+      return typeCode + modelVariant + ".mca";
+    }
+
     public static bool modelFileExists(String folder, byte typeCode, String modelVariant)
     {
-      return File.Exists(Path.Combine(folder, typeCode + modelVariant + ".mca"));
+      return modelFileExists(new DirectoryBuildingSource(folder), typeCode, modelVariant);
+    }
+
+    /// <summary>
+    /// Whether the source holds a model file for the given building type and variant.
+    /// </summary>
+    public static bool modelFileExists(BuildingSource src, byte typeCode, String modelVariant)
+    {
+      return src.read(modelFileName(typeCode, modelVariant)) != null;
     }
 
     public BuildingModel(String folder, byte typeCode, String modelVariant)
+      : this(new DirectoryBuildingSource(folder), typeCode, modelVariant)
+    {
+    }
+
+    /// <summary>
+    /// Loads the model file for the given building type and variant from the source.
+    /// </summary>
+    /// <exception cref="FileNotFoundException">The source has no such model file.</exception>
+    public BuildingModel(BuildingSource src, byte typeCode, String modelVariant)
+      : this(src.read(modelFileName(typeCode, modelVariant))
+          ?? throw new FileNotFoundException("Building model not found: " + modelFileName(typeCode, modelVariant)), typeCode)
+    {
+    }
+
+    /// <summary>
+    /// Builds the model from the bytes of its .mca file.
+    /// </summary>
+    public BuildingModel(byte[] mcaBytes, byte typeCode)
     {
       _type = BuildingType.getByCode(typeCode);
 
       _sections = new Section?[_type.getSize(), _type.getSize(), 16];
 
-      List<Chunk> chunks = MCAReader.readFile(Path.Combine(folder, typeCode + modelVariant + ".mca"));
+      List<Chunk> chunks = MCAReader.read(mcaBytes);
 
       foreach (Chunk chunk in chunks)
       {

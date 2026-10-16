@@ -24,14 +24,22 @@ namespace com.mc2k.MineCity2000
     private const int SANDSTONE_BLOCK = 24;
     private const int OBSIDIAN_BLOCK = 49;
 
-    private String _buildingsDir;
+    private BuildingSource _buildings;
     Dictionary<string, BuildingModel> _buildingModels = new Dictionary<string, BuildingModel>();
 
     public delegate void ProgressCallback(int progress);
 
     public SCMapper(String buildingsDir, ProgressCallback? progressCallback)
+      : this(new DirectoryBuildingSource(buildingsDir), progressCallback)
     {
-      _buildingsDir = buildingsDir;
+    }
+
+    /// <summary>
+    /// Creates a mapper that reads its building models from <paramref name="buildings"/>.
+    /// </summary>
+    public SCMapper(BuildingSource buildings, ProgressCallback? progressCallback)
+    {
+      _buildings = buildings;
       _progressCallback = progressCallback;
     }
 
@@ -408,14 +416,12 @@ namespace com.mc2k.MineCity2000
 
       if (!_buildingModels.ContainsKey(modelKey))
       {
-        if (BuildingModel.modelFileExists(_buildingsDir, buildingType, modelVariant))
-        {
-          _buildingModels[modelKey] = new BuildingModel(_buildingsDir, buildingType, modelVariant);
-        }
-        else
+        byte[]? bytes = _buildings.read(BuildingModel.modelFileName(buildingType, modelVariant));
+        if (bytes == null)
         {
           return null;
         }
+        _buildingModels[modelKey] = new BuildingModel(bytes, buildingType);
       }
 
       return _buildingModels[modelKey];
