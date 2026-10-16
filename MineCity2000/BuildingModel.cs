@@ -71,15 +71,15 @@ namespace com.mc2k.MineCity2000
                 //ignore wool and bedrock below the top layer of the bottom section
                 if (section.getY() > 0 || y == 15 || (sourceBlocks[bl] != WOOL_BLOCK && sourceBlocks[bl] != BEDROCK_BLOCK))
                 {
-                  target.putBlock(x, y, z, sourceBlocks[bl], tmpData);
+                  target.putBlock(x: x, y: y, z: z, sourceBlocks[bl], tmpData);
                 }
                 else if (section.getY() == 0 && sourceBlocks[bl] == WOOL_BLOCK && tmpData != 0 && tmpData != 15)//except colored wool
                 {
-                  target.putBlock(x, y, z, sourceBlocks[bl], tmpData);
+                  target.putBlock(x: x, y: y, z: z, sourceBlocks[bl], tmpData);
                 }
                 else if (BuildingType.isSloped(typeCode) && sourceBlocks[bl] == WOOL_BLOCK)//for sloped blocks, turn wool to sandstone
                 {
-                  target.putBlock(x, y, z, SANDSTONE_BLOCK, 0);
+                  target.putBlock(x: x, y: y, z: z, SANDSTONE_BLOCK, 0);
                 }
               }
             }

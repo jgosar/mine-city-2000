@@ -12,6 +12,8 @@ namespace com.mc2k.MinecraftEditor
     /// y the height (0..255); this historical order differs from <see cref="Section"/>, which takes (x, y, z).
     /// Coordinates are not range-checked (only y >= 256 is tolerated): callers must guard, and an out-of-range x or z
     /// aliases another position or throws. Data values are 0..15; higher bits are masked off.
+    /// Negative y is not supported: it throws for most operations, or is silently ignored when the write equals the
+    /// section's fill value.
     /// </summary>
     public class AbstractRegion
     {

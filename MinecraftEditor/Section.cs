@@ -95,7 +95,9 @@ namespace com.mc2k.MinecraftEditor
         }
 
         /// <summary>
-        /// True if the section is uniform air and has never been materialised, i.e. it holds no information.
+        /// True when the section is uniform air and has never been materialised. Note: AbstractRegion.saveToFolder
+        /// still writes touched air-only sections (Minecraft needs them for structures that deliberately place air),
+        /// so do not use this to skip sections when saving.
         /// </summary>
         public bool isEmpty
         {

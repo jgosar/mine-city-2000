@@ -122,6 +122,30 @@ public class AbstractRegionTests
   }
 
   [Fact]
+  public void saveToFolder_savesSectionThatOnlyReceivedAir()
+  {
+    string dir = Path.Combine(Path.GetTempPath(), "mc2k-test-" + Guid.NewGuid());
+    Directory.CreateDirectory(dir);
+    try
+    {
+      var r = new AbstractRegion(0, 0);
+      r.putBlock(0, 0, 0, 0);
+      r.saveToFolder(dir, 7);
+
+      List<Chunk> chunks = MCAReader.readFile(Path.Combine(dir, "r.0.0.mca"));
+      Chunk chunk = Assert.Single(chunks);
+      Assert.Equal(0, chunk.getXPos());
+      Assert.Equal(0, chunk.getZPos());
+      Section section = Assert.Single(chunk.getSections());
+      Assert.Equal(0, section.getY());
+    }
+    finally
+    {
+      TempDirs.deleteBestEffort(dir);
+    }
+  }
+
+  [Fact]
   public void saveToFolder_usesRegionCoordinatesInFileNameAndChunkPositions()
   {
     string dir = Path.Combine(Path.GetTempPath(), "mc2k-test-" + Guid.NewGuid());

@@ -21,7 +21,9 @@ public class BuildingModelTests
   // Pins the content of every building model. The hash is representation independent: for each (cx, cz, sy) in
   // ascending nested order, every non-null section contributes 4096 block bytes (index x + 16 * z + 256 * y)
   // followed by 2048 packed data bytes (low nibble for even indexes, high nibble for odd ones).
-  // Regenerate with MC2K_UPDATE_BASELINE=1 (only ever on purpose: the models must not change).
+  // Models can change on purpose; regenerate with
+  // MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter FullyQualifiedName~allModels_matchBaselineHashes
+  // (the filter matters: without it the golden worlds are regenerated too).
   [Fact]
   public void allModels_matchBaselineHashes()
   {
@@ -49,12 +51,36 @@ public class BuildingModelTests
     else
     {
       string[] expected = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "Fixtures", baselineName));
-      Assert.Equal(expected.Length, actual.Count);
-      for (int i = 0; i < expected.Length; i++)
+      Dictionary<string, string> expectedHashes = toDictionary(expected);
+      Dictionary<string, string> actualHashes = toDictionary(actual);
+
+      var problems = new List<string>();
+      foreach (string name in actualHashes.Keys.Where(n => !expectedHashes.ContainsKey(n)))
       {
-        Assert.Equal(expected[i], actual[i]);
+        problems.Add("added: " + name);
       }
+      foreach (string name in expectedHashes.Keys.Where(n => !actualHashes.ContainsKey(n)))
+      {
+        problems.Add("removed: " + name);
+      }
+      foreach (string name in actualHashes.Keys.Where(n => expectedHashes.TryGetValue(n, out string? h) && h != actualHashes[n]))
+      {
+        problems.Add("changed: " + name);
+      }
+
+      Assert.True(problems.Count == 0, "Building model hashes differ from the baseline:\n" + string.Join("\n", problems));
     }
+  }
+
+  private static Dictionary<string, string> toDictionary(IEnumerable<string> lines)
+  {
+    var result = new Dictionary<string, string>();
+    foreach (string line in lines)
+    {
+      string[] parts = line.Split('\t');
+      result[parts[0]] = parts[1];
+    }
+    return result;
   }
 
   private static string hashModel(BuildingModel model, int size)

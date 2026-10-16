@@ -214,8 +214,8 @@ namespace com.mc2k.MineCity2000
                         int blockZ = squareZIndex * SQUARE_SIZE + sz;
                         int blockY = section * SECTION_HEIGHT + sy + 2 - SECTION_HEIGHT;
 
-                        byte buildingBlock = buildingSection.getBlock(sx, sy, sz);
-                        byte buildingData = buildingSection.getData(sx, sy, sz);
+                        byte buildingBlock = buildingSection.getBlock(x: sx, y: sy, z: sz);
+                        byte buildingData = buildingSection.getData(x: sx, y: sy, z: sz);
 
                         if (overridesSlope)
                         {
