@@ -1,4 +1,4 @@
-// Unit tests for wwwroot/converter-client.js on Node's built-in runner: `node --test MineCity2000.Wasm/tests/`.
+// Unit tests for wwwroot/converter-client.js on Node's built-in runner: `node --test "MineCity2000.Wasm/tests/*.test.mjs"`.
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import { ConverterClient, MAX_FILE_BYTES, cityNameOf } from '../wwwroot/converter-client.js';
@@ -165,6 +165,46 @@ describe('ConverterClient', () => {
     worker.emit({ type: 'ready' });
     worker.onmessageerror({});
     await assert.rejects(client.convert(file, true, true), /worker has stopped/);
+  });
+
+  it('rejects with "Could not read the file" when arrayBuffer() rejects and allows another conversion', async () => {
+    worker.emit({ type: 'ready' });
+    const unreadable = { name: 'x.sc2', size: 3, arrayBuffer: async () => Promise.reject(new Error('disk gone')) };
+    await assert.rejects(client.convert(unreadable, true, true), { message: 'Could not read the file: disk gone' });
+
+    const next = client.convert(file, true, true);
+    await tick();
+    const zip = new Uint8Array([4]);
+    worker.emit({ type: 'done', zip });
+    assert.equal(await next, zip);
+  });
+
+  it('settles the promise and clears busy when postMessage throws', async () => {
+    worker.emit({ type: 'ready' });
+    worker.postMessage = () => {
+      throw new Error('cannot clone');
+    };
+    await assert.rejects(client.convert(file, true, true), { message: 'Could not start the conversion: cannot clone' });
+
+    worker.postMessage = FakeWorker.prototype.postMessage;
+    const next = client.convert(file, true, true);
+    await tick();
+    const zip = new Uint8Array([5]);
+    worker.emit({ type: 'done', zip });
+    assert.equal(await next, zip);
+  });
+
+  it('a rejected ready that nobody awaits does not raise unhandledRejection', async () => {
+    let unhandled = null;
+    const onUnhandled = (reason) => (unhandled = reason);
+    process.once('unhandledRejection', onUnhandled);
+    try {
+      worker.fail('failed to load');
+      await new Promise((resolve) => setImmediate(resolve));
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+    assert.equal(unhandled, null);
   });
 });
 

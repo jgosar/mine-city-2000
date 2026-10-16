@@ -74,18 +74,23 @@ export class ConverterClient {
       /** @type {Job} */
       const job = { resolve, reject, onProgress };
       this.#job = job;
+      const failJob = (/** @type {unknown} */ e, /** @type {string} */ what) => {
+        if (this.#job === job) this.#fail(`${what}: ${e instanceof Error ? e.message : String(e)}`);
+      };
       file.arrayBuffer().then(
         (buffer) => {
           if (this.#job !== job) return;
-          const sc2 = new Uint8Array(buffer);
-          this.#worker.postMessage(
-            { type: 'convert', sc2, cityName: cityNameOf(file), fill, terrain, ...deterministic },
-            [sc2.buffer],
-          );
+          try {
+            const sc2 = new Uint8Array(buffer);
+            this.#worker.postMessage(
+              { type: 'convert', sc2, cityName: cityNameOf(file), fill, terrain, ...deterministic },
+              [sc2.buffer],
+            );
+          } catch (e) {
+            failJob(e, 'Could not start the conversion');
+          }
         },
-        (e) => {
-          if (this.#job === job) this.#fail(`Could not read the file: ${e?.message ?? e}`);
-        },
+        (e) => failJob(e, 'Could not read the file'),
       );
     });
   }

@@ -25,7 +25,8 @@ const statusText = byId('status', HTMLParagraphElement);
 const errorText = byId('error', HTMLParagraphElement);
 const downloadLink = byId('download', HTMLAnchorElement);
 
-const client = new ConverterClient();
+/** @type {ConverterClient | null} */
+let client = null;
 
 /** @type {File | null} */
 let file = null;
@@ -106,6 +107,7 @@ async function convert() {
   converting = true;
   render();
   try {
+    if (!client) throw new Error('The converter could not start.');
     const zip = await client.convert(chosen, fill, terrain, {
       onProgress: (value) => {
         percent = value;
@@ -163,15 +165,22 @@ dropZone.addEventListener('drop', (event) => {
   render();
 });
 
-client.ready.then(
-  () => {
-    workerReady = true;
-    render();
-  },
-  (e) => {
-    workerError = e instanceof Error ? e.message : String(e);
-    render();
-  },
-);
+try {
+  client = new ConverterClient();
+  client.ready.then(
+    () => {
+      workerReady = true;
+      render();
+    },
+    (e) => {
+      workerError = e instanceof Error ? e.message : String(e);
+      render();
+    },
+  );
+} catch (e) {
+  workerError = e instanceof Error ? e.message : String(e);
+}
+
+window.addEventListener('pagehide', revokeDownload);
 
 render();
