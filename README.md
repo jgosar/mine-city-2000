@@ -30,7 +30,7 @@ The conversion runs entirely in your browser; your city file is never uploaded a
 1. Drop your *.sc2 city file onto the page (or choose it with the file picker).
 2. Tick "Fill underground area" and/or "Generate terrain around the city" if you want them (see "Running the compiled app" below for what they do).
 3. Click "Convert" and wait for the progress bar to finish.
-4. Download the resulting zip, unzip it and put the world folder into the `saves` folder of your Minecraft install directory.
+4. Download the resulting zip. It contains a folder named after your city: unzip it into the `saves` folder of your Minecraft install directory, so that `saves/<city>/level.dat` exists.
 
 The first conversion downloads about 24 MB of building models, so the first run takes a bit longer. A conversion takes a few seconds on a modern laptop.
 
@@ -52,7 +52,7 @@ https://github.com/jgosar/mine-city-2000/releases/download/v0.3.0/mc2k-release-l
 
 ## Running the compiled app
 
-Run the compiled app using MineCity2000-GUI.exe.
+Run the compiled app using MineCity2000-GUI.exe. (This describes the already released GUI build; the GUI can no longer be built from the source code, see "Projects" below. Use the web app or the CLI instead.)
 
 With the first browse button, choose your *.sc2 city file. A good place to look for it would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
 
@@ -94,14 +94,14 @@ The repository contains these projects:
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
 - MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
 - MineCity2000.Cli: The command-line interface
-- MineCity2000-GUI: A rudimentary GUI for running the program
+- MineCity2000-GUI: A rudimentary GUI for running the program. It no longer builds (see below) and is removed in the next PR
 - MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser
 - MineCity2000-Web: The Angular web app (the page behind the web app link above)
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
-In order to develop the GUI, you will also need the dotnet MAUI workload.
-If you open the project with Visual Studio Code, you can launch it using the "Launch GUI" or "Launch CLI" commands under the "Run and Debug" menu.
+For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the web app additionally needs Node.js (see below). The projects are set up for development with Visual Studio Code.
+
+`MineCity2000-GUI` no longer builds: it targets `net8.0-windows` while the engine moved to .NET 10, and a .NET 8 project cannot reference a .NET 10 one. It is removed in the next PR. The CLI and the web app are the supported front ends; if you open the project with Visual Studio Code, you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu.
 
 This is a development version, so do not be surprised if something doesn't work. Please open an issue on GitHub if you encounter any problems.
 
@@ -125,6 +125,8 @@ Run `dotnet test MineCity2000.Tests`. Use `--filter Category!=Slow` to skip the 
 The golden-master tests compare generated worlds with the baseline worlds in `MineCity2000.Tests/Fixtures/baseline`;
 to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden`, then run `dotnet test MineCity2000.Tests` normally afterwards.
 Regenerating rewrites both baseline zips (zip entries carry timestamps), so they show as ~16 MB changed even when the content is identical; only commit them after a golden test failed for an intended output change.
+
+The web app's unit tests (`npm test` inside `MineCity2000-Web`) run in the `Pages` GitHub Actions workflow, before the web app is built.
 
 ## If you would like to help
 
