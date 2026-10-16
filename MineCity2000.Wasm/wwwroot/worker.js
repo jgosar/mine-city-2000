@@ -21,7 +21,7 @@ let loading;
 
 function loadBuildings() {
   loading ??= (async () => {
-    const response = await fetch(new URL('./buildings.zip', import.meta.url), { cache: 'force-cache' });
+    const response = await fetch(new URL('./buildings.zip', import.meta.url));
     if (!response.ok) throw new Error(`Could not load building models (HTTP ${response.status})`);
     converter.LoadBuildings(new Uint8Array(await response.arrayBuffer()));
   })().catch(e => {

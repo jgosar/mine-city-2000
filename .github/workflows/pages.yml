@@ -8,12 +8,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -31,6 +25,8 @@ jobs:
           cache-dependency-path: MineCity2000-Web/package-lock.json
       - run: npm ci
         working-directory: MineCity2000-Web
+      - run: npm test
+        working-directory: MineCity2000-Web
       - run: npm run build -- --base-href /mine-city-2000/
         working-directory: MineCity2000-Web
       - run: touch MineCity2000-Web/dist/MineCity2000-Web/browser/.nojekyll
@@ -42,6 +38,12 @@ jobs:
     needs: build
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

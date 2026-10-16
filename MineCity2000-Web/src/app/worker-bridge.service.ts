@@ -22,6 +22,9 @@ export const WORKER_FACTORY = new InjectionToken<() => Worker>('WORKER_FACTORY',
     new Worker(new URL('assets/worker.js', document.baseURI), { type: 'module' }),
 });
 
+/** Real SimCity 2000 cities are well under 1 MB; anything this large is certainly the wrong file. */
+export const MAX_FILE_BYTES = 16 * 1024 * 1024;
+
 @Injectable({ providedIn: 'root' })
 export class WorkerBridgeService {
   private readonly ready = new ReplaySubject<void>(1);
@@ -50,14 +53,19 @@ export class WorkerBridgeService {
     terrain: boolean,
     deterministic?: Deterministic,
   ): Observable<ConvertEvent> {
-    return defer(() =>
-      this.dead
+    return defer(() => {
+      if (file.size > MAX_FILE_BYTES) {
+        return throwError(
+          () => new Error('File is too large to be a SimCity 2000 city (max 16 MB)'),
+        );
+      }
+      return this.dead
         ? throwError(() => new Error('The converter worker has stopped; reload the page'))
         : this.ready$.pipe(
             take(1),
             switchMap(() => this.run(file, fill, terrain, deterministic)),
-          ),
-    );
+          );
+    });
   }
 
   private run(

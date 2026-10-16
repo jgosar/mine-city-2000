@@ -11,7 +11,7 @@ npm run build -- --base-href /mine-city-2000/   # prebuild publishes the wasm pr
 npm test                                          # Vitest + jsdom, headless
 ```
 
-Requires the .NET 10 SDK with the `wasm-tools` workload (for `dotnet publish -c Release`) and `rsync`.
+Requires the .NET 10 SDK with the `wasm-tools` workload (for `dotnet publish -c Release`).
 
 ## Where the worker lives
 

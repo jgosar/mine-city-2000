@@ -40,6 +40,19 @@ describe('WorkerBridgeService', () => {
     expect(await events).toEqual([{ percent: 10 }, { percent: 60 }, { zip }]);
   });
 
+  it('rejects files over 16 MB without reading them', async () => {
+    worker.emit({ type: 'ready' });
+    const big = new File([new Uint8Array(1)], 'huge.sc2');
+    Object.defineProperty(big, 'size', { value: 17 * 1024 * 1024 });
+    const arrayBuffer = vi.spyOn(big, 'arrayBuffer');
+
+    await expect(firstValueFrom(service.convert(big, true, true))).rejects.toThrow(
+      'File is too large to be a SimCity 2000 city (max 16 MB)',
+    );
+    expect(arrayBuffer).not.toHaveBeenCalled();
+    expect(worker.posted).toEqual([]);
+  });
+
   it('waits for ready before posting the convert message', async () => {
     const events = firstValueFrom(service.convert(file, true, true).pipe(toArray()));
     await tick();
