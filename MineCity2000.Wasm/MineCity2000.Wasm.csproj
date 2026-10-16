@@ -30,7 +30,7 @@
   <ItemGroup>
     <BuildingModelFiles Include="..\buildings\*.mca" />
   </ItemGroup>
-  <Target Name="BundleBuildings" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild" Inputs="@(BuildingModelFiles)" Outputs="wwwroot\buildings.zip">
+  <Target Name="BundleBuildings" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild" Inputs="@(BuildingModelFiles);$(MSBuildProjectFullPath)" Outputs="wwwroot\buildings.zip">
     <Delete Files="wwwroot\buildings.zip" />
     <ZipDirectory SourceDirectory="..\buildings" DestinationFile="wwwroot\buildings.zip" />
   </Target>
