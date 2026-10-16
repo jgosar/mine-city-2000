@@ -4,6 +4,9 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+  # Validate the build job on pull requests that touch the CLI or this workflow (no release is created).
+  pull_request:
+    paths: ['.github/workflows/release.yml', 'MineCity2000.Cli/**', 'MineCity2000/**']
 
 permissions:
   contents: read
@@ -30,6 +33,7 @@ jobs:
           name: mc2k-cli-${{ matrix.rid }}.zip
           path: mc2k-cli-${{ matrix.rid }}.zip
           if-no-files-found: error
+          compression-level: 0
 
   release:
     needs: build
@@ -46,6 +50,8 @@ jobs:
         with:
           files: mc2k-cli-*.zip
           generate_release_notes: true
+          # Tags like v1.0.0-rc1 are pre-releases and must not become releases/latest.
+          prerelease: ${{ contains(github.ref_name, '-') }}
           body: |
             Command-line builds of MineCity 2000 for Windows (`win-x64`), macOS (`osx-arm64`, `osx-x64`) and Linux (`linux-x64`). Unzip and run `MineCity2000 city.sc2`.
 

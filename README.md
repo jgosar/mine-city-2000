@@ -58,7 +58,7 @@ Unzip the file you downloaded and run the program from a terminal, giving it you
 
 On Windows it is `MineCity2000.exe city.sc2`. A good place to look for your city files would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open the city in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
 
-The program creates a folder named after the city file (so `city.sc2` becomes `city`) and puts the Minecraft world in it. By default this folder goes into the `saves` folder of your Minecraft install if the program finds one (for example `C:\Users\[username]\AppData\Roaming\.minecraft\saves` on Windows), so you can open Minecraft and you should see your city among the saved games. Otherwise it goes into a `generated` folder next to the program. Use `-o` to choose a different output directory.
+The program creates a folder named after the city file (lower-cased, so `City.sc2` becomes `city`) and puts the Minecraft world in it. By default this folder goes into the `saves` folder of your Minecraft install if the program finds one (for example `C:\Users\[username]\AppData\Roaming\.minecraft\saves` on Windows), so you can open Minecraft and you should see your city among the saved games. Otherwise it goes into a `generated` folder next to the program. Use `-o` to choose a different output directory.
 
 Options (run the program without arguments to see them again):
 - `-o, --output <directory>`: The output directory. The city is saved into a subfolder of it, named the same as the city file.
@@ -71,7 +71,7 @@ Options that you want to use on every run can be put into the `default_args.txt`
 
 On macOS the first run may be blocked because the program is downloaded from the internet and is not signed. Either remove the quarantine flag once with `xattr -dr com.apple.quarantine .` in the unzipped folder (or `xattr -d com.apple.quarantine MineCity2000` for the program alone), or right-click the program in Finder and choose Open. On Linux you might need to make it executable first: `chmod +x MineCity2000`.
 
-Your antivirus might think that MineCity 2000 is a virus. It's not.
+Your antivirus might think that MineCity 2000 is a virus. It's not. If Windows SmartScreen warns about an unsigned app, choose "More info" and then "Run anyway".
 
 ## Opening generated worlds in Minecraft Bedrock Edition
 
