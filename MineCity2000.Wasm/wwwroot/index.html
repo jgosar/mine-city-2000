@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MineCity 2000 wasm harness</title>
+</head>
+<body>
+  <!-- Developer harness for the wasm worker only; the real UI is the Angular app in MineCity2000-Web. -->
+  <p>
+    <input type="file" id="file" accept=".sc2">
+    <label><input type="checkbox" id="fill"> Fill underground area</label>
+    <label><input type="checkbox" id="terrain"> Generate terrain around the city</label>
+    <button id="go" disabled>Convert</button>
+    <a id="download" hidden>Download</a>
+  </p>
+  <pre id="log"></pre>
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const log = message => { $('log').textContent += message + '\n'; };
+    const worker = new Worker(new URL('./worker.js', document.baseURI), { type: 'module' });
+    worker.onerror = e => log('WORKER_ERROR ' + e.message);
+    // Verification hook: window.convertBytes(bytes, cityName, fill, terrain, timestamp?, seed?) resolves to the zip bytes.
+    let pending = null;
+    window.convertBytes = (sc2, cityName, fill, terrain, timestamp, seed) => new Promise((resolve, reject) => {
+      pending = { resolve, reject, progress: [] };
+      worker.postMessage({ type: 'convert', sc2, cityName, fill, terrain, timestamp, seed });
+    });
+    window.lastProgress = () => pending?.progress ?? [];
+    worker.onmessage = ({ data }) => {
+      if (data.type === 'ready') { $('go').disabled = false; log('ready'); window.workerReady = true; }
+      else if (data.type === 'progress') { pending?.progress.push(data.percent); }
+      else if (data.type === 'error') { log('ERROR ' + data.message); pending?.reject(new Error(data.message)); }
+      else if (data.type === 'done') {
+        log('DONE zip bytes=' + data.zip.length);
+        $('download').href = URL.createObjectURL(new Blob([data.zip], { type: 'application/zip' }));
+        $('download').download = 'world.zip';
+        $('download').hidden = false;
+        pending?.resolve(data.zip);
+      }
+    };
+    $('go').onclick = async () => {
+      const file = $('file').files[0];
+      if (!file) return log('pick a .sc2 file first');
+      const sc2 = new Uint8Array(await file.arrayBuffer());
+      window.convertBytes(sc2, file.name.replace(/\.sc2$/i, ''), $('fill').checked, $('terrain').checked).catch(() => {});
+    };
+  </script>
+</body>
+</html>

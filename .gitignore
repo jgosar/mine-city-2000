@@ -18,3 +18,6 @@ release
 MineCity2000.Cli/generated
 MineCity2000.Tests/bin
 MineCity2000.Tests/obj
+MineCity2000.Wasm/bin
+MineCity2000.Wasm/obj
+MineCity2000.Wasm/wwwroot/buildings.zip

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <WasmMainJSPath>wwwroot/main.js</WasmMainJSPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantTimezone>true</InvariantTimezone>
+    <EmccInitialHeapSize>268435456</EmccInitialHeapSize>
+    <!-- GitHub Pages does not serve pre-compressed .br/.gz twins -->
+    <CompressionEnabled>false</CompressionEnabled>
+  </PropertyGroup>
+
+  <!-- AOT is slow to build and must not be toggled in an existing obj/ folder (delete obj/ first). -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MineCity2000\MineCity2000.csproj" />
+  </ItemGroup>
+
+  <!-- All building models in one zip, fetched by the worker on the first conversion. Git-ignored build output. -->
+  <ItemGroup>
+    <BuildingModelFiles Include="..\buildings\*.mca" />
+  </ItemGroup>
+  <Target Name="BundleBuildings" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild" Inputs="@(BuildingModelFiles)" Outputs="wwwroot\buildings.zip">
+    <Delete Files="wwwroot\buildings.zip" />
+    <ZipDirectory SourceDirectory="..\buildings" DestinationFile="wwwroot\buildings.zip" />
+  </Target>
+
+</Project>
