@@ -12,4 +12,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
       - run: dotnet build MineCity2000.Tests/MineCity2000.Tests.csproj -c Release
-      - run: dotnet test MineCity2000.Tests/MineCity2000.Tests.csproj -c Release --no-build --logger "trx" --logger "console;verbosity=normal"
+      - run: dotnet test MineCity2000.Tests/MineCity2000.Tests.csproj -c Release --no-build --results-directory TestResults --logger "trx" --logger "console;verbosity=normal"
+      - name: Upload test results and failed worlds
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            **/TestResults/*.trx
+            ${{ runner.temp }}/mc2k-golden-*
+          if-no-files-found: ignore

@@ -15,7 +15,7 @@ public class WorldComparerTests : IDisposable
 
   public void Dispose()
   {
-    Directory.Delete(tempRoot, true);
+    TempDirs.deleteBestEffort(tempRoot);
   }
 
   private static List<Chunk> chunks(byte secondChunkBlock)

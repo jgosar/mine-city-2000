@@ -99,7 +99,8 @@ Stuff that does NOT work yet:
 
 Run `dotnet test MineCity2000.Tests`. Use `--filter Category!=Slow` to skip the ~2-minute fill-underground test.
 The golden-master tests compare generated worlds with the baseline worlds in `MineCity2000.Tests/Fixtures/baseline`;
-set the environment variable `MC2K_UPDATE_BASELINE=1` when running the tests to regenerate those baselines after an intentional output change.
+to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden`, then run `dotnet test MineCity2000.Tests` normally afterwards.
+Regenerating rewrites both baseline zips (zip entries carry timestamps), so they show as ~16 MB changed even when the content is identical; only commit them after a golden test failed for an intended output change.
 
 ## If you would like to help
 

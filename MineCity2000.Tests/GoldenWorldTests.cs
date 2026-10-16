@@ -56,7 +56,7 @@ public class GoldenWorldTests
 
   private static void run(bool fill, string baselineName)
   {
-    string outDir = Path.Combine(Path.GetTempPath(), "mc2k-golden-" + Guid.NewGuid());
+    string outDir = Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "mc2k-golden-" + Guid.NewGuid());
     var options = new MapperOptions(fill, generateTerrain: false, timestamp: 1700000000, randomSeed: 12345);
     bool succeeded = false;
     try
@@ -84,7 +84,7 @@ public class GoldenWorldTests
     {
       if (succeeded)
       {
-        Directory.Delete(outDir, true);
+        TempDirs.deleteBestEffort(outDir);
       }
     }
   }

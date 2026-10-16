@@ -48,11 +48,12 @@ public class TerrainTests
   }
 
   [Fact]
-  public void interpolateTriangles_diagonalSplit_keepsFlatTriangleAtZero()
+  public void interpolateTriangles_diagonalSplit_keepsFlatTriangleAtZero_currentBehaviour()
   {
     // (0,0,0,16): p2 == p3, so the square is split into an upper-left triangle (flat at 0)
-    // and a lower-right triangle that climbs towards p4. Note the far corner reaches 224 rather than
-    // 256 because the formula steps by diff (16) per block starting from (i + j - 16).
+    // and a lower-right triangle that climbs towards p4. Characterises current behaviour (_currentBehaviour):
+    // the far corner reaches 224 rather than 256 because the formula steps by diff (16) per block starting
+    // from (i + j - 16). That looks like a seam quirk that a future fix may change.
     int[][] field = SCMapper.interpolateTriangles(0, 0, 0, 16);
 
     Assert.Equal(0, field[0][0]);

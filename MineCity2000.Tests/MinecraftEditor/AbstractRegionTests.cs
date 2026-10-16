@@ -88,7 +88,7 @@ public class AbstractRegionTests
     }
     finally
     {
-      Directory.Delete(dir, true);
+      TempDirs.deleteBestEffort(dir);
     }
   }
 
@@ -111,7 +111,7 @@ public class AbstractRegionTests
     }
     finally
     {
-      Directory.Delete(dir, true);
+      TempDirs.deleteBestEffort(dir);
     }
   }
 }
