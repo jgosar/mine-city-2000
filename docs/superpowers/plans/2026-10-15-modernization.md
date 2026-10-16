@@ -47,7 +47,7 @@
 1. A `.sc2` whose embedded CNAM name is empty or whitespace-only → `LevelName` must fall back to the file name without extension (the world folder already comes from the file name) (tests in PR 3, `CityDataTests.cityName_*_fallsBackToFileName`). Non-printable "garbage" names are not detected; revisit in PR 6, where browser uploads make odd files likelier.
 2. An output path containing spaces on any OS → must be used verbatim (test in PR 1 `DefaultArgsTests.value_with_spaces_is_kept`).
 3. A region file produced on Windows and one produced on macOS from the same city → identical decompressed chunk NBT (golden test runs on all 3 CI OSes in PR 3).
-4. A building model `.mca` with a section containing only data nibbles (block id 0, data ≠ 0) → must still be loaded as an existing section (PR 5 `BuildingModelTests.allModels_matchBaselineHashes` covers all 162 real models; the differential test covers synthetic cases).
+4. A building model `.mca` with a section containing only data nibbles (block id 0, data ≠ 0) → must still be loaded as an existing section (PR 5 `BuildingModelTests.allModels_matchBaselineHashes` covers all 160 real models; the verbatim existence check in `BuildingModel` plus that hash baseline are the guard).
 5. Browser upload of a non-`.sc2` file or a truncated file → clear error message, no hung progress bar (PR 6 `convert_rejectsInvalidFile` test + manual check).
 
 ---
@@ -388,7 +388,7 @@ Remove `using zlib;`, `testDecompress`, `CopyStream`.
 ## PR 5: Flat section storage (memory ~20x down)
 
 **Branch:** `pr5-flat-sections`
-**Outcome:** Default conversion well under 100 MB RSS and faster; fill-underground under ~200 MB and several times faster; golden tests unchanged; public behaviour unchanged.
+**Outcome:** Default and fill-underground conversions both around 200 MB RSS (of which ~45 MB is the .NET runtime; the rest is the `int[2049][2049]` terrain grid, the model cache and `MCAWriter` buffers, untouched by this PR) and several times faster; golden tests unchanged; public behaviour unchanged. (Measured 2026-10-16: default 953 MB → 193 MB, 24 s → 3.2 s; fill 3,685 MB → 202 MB, 107 s → 5.7 s.)
 
 **Files:**
 - Modify: `MinecraftEditor/Section.cs` (becomes the storage unit with lazy/uniform fill), `MinecraftEditor/AbstractRegion.cs` (holds `Section?[,,]`), `MineCity2000/BuildingModel.cs` (holds `Section?[,,]`), `MineCity2000/SCMapper.cs` (call sites of `putBlockData`/`getBlockData`/`getChunkData`), `MinecraftEditor/AbstractWorld.cs` (if it touches `getBlockData` — read it)
@@ -463,7 +463,7 @@ Plus `SectionTests`: uniform sandstone section → `getBlock` anywhere is 24 and
 
 - [ ] **Step 9: Pin building models:** replace `allModels_loadWithoutError` with `allModels_matchBaselineHashes`: for each model compute SHA-256 over the concatenation of `getBlocks()` + `getData()` of every non-null section in `(cx, cz, sy)` order and compare with `Fixtures/building_model_hashes.txt` (generated with `MC2K_UPDATE_BASELINE=1`, same pattern as golden). Generate the file from the **PR 4 merge commit** (checkout, run generator, copy file forward) so it pins pre-refactor behaviour.
 
-- [ ] **Step 10: Measure and record** in the PR description: `/usr/bin/time -l dotnet MineCity2000/bin/Release/net8.0/MineCity2000.dll MineCity2000.Tests/Fixtures/test.sc2 -o /tmp/x -c [-f]` before (main) and after. Expected: default < 100 MB, fill < 200 MB; both faster.
+- [ ] **Step 10: Measure and record** in the PR description: `/usr/bin/time -l dotnet MineCity2000/bin/Release/net8.0/MineCity2000.dll MineCity2000.Tests/Fixtures/test.sc2 -o /tmp/x -c [-f]` before (main) and after. Expected: both modes around 200 MB RSS; both several times faster. Further levers (for PR 6, where browser memory is tighter): allocate light arrays only at serialisation with a shared sky-light array; narrower terrain heightmap type; stream `MCAWriter` output instead of `List<byte>`.
 
 - [ ] **Step 11:** Delete `LegacyAbstractRegion.cs` and the differential test (they served their purpose; the golden + unit tests remain). Commit `test: remove legacy differential harness`.
 
