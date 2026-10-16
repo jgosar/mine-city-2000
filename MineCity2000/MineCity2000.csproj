@@ -18,4 +18,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="MineCity2000.Tests" />
+  </ItemGroup>
+
 </Project>

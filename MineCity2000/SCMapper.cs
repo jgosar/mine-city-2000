@@ -545,7 +545,7 @@ namespace com.mc2k.MineCity2000
       return squareHeight - 1 >= waterLevel * SECTION_HEIGHT;
     }
 
-    private static int[][] reticulateSplines(CityData data)
+    internal static int[][] reticulateSplines(CityData data)
     {
       byte[][] basePoints = readCityHeightmap(data);
 
@@ -569,7 +569,7 @@ namespace com.mc2k.MineCity2000
       return interpolatedPoints;
     }
 
-    private static byte[][] readCityHeightmap(CityData data)
+    internal static byte[][] readCityHeightmap(CityData data)
     {
       byte[][] heightmap = Util.new2DArray<byte>(SQUARES_IN_CITY + 1, SQUARES_IN_CITY + 1);
 
@@ -600,7 +600,7 @@ namespace com.mc2k.MineCity2000
       return heightmap;
     }
 
-    private static int[][] interpolateTriangles(int p1, int p2, int p3, int p4)
+    internal static int[][] interpolateTriangles(int p1, int p2, int p3, int p4)
     {
       int[][] result = Util.new2DArray<int>(SQUARE_SIZE, SQUARE_SIZE);
 
@@ -665,7 +665,7 @@ namespace com.mc2k.MineCity2000
       return result;
     }
 
-    private static int getLowestTerrainLevel(int[][] terrainHeights)
+    internal static int getLowestTerrainLevel(int[][] terrainHeights)
     {
       int minLevel = 256;
       for (int i = 0; i < terrainHeights.Length; i++)
