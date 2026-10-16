@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/MineCity2000-GUI/MineCity2000-GUI.csproj",
+        "${workspaceFolder}/mine-city-2000.sln",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -31,7 +31,7 @@
       "type": "process",
       "args": [
         "publish",
-        "${workspaceFolder}/MineCity2000-GUI/MineCity2000-GUI.csproj",
+        "${workspaceFolder}/MineCity2000.Cli/MineCity2000.Cli.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -45,7 +45,7 @@
         "watch",
         "run",
         "--project",
-        "${workspaceFolder}/MineCity2000-GUI/MineCity2000-GUI.csproj"
+        "${workspaceFolder}/MineCity2000.Cli/MineCity2000.Cli.csproj"
       ],
       "problemMatcher": "$msCompile"
     }
