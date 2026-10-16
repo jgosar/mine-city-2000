@@ -18,7 +18,8 @@ export interface Deterministic {
 /** Creates the module worker that hosts the .NET runtime. Replace in tests with a fake. */
 export const WORKER_FACTORY = new InjectionToken<() => Worker>('WORKER_FACTORY', {
   providedIn: 'root',
-  factory: () => () => new Worker(new URL('assets/worker.js', document.baseURI), { type: 'module' }),
+  factory: () => () =>
+    new Worker(new URL('assets/worker.js', document.baseURI), { type: 'module' }),
 });
 
 @Injectable({ providedIn: 'root' })
@@ -37,11 +38,18 @@ export class WorkerBridgeService {
   constructor() {
     this.worker = inject(WORKER_FACTORY)();
     this.worker.onmessage = ({ data }: MessageEvent<WorkerMessage>) => this.handle(data);
-    this.worker.onerror = (e: ErrorEvent) => this.crash(e.message || 'The converter worker failed to load');
-    this.worker.onmessageerror = () => this.crash('The converter worker sent an unreadable message');
+    this.worker.onerror = (e: ErrorEvent) =>
+      this.crash(e.message || 'The converter worker failed to load');
+    this.worker.onmessageerror = () =>
+      this.crash('The converter worker sent an unreadable message');
   }
 
-  convert(file: File, fill: boolean, terrain: boolean, deterministic?: Deterministic): Observable<ConvertEvent> {
+  convert(
+    file: File,
+    fill: boolean,
+    terrain: boolean,
+    deterministic?: Deterministic,
+  ): Observable<ConvertEvent> {
     return defer(() =>
       this.dead
         ? throwError(() => new Error('The converter worker has stopped; reload the page'))
@@ -52,7 +60,12 @@ export class WorkerBridgeService {
     );
   }
 
-  private run(file: File, fill: boolean, terrain: boolean, deterministic?: Deterministic): Observable<ConvertEvent> {
+  private run(
+    file: File,
+    fill: boolean,
+    terrain: boolean,
+    deterministic?: Deterministic,
+  ): Observable<ConvertEvent> {
     return new Observable<ConvertEvent>((subscriber) => {
       if (this.busy) {
         subscriber.error(new Error('A conversion is already running'));

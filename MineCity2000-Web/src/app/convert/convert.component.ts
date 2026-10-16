@@ -24,12 +24,16 @@ export class ConvertComponent {
   protected readonly downloadName = signal('');
   protected readonly downloadSize = signal(0);
 
-  protected readonly canConvert = computed(() => this.file() !== null && !this.converting() && !this.workerError());
+  protected readonly canConvert = computed(
+    () => this.file() !== null && !this.converting() && !this.workerError(),
+  );
   protected readonly status = computed(() => {
     if (this.converting()) {
       const percent = this.percent();
       if (percent !== null) return `Converting… ${percent}%`;
-      return this.workerReady() ? 'Loading building models (about 24 MB on the first run)…' : 'Loading converter…';
+      return this.workerReady()
+        ? 'Loading building models (about 24 MB on the first run)…'
+        : 'Loading converter…';
     }
     if (this.downloadUrl()) return `Done: ${(this.downloadSize() / 1048576).toFixed(1)} MB`;
     if (this.workerError()) return 'The converter could not start.';

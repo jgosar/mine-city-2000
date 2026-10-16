@@ -11,7 +11,9 @@ describe('WorkerBridgeService', () => {
 
   beforeEach(() => {
     worker = new FakeWorker();
-    TestBed.configureTestingModule({ providers: [{ provide: WORKER_FACTORY, useValue: () => worker.asWorker() }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: WORKER_FACTORY, useValue: () => worker.asWorker() }],
+    });
     service = TestBed.inject(WorkerBridgeService);
   });
 
@@ -23,7 +25,12 @@ describe('WorkerBridgeService', () => {
 
     const events = firstValueFrom(service.convert(file, true, false).pipe(toArray()));
     await tick();
-    expect(worker.posted[0]).toMatchObject({ type: 'convert', cityName: 'Springfield', fill: true, terrain: false });
+    expect(worker.posted[0]).toMatchObject({
+      type: 'convert',
+      cityName: 'Springfield',
+      fill: true,
+      terrain: false,
+    });
     expect(Array.from((worker.posted[0] as { sc2: Uint8Array }).sc2)).toEqual([1, 2, 3]);
 
     const zip = new Uint8Array([9]);
@@ -46,7 +53,9 @@ describe('WorkerBridgeService', () => {
 
   it('forwards deterministic timestamp and seed', async () => {
     worker.emit({ type: 'ready' });
-    const events = firstValueFrom(service.convert(file, true, true, { timestamp: 5, seed: 6 }).pipe(toArray()));
+    const events = firstValueFrom(
+      service.convert(file, true, true, { timestamp: 5, seed: 6 }).pipe(toArray()),
+    );
     await tick();
     expect(worker.posted[0]).toMatchObject({ timestamp: 5, seed: 6 });
     worker.emit({ type: 'done', zip: new Uint8Array() });
@@ -69,7 +78,9 @@ describe('WorkerBridgeService', () => {
   it('rejects a concurrent convert without disturbing the running one', async () => {
     worker.emit({ type: 'ready' });
     const first = firstValueFrom(service.convert(file, true, true).pipe(toArray()));
-    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('already running');
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow(
+      'already running',
+    );
     await tick();
     expect(worker.posted.length).toBe(1);
     worker.emit({ type: 'done', zip: new Uint8Array() });
@@ -95,13 +106,17 @@ describe('WorkerBridgeService', () => {
     await tick();
     worker.onerror!({ message: 'boom' } as ErrorEvent);
     await expect(running).rejects.toThrow('boom');
-    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('worker has stopped');
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow(
+      'worker has stopped',
+    );
   });
 
   it('treats onmessageerror as a crash too', async () => {
     worker.emit({ type: 'ready' });
     worker.onmessageerror!({} as MessageEvent);
-    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('worker has stopped');
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow(
+      'worker has stopped',
+    );
   });
 
   it('surfaces worker.onerror before ready through ready$', async () => {

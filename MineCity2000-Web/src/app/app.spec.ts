@@ -11,6 +11,8 @@ describe('App', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent).toBe('MineCity 2000');
+    expect((fixture.nativeElement as HTMLElement).querySelector('h1')?.textContent).toBe(
+      'MineCity 2000',
+    );
   });
 });

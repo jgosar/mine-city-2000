@@ -12,7 +12,10 @@ describe('ConvertComponent', () => {
 
   async function chooseFile(name = 'Town.sc2') {
     const input = root.querySelector('input[type=file]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { value: [new File([new Uint8Array([1])], name)], configurable: true });
+    Object.defineProperty(input, 'files', {
+      value: [new File([new Uint8Array([1])], name)],
+      configurable: true,
+    });
     input.dispatchEvent(new Event('change'));
     await fixture.whenStable();
   }
