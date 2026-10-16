@@ -20,6 +20,7 @@
     <ProjectReference Include="..\MinecraftEditor\MinecraftEditor.csproj" />
     <ProjectReference Include="..\SimCityReader\SimCityReader.csproj" />
     <ProjectReference Include="..\MineCity2000\MineCity2000.csproj" />
+    <ProjectReference Include="..\MineCity2000.Cli\MineCity2000.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

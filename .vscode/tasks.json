@@ -19,7 +19,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/MineCity2000/MineCity2000.csproj",
+        "${workspaceFolder}/MineCity2000.Cli/MineCity2000.Cli.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],

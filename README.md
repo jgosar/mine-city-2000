@@ -77,7 +77,8 @@ The repository contains these projects:
 - SimCityReader: Reads information about the city map from a *.sc2 city file
 - AnvilFile: Contains utility classes for working with Minecraft's Anvil file format
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
-- MineCity2000: Creates the Minecraft world with terrain and buildings
+- MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
+- MineCity2000.Cli: The command-line interface
 - MineCity2000-GUI: A rudimentary GUI for running the program
 - MineCity2000.Tests: Unit and golden-master tests
 
