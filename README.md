@@ -28,7 +28,7 @@ You can try MineCity 2000 without installing anything: https://jgosar.github.io/
 The conversion runs entirely in your browser; your city file is never uploaded anywhere.
 
 1. Drop your *.sc2 city file onto the page (or choose it with the file picker).
-2. Tick "Fill underground area" and/or "Generate terrain around the city" if you want them (see "Running the compiled app" below for what they do).
+2. Tick "Fill underground area" and/or "Generate terrain around the city" if you want them (see "Running the CLI" below for what they do).
 3. Click "Convert" and wait for the progress bar to finish.
 4. Download the resulting zip. It contains a folder named after your city: unzip it into the `saves` folder of your Minecraft install directory, so that `saves/<city>/level.dat` exists.
 
@@ -36,40 +36,42 @@ The first conversion downloads about 24 MB of building models, so the first run 
 
 It has been tested in current versions of Chrome and Firefox, and in the WebKit engine that Safari is built on (Safari itself has not been tested yet).
 
-## Download link for the compiled app
+## Downloads
 
-This is a link to the compiled app, so you don't have to build it from the source code yourself:
+The easiest way to use MineCity 2000 is the web app, which needs no installation: https://jgosar.github.io/mine-city-2000/ (see "Using the web app" above).
 
-https://github.com/jgosar/mine-city-2000/releases/latest/download/mc2k-release.rar
+If you prefer the command line, or want to call MineCity 2000 from a script, download the CLI (Command-line interface) for your platform from the latest release: https://github.com/jgosar/mine-city-2000/releases/latest
 
-You can download a smaller version here if you only want to use MineCity 2000 CLI (Command-line interface):
+Each platform has its own zip file, which contains the program and everything it needs (you don't have to install .NET):
+- `mc2k-cli-win-x64.zip`: Windows (64-bit)
+- `mc2k-cli-osx-arm64.zip`: macOS on Apple silicon (M1 and newer)
+- `mc2k-cli-osx-x64.zip`: macOS on Intel processors
+- `mc2k-cli-linux-x64.zip`: Linux (64-bit)
 
-https://github.com/jgosar/mine-city-2000/releases/latest/download/mc2k-release-cli.rar
-
-If for some reason the app above doesn't work, please try the old version:
-
-https://github.com/jgosar/mine-city-2000/releases/download/v0.3.0/mc2k-release-legacy.rar
-
-## Running the compiled app
-
-Run the compiled app using MineCity2000-GUI.exe. (This describes the already released GUI build; the GUI can no longer be built from the source code, see "Projects" below. Use the web app or the CLI instead.)
-
-With the first browse button, choose your *.sc2 city file. A good place to look for it would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
-
-With the second browse button, choose your Minecraft install directory. It might be `C:\Users\[username]\AppData\Roaming\.minecraft` or something similar. A sure way of finding it is if you right-click the shortcut you use to run Minecraft, click Properties and see where the shortcut points.
-
-If you want the underground area to be filled instead of empty (So you don't fall into the ground after digging for a bit), select the "Fill underground area" checkbox. But be warned that this also increases the conversion time and RAM requirements.
-
-If you want Minecraft to automatically generate its own terrain around the city instead of having an obsidian wall, select the "Generate terrain around the city" option.
-
-After you choose both of these, click "Convert!". And when the processing is done, you can close this window, open Minecraft and you should see your city among the saved games.
-
-Your antivirus might think that MineCity 2000 is a virus. It's not.
+The older `.rar` releases (the ones with the GUI, `mc2k-release.rar` and `mc2k-release-cli.rar`, and the legacy version `mc2k-release-legacy.rar`) are historical. They are still available on the releases page, but they are no longer maintained and the GUI has been removed from the project; use the web app or the CLI instead.
 
 ## Running the CLI (Command-line interface)
 
-You can also run MineCity 2000 as a CLI, which can be useful if you want to call it from a script or from another app, here are the instructions: https://github.com/jgosar/mine-city-2000/wiki/CLI-usage
+Unzip the file you downloaded and run the program from a terminal, giving it your *.sc2 city file:
 
+    ./MineCity2000 city.sc2
+
+On Windows it is `MineCity2000.exe city.sc2`. A good place to look for your city files would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open the city in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
+
+The program creates a folder named after the city file (so `city.sc2` becomes `city`) and puts the Minecraft world in it. By default this folder goes into the `saves` folder of your Minecraft install if the program finds one (for example `C:\Users\[username]\AppData\Roaming\.minecraft\saves` on Windows), so you can open Minecraft and you should see your city among the saved games. Otherwise it goes into a `generated` folder next to the program. Use `-o` to choose a different output directory.
+
+Options (run the program without arguments to see them again):
+- `-o, --output <directory>`: The output directory. The city is saved into a subfolder of it, named the same as the city file.
+- `-f, --fillUnderground`: Fills the underground sections of the city with sandstone, so you can't fall through when digging down (instead of having it empty). This increases the memory usage and the generation time.
+- `-g, --generateTerrain`: Lets Minecraft generate its own terrain around the city instead of creating an obsidian wall around the city with nothing outside.
+- `-c, --continue`: Continues console execution after the command is finished, instead of waiting for the user to press a key after reading the output.
+- `--timestamp <unix seconds>`, `--seed <number>`: Fix the timestamps and the random seed written into the world, so that two runs produce identical files (used by the tests).
+
+Options that you want to use on every run can be put into the `default_args.txt` file next to the program, one per line. The wiki has some more CLI usage notes: https://github.com/jgosar/mine-city-2000/wiki/CLI-usage
+
+On macOS the first run may be blocked because the program is downloaded from the internet and is not signed. Either remove the quarantine flag once with `xattr -dr com.apple.quarantine .` in the unzipped folder (or `xattr -d com.apple.quarantine MineCity2000` for the program alone), or right-click the program in Finder and choose Open. On Linux you might need to make it executable first: `chmod +x MineCity2000`.
+
+Your antivirus might think that MineCity 2000 is a virus. It's not.
 
 ## Opening generated worlds in Minecraft Bedrock Edition
 
@@ -94,13 +96,10 @@ The repository contains these projects:
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
 - MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
 - MineCity2000.Cli: The command-line interface
-- MineCity2000-GUI: A rudimentary GUI for running the program. It no longer builds (see below) and is removed in the next PR
 - MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser and the plain HTML/CSS/JS page behind the web app link above (in `wwwroot`)
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the web app additionally needs the `wasm-tools` workload (see below). The projects are set up for development with Visual Studio Code.
-
-`MineCity2000-GUI` no longer builds: it targets `net8.0-windows` while the engine moved to .NET 10, and a .NET 8 project cannot reference a .NET 10 one. It is removed in the next PR. The CLI and the web app are the supported front ends; if you open the project with Visual Studio Code, you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu.
+For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux with `dotnet build` and `dotnet test`; `dotnet build mine-city-2000.sln` builds everything, including the web app, so it additionally needs the `wasm-tools` workload (see below). The projects are set up for development with Visual Studio Code: you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu (edit the city file path in `.vscode/launch.json` first). `dotnet publish MineCity2000.Cli -c Release -r <rid> --self-contained true` produces the same folder that is zipped for the releases (for example `-r osx-arm64`; the releases are built by the "Release" GitHub Actions workflow when a `v*` tag is pushed).
 
 This is a development version, so do not be surprised if something doesn't work. Please open an issue on GitHub if you encounter any problems.
 
@@ -124,7 +123,7 @@ The page's tests need no packages: the unit tests run with `node --test "MineCit
 
 Run `dotnet test MineCity2000.Tests`. Use `--filter Category!=Slow` to skip the ~2-minute fill-underground test.
 The golden-master tests compare generated worlds with the baseline worlds in `MineCity2000.Tests/Fixtures/baseline`;
-to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden`, then run `dotnet test MineCity2000.Tests` normally afterwards.
+to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden` (on Windows, set the variable first: `set MC2K_UPDATE_BASELINE=1` in cmd.exe or `$env:MC2K_UPDATE_BASELINE=1` in PowerShell, and remove it again afterwards), then run `dotnet test MineCity2000.Tests` normally afterwards.
 Regenerating rewrites both baseline zips (zip entries carry timestamps), so they show as ~16 MB changed even when the content is identical; only commit them after a golden test failed for an intended output change.
 
 The web page has its own tests, see "Building the web app" above.
@@ -138,6 +137,13 @@ If you know a community that might be interested in this project, tell them abou
 If you have the time, patience and skills, you can design a few more of the missing buildings. The instructions are available here: https://github.com/jgosar/mine-city-2000/wiki/How-to-design-and-add-new-buildings-to-the-project. Please let me know if anything is unclear.
 
 ## Changelog:
+
+Unreleased:
+- The CLI now runs on Windows, macOS and Linux, with a zip file for each platform on the releases page
+- The conversion needs about 5 times less memory and is faster, and the generated worlds are identical
+- New web app: convert a city in your browser without installing anything
+- The MAUI GUI has been removed (use the web app or the CLI)
+- Automated tests, and continuous integration on Windows, macOS and Linux
 
 The minecraftforums version:
 v0.1:

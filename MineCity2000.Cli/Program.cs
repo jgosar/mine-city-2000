@@ -10,13 +10,13 @@ namespace com.mc2k.MineCity2000
     private static string helpText = @"Usage: ./MineCity2000 <SimCity2000 file> [OPTIONS]
 
 -o, --output
-            Output directory Recommended to be something like 'C:\Users\[username]\AppData\Roaming\.minecraft\saves' if you want to open the city directly in minecraft). If this parameter is not used, the cities are placed into the Minecraft saves folder of the current user if it exists, otherwise into a `generated` folder next to the program. Each city will be saved into a subfolder of the selected path, which will be named the same as the city file.
+            Output directory. Recommended to be something like 'C:\Users\[username]\AppData\Roaming\.minecraft\saves' if you want to open the city directly in Minecraft). If this parameter is not used, the cities are placed into the Minecraft saves folder of the current user if it exists, otherwise into a `generated` folder next to the program. Each city will be saved into a subfolder of the selected path, which will be named the same as the city file.
 
 -f, --fillUnderground
             Fills the underground sections of the city with sandstone, so you can't fall through when digging down. This will increase memory usage and generation time.
 
 -g, --generateTerrain
-            Lets Minecraft generate its own terain around the city instead creating a wall around the city with nothing outside.
+            Lets Minecraft generate its own terrain around the city instead of creating a wall around the city with nothing outside.
 
 -c, --continue
             Continues console execution after the command is finished, instead of waiting for the user to press a key after reading the output.
