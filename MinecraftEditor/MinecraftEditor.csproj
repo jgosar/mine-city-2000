@@ -2,9 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AnvilFile\AnvilFile.csproj" />
-    <Reference Include="zlib">
-      <HintPath>lib\zlib.net.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <PropertyGroup>
