@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, toArray } from 'rxjs';
-import { FakeWorker } from './fake-worker';
+import { FakeWorker } from './fake-worker.testing';
 import { WORKER_FACTORY, WorkerBridgeService } from './worker-bridge.service';
 
 describe('WorkerBridgeService', () => {
@@ -24,7 +24,7 @@ describe('WorkerBridgeService', () => {
     const events = firstValueFrom(service.convert(file, true, false).pipe(toArray()));
     await tick();
     expect(worker.posted[0]).toMatchObject({ type: 'convert', cityName: 'Springfield', fill: true, terrain: false });
-    expect(Array.from(worker.posted[0].sc2)).toEqual([1, 2, 3]);
+    expect(Array.from((worker.posted[0] as { sc2: Uint8Array }).sc2)).toEqual([1, 2, 3]);
 
     const zip = new Uint8Array([9]);
     worker.emit({ type: 'progress', percent: 10 });
@@ -64,6 +64,44 @@ describe('WorkerBridgeService', () => {
     await tick();
     worker.emit({ type: 'done', zip: new Uint8Array() });
     expect(await next).toHaveLength(1);
+  });
+
+  it('rejects a concurrent convert without disturbing the running one', async () => {
+    worker.emit({ type: 'ready' });
+    const first = firstValueFrom(service.convert(file, true, true).pipe(toArray()));
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('already running');
+    await tick();
+    expect(worker.posted.length).toBe(1);
+    worker.emit({ type: 'done', zip: new Uint8Array() });
+    expect(await first).toHaveLength(1);
+  });
+
+  it('resets after an unsubscribe before the file was read', async () => {
+    worker.emit({ type: 'ready' });
+    service.convert(file, true, true).subscribe().unsubscribe();
+    await tick();
+    expect(worker.posted).toEqual([]);
+
+    const next = firstValueFrom(service.convert(file, true, true).pipe(toArray()));
+    await tick();
+    expect(worker.posted.length).toBe(1);
+    worker.emit({ type: 'done', zip: new Uint8Array() });
+    expect(await next).toHaveLength(1);
+  });
+
+  it('errors every later convert once the worker has crashed after ready', async () => {
+    worker.emit({ type: 'ready' });
+    const running = firstValueFrom(service.convert(file, true, true));
+    await tick();
+    worker.onerror!({ message: 'boom' } as ErrorEvent);
+    await expect(running).rejects.toThrow('boom');
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('worker has stopped');
+  });
+
+  it('treats onmessageerror as a crash too', async () => {
+    worker.emit({ type: 'ready' });
+    worker.onmessageerror!({} as MessageEvent);
+    await expect(firstValueFrom(service.convert(file, true, true))).rejects.toThrow('worker has stopped');
   });
 
   it('surfaces worker.onerror before ready through ready$', async () => {

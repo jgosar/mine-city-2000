@@ -3,7 +3,7 @@ export class FakeWorker {
   onmessage: ((e: MessageEvent) => void) | null = null;
   onerror: ((e: ErrorEvent) => void) | null = null;
   onmessageerror: ((e: MessageEvent) => void) | null = null;
-  readonly posted: any[] = [];
+  readonly posted: unknown[] = [];
 
   postMessage(message: unknown): void {
     this.posted.push(message);

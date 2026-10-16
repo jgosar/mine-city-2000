@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { FakeWorker } from './fake-worker';
+import { FakeWorker } from './fake-worker.testing';
 import { App } from './app';
 import { WORKER_FACTORY } from './worker-bridge.service';
 

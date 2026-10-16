@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { FakeWorker } from '../fake-worker';
+import { FakeWorker } from '../fake-worker.testing';
 import { WORKER_FACTORY } from '../worker-bridge.service';
 import { ConvertComponent } from './convert.component';
 
@@ -10,11 +10,15 @@ describe('ConvertComponent', () => {
   const tick = () => new Promise((r) => setTimeout(r));
   const button = () => root.querySelector('button') as HTMLButtonElement;
 
-  async function chooseFileAndConvert() {
+  async function chooseFile(name = 'Town.sc2') {
     const input = root.querySelector('input[type=file]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { value: [new File([new Uint8Array([1])], 'Town.sc2')] });
+    Object.defineProperty(input, 'files', { value: [new File([new Uint8Array([1])], name)], configurable: true });
     input.dispatchEvent(new Event('change'));
     await fixture.whenStable();
+  }
+
+  async function chooseFileAndConvert() {
+    await chooseFile();
     button().click();
     await tick();
     await fixture.whenStable();
@@ -56,5 +60,38 @@ describe('ConvertComponent', () => {
     expect(root.querySelector('.error')?.textContent).toContain('Not a SimCity 2000 city file');
     expect(button().disabled).toBe(false);
     expect(root.querySelector('a.download')).toBeNull();
+  });
+
+  it('revokes the previous download URL when a new file replaces a finished result', async () => {
+    const revoke = vi.spyOn(URL, 'revokeObjectURL');
+    await chooseFileAndConvert();
+    worker.emit({ type: 'done', zip: new Uint8Array([1, 2]) });
+    await fixture.whenStable();
+    const url = (root.querySelector('a.download') as HTMLAnchorElement).href;
+    await chooseFile('Other.sc2');
+    expect(revoke).toHaveBeenCalledWith(url);
+    expect(root.querySelector('a.download')).toBeNull();
+  });
+});
+
+describe('ConvertComponent with a worker that failed to start', () => {
+  it('keeps the start error visible when a file is chosen', async () => {
+    const worker = new FakeWorker();
+    await TestBed.configureTestingModule({
+      imports: [ConvertComponent],
+      providers: [{ provide: WORKER_FACTORY, useValue: () => worker.asWorker() }],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ConvertComponent);
+    const root: HTMLElement = fixture.nativeElement;
+    await fixture.whenStable();
+    worker.onerror!({ message: 'failed to load' } as ErrorEvent);
+    await fixture.whenStable();
+    expect(root.querySelector('.error')?.textContent).toContain('failed to load');
+
+    const input = root.querySelector('input[type=file]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [new File([new Uint8Array([1])], 'Town.sc2')] });
+    input.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(root.querySelector('.error')?.textContent).toContain('failed to load');
   });
 });

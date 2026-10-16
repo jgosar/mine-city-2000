@@ -15,6 +15,8 @@ dotnet publish ../MineCity2000.Wasm -c Release
 publish=../MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot
 assets=src/assets
 
+[ -d "$publish/_framework" ] || { echo "publish output missing: $publish" >&2; exit 1; }
+
 mkdir -p "$assets/_framework"
 rsync -a --delete "$publish/_framework/" "$assets/_framework/"
 cp "$publish/worker.js" "$publish/main.js" "$publish/buildings.zip" "$assets/"

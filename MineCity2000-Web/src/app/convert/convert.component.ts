@@ -16,7 +16,9 @@ export class ConvertComponent {
   protected readonly converting = signal(false);
   /** null until the converter reports its first progress (building models are still being loaded). */
   protected readonly percent = signal<number | null>(null);
-  protected readonly error = signal('');
+  private readonly workerError = signal('');
+  private readonly conversionError = signal('');
+  protected readonly error = computed(() => this.workerError() || this.conversionError());
   protected readonly dragging = signal(false);
   protected readonly downloadUrl = signal('');
   protected readonly downloadName = signal('');
@@ -37,7 +39,7 @@ export class ConvertComponent {
   constructor() {
     this.bridge.ready$.subscribe({
       next: () => this.workerReady.set(true),
-      error: (e: Error) => this.error.set(e.message),
+      error: (e: Error) => this.workerError.set(e.message),
     });
     inject(DestroyRef).onDestroy(() => this.revokeDownload());
   }
@@ -61,7 +63,7 @@ export class ConvertComponent {
     const file = this.file();
     if (!file || this.converting()) return;
     this.revokeDownload();
-    this.error.set('');
+    this.conversionError.set('');
     this.percent.set(null);
     this.converting.set(true);
     this.bridge.convert(file, this.fill(), this.terrain()).subscribe({
@@ -69,14 +71,14 @@ export class ConvertComponent {
         if ('percent' in event) {
           this.percent.set(event.percent);
         } else {
-          const blob = new Blob([event.zip as Uint8Array<ArrayBuffer>], { type: 'application/zip' });
+          const blob = new Blob([event.zip], { type: 'application/zip' });
           this.downloadUrl.set(URL.createObjectURL(blob));
           this.downloadName.set(`${cityNameOf(file)}.zip`);
           this.downloadSize.set(blob.size);
         }
       },
       error: (e: Error) => {
-        this.error.set(e.message);
+        this.conversionError.set(e.message);
         this.converting.set(false);
       },
       complete: () => this.converting.set(false),
@@ -86,7 +88,7 @@ export class ConvertComponent {
   private setFile(file: File | null): void {
     if (!file || this.converting()) return;
     this.file.set(file);
-    this.error.set('');
+    this.conversionError.set('');
     this.revokeDownload();
   }
 
