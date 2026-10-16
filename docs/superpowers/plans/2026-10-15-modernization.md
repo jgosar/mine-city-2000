@@ -4,7 +4,7 @@
 
 **Goal:** Make MineCity 2000 build, test and run identically on Windows and macOS, cut its memory use ~20x, and replace the MAUI GUI with a browser-only Angular + .NET WebAssembly web app, all protected by an automated test suite created before any refactoring.
 
-**Architecture:** The four pure-C# projects (SimCityReader, AnvilFile, MinecraftEditor, MineCity2000) stay the conversion engine. A new xUnit project pins their behaviour with unit tests plus a golden-master test against a committed city and baseline world. Only then does the block storage get flattened. Finally the engine is compiled to WebAssembly and driven from an Angular page; the MAUI GUI is removed last.
+**Architecture:** The four pure-C# projects (SimCityReader, AnvilFile, MinecraftEditor, MineCity2000) stay the conversion engine. A new xUnit project pins their behaviour with unit tests plus a golden-master test against a committed city and baseline world. Only then does the block storage get flattened. Finally the engine is compiled to WebAssembly and driven from a plain HTML/JS page; the MAUI GUI is removed last.
 
 **Tech Stack:** C# / .NET 8 (bumped to .NET 10 in PR 6), xUnit, GitHub Actions, .NET WebAssembly Browser App (`Microsoft.NET.Sdk.WebAssembly`, `[JSExport]`, runtime hosted in a Web Worker), a plain HTML/CSS/JS page (Angular was tried first in PR 6 and replaced in PR 6b, see below), GitHub Pages.
 

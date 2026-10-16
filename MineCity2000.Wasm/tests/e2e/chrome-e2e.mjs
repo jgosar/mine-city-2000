@@ -41,19 +41,21 @@ const out = path.resolve(process.env.MC2K_OUT ?? path.join(tmp, 'out'));
 const run = (cmd, cmdArgs, opts) => {
   try { return String(execFileSync(cmd, cmdArgs, opts) ?? ''); } catch (e) {
     if (/** @type {any} */ (e).code === 'ENOENT' && cmd === 'dotnet') throw new Error('dotnet not on PATH (on macOS with a user-local SDK: export PATH="$HOME/.dotnet:$PATH")');
-    throw e;
+    const err = /** @type {any} */ (e);
+    // dotnet/MSBuild report the details on stdout; err.message already carries stderr.
+    throw new Error(`${cmd} ${cmdArgs.join(' ')} failed: ${err.message}\n${err.stdout ?? ''}`.trimEnd());
   }
 };
-let cleanedUp = false;
-async function cleanup() {
-  if (cleanedUp) return;
-  cleanedUp = true;
+/** @type {Promise<void> | undefined} */
+let cleanupPromise;
+/** Runs once; every caller (watchdog, finally) awaits the same run, so nobody exits before the temp dir is gone. */
+const cleanup = () => (cleanupPromise ??= (async () => {
   try { ws?.close(); } catch { /* already closed */ }
   chrome?.kill('SIGKILL');
   server?.close();
   await sleep(300);
   fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-}
+})());
 // Watchdog: a hung page or build must not hold a CI job until the job timeout.
 setTimeout(async () => {
   console.error('e2e timed out after 10 minutes');
@@ -91,7 +93,8 @@ try {
   let debugPort = 0;
   for (let i = 0; i < 300 && !debugPort; i++) {
     if (chromeFailure) throw chromeFailure;
-    try { debugPort = Number(fs.readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]); } catch { await sleep(100); }
+    try { debugPort = Number(fs.readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]); } catch { /* not written yet */ }
+    if (!debugPort) await sleep(100); // also covers a file that exists but has no port yet
   }
   assert(debugPort, 'Chrome did not write DevToolsActivePort');
   let page;
@@ -102,9 +105,23 @@ try {
   assert(page, 'Chrome has no page target');
 
   const socket = (ws = new WebSocket(page.webSocketDebuggerUrl));
-  await new Promise((r) => (socket.onopen = r));
-  let nextId = 0;
+  /** Why the DevTools connection is unusable, once it is. @type {string | undefined} */
+  let closedReason;
   const pending = new Map();
+  const onGone = async (/** @type {string} */ why) => {
+    await sleep(150); // let Chrome's 'exit' event arrive so its exit code/signal can be named
+    closedReason ??= `${why}${chromeFailure ? `: ${chromeFailure.message}` : ''}`;
+    for (const settle of [...pending.values()]) settle({ error: { message: closedReason } });
+  };
+  socket.onclose = () => onGone('DevTools connection closed');
+  socket.onerror = () => onGone('DevTools connection error');
+  await new Promise((resolve, reject) => {
+    socket.onopen = resolve;
+    const early = (/** @type {string} */ why) => () => reject(new Error(`FAILED: ${why} before the page connected${chromeFailure ? `: ${chromeFailure.message}` : ''}`));
+    socket.addEventListener('close', early('DevTools connection closed'));
+    socket.addEventListener('error', early('DevTools connection error'));
+  });
+  let nextId = 0;
   socket.onmessage = ({ data }) => {
     const m = JSON.parse(String(data));
     if (m.id) pending.get(m.id)?.(m);
@@ -112,9 +129,10 @@ try {
     else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') console.log('[console.error]', m.params.args.map((/** @type {any} */ a) => a.value ?? a.description).join(' '));
   };
   const send = (/** @type {string} */ method, params = {}, timeoutMs = 30_000) => new Promise((resolve, reject) => {
+    if (closedReason) return reject(new Error(`${method}: ${closedReason}`));
     const id = ++nextId;
     const timer = setTimeout(() => { pending.delete(id); reject(new Error(`FAILED: Chrome did not answer ${method} within ${timeoutMs / 1000} s`)); }, timeoutMs);
-    pending.set(id, (/** @type {any} */ m) => { clearTimeout(timer); pending.delete(id); if (m.error) reject(new Error(`${method}: ${m.error.message}`)); else resolve(m.result); });
+    pending.set(id, (/** @type {any} */ m) => { clearTimeout(timer); pending.delete(id); if (m.error) reject(new Error(`FAILED: ${method}: ${m.error.message}`)); else resolve(m.result); });
     socket.send(JSON.stringify({ id, method, params }));
   });
   const evaluate = async (/** @type {string} */ expression, timeoutMs = 30_000) => {
@@ -123,7 +141,11 @@ try {
     return r.result.value;
   };
   const waitFor = async (/** @type {string} */ expression, /** @type {string} */ what, seconds = 180) => {
-    for (let i = 0; i < seconds * 10; i++) { if (await evaluate(expression).catch(() => false)) return; await sleep(100); }
+    for (let i = 0; i < seconds * 10; i++) {
+      if (closedReason) throw new Error(`FAILED: ${closedReason}`);
+      if (await evaluate(expression).catch(() => false)) return;
+      await sleep(100);
+    }
     throw new Error(`FAILED: timeout waiting for ${what}`);
   };
   const setFile = async (/** @type {string} */ file) => {

@@ -194,6 +194,12 @@ describe('ConverterClient', () => {
     assert.equal(await next, zip);
   });
 
+  it('a worker error before ready rejects ready and later conversions with that message', async () => {
+    worker.emit({ type: 'error', message: 'boom' });
+    await assert.rejects(client.ready, /boom/);
+    await assert.rejects(client.convert(file, true, true), { message: 'boom' });
+  });
+
   it('a rejected ready that nobody awaits does not raise unhandledRejection', async () => {
     let unhandled = null;
     const onUnhandled = (reason) => (unhandled = reason);

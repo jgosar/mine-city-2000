@@ -181,6 +181,4 @@ try {
   workerError = e instanceof Error ? e.message : String(e);
 }
 
-window.addEventListener('pagehide', revokeDownload);
-
 render();
