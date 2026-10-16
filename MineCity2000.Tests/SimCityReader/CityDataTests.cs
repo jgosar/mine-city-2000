@@ -27,12 +27,18 @@ public class CityDataTests
   }
 
   [Fact]
-  public void cityName_emptyCnam_isCurrentlyEmptyNotFileName()
+  public void cityName_emptyCnam_fallsBackToFileName()
   {
-    // Characterises current behaviour: a CNAM segment that exists but holds an empty name does NOT fall back
-    // to the file name (CityData only falls back when the CNAM segment is absent). See the PR 3 report.
     CityData city = Reader.read(new IffBuilder().rawCnam(new byte[] { 0, 0, 0, 0 }).build(), "myCity");
-    Assert.Equal("", city.getCityName());
+    Assert.Equal("myCity", city.getCityName());
+  }
+
+  [Fact]
+  public void cityName_whitespaceOnlyCnam_fallsBackToFileName()
+  {
+    byte[] cnam = new byte[] { 3, (byte)' ', (byte)' ', (byte)' ', 0 };
+    CityData city = Reader.read(new IffBuilder().rawCnam(cnam).build(), "myCity");
+    Assert.Equal("myCity", city.getCityName());
   }
 
   [Fact]

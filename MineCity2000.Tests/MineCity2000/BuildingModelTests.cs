@@ -16,22 +16,21 @@ public class BuildingModelTests
     }
   }
 
-  [Fact]
-  public void allModels_loadWithoutError()
+  [Theory]
+  [MemberData(nameof(modelFiles))]
+  public void allModels_loadWithoutError(byte code, string variant)
   {
     string dir = TestPaths.buildingsDir();
-    int count = 0;
-    foreach (object[] args in modelFiles())
-    {
-      byte code = (byte)args[0];
-      string variant = (string)args[1];
 
-      Assert.True(BuildingModel.modelFileExists(dir, code, variant), "missing " + code + variant);
-      var model = new BuildingModel(dir, code, variant);
-      Assert.Equal(16, model.getChunkData(0, 0).Length);
-      count++;
-    }
-    Assert.True(count > 100, "Expected the repository to hold the building models, found " + count);
+    Assert.True(BuildingModel.modelFileExists(dir, code, variant), "missing " + code + variant);
+    var model = new BuildingModel(dir, code, variant);
+    Assert.Equal(16, model.getChunkData(0, 0).Length);
+  }
+
+  [Fact]
+  public void buildingsDir_holdsTheModelFiles()
+  {
+    Assert.True(modelFiles().Count() > 100, "Expected the repository to hold the building models");
   }
 
   [Fact]

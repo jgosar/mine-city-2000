@@ -101,9 +101,10 @@ public class ByteConverterTests
   }
 
   [Fact]
-  public void readNumber_readEndingAtEndOfArray_isRejected()
+  public void readNumber_readEndingAtEndOfArray_isRejected_currentBehaviour()
   {
-    // Characterises the existing bounds check: offset + len must be strictly less than the array length.
+    // Characterises current behaviour (_currentBehaviour): offset + len must be strictly less than the array length.
+    // This is most likely an off-by-one in the bounds check (>= instead of >), not intended; do not rely on it.
     Assert.Throws<Exception>(() => ByteConverter.readNumber(new byte[] { 0, 0, 0, 1 }, 0, 4));
   }
 
