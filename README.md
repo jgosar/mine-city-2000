@@ -21,6 +21,21 @@ https://www.youtube.com/watch?v=Z3FkM7GLxKo
 
 https://www.youtube.com/watch?v=EhIF_1SuZLs
 
+## Using the web app
+
+You can try MineCity 2000 without installing anything: https://jgosar.github.io/mine-city-2000/
+
+The conversion runs entirely in your browser; your city file is never uploaded anywhere.
+
+1. Drop your *.sc2 city file onto the page (or choose it with the file picker).
+2. Tick "Fill underground area" and/or "Generate terrain around the city" if you want them (see "Running the compiled app" below for what they do).
+3. Click "Convert" and wait for the progress bar to finish.
+4. Download the resulting zip, unzip it and put the world folder into the `saves` folder of your Minecraft install directory.
+
+The first conversion downloads about 24 MB of building models, so the first run takes a bit longer. A conversion takes a few seconds on a modern laptop.
+
+It has been tested in current versions of Chrome and Firefox, and in the WebKit engine that Safari is built on (Safari itself has not been tested yet).
+
 ## Download link for the compiled app
 
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
@@ -80,6 +95,8 @@ The repository contains these projects:
 - MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
 - MineCity2000.Cli: The command-line interface
 - MineCity2000-GUI: A rudimentary GUI for running the program
+- MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser
+- MineCity2000-Web: The Angular web app (the page behind the web app link above)
 - MineCity2000.Tests: Unit and golden-master tests
 
 For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
@@ -95,6 +112,12 @@ Stuff that does NOT work yet:
 - Highways (mostly)
 - Underwater pipes?
 - ???
+
+### Building the web app
+
+`MineCity2000.Wasm` is built with the .NET `wasm-tools` workload (`dotnet workload install wasm-tools`); because it is part of `mine-city-2000.sln`, building the whole solution needs this workload too.
+
+`MineCity2000-Web` needs Node.js: run `npm ci` and then `npm run build` inside it. The build publishes `MineCity2000.Wasm` and copies it into the app. See [MineCity2000-Web/README.md](MineCity2000-Web/README.md) for details.
 
 ### Running the tests
 
