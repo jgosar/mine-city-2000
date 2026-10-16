@@ -54,7 +54,7 @@ public class CityDataTests
     }
     finally
     {
-      Directory.Delete(dir, true);
+      TempDirs.deleteBestEffort(dir);
     }
   }
 }
