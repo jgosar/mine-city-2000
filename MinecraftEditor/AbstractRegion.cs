@@ -10,6 +10,8 @@ namespace com.mc2k.MinecraftEditor
     /// One Minecraft region (32x32 chunks, 512x512 blocks, 256 high) held in memory as 32x32x16 lazily created
     /// <see cref="Section"/>s. Positions are given as (x, z, y) with x and z relative to the region (0..511) and
     /// y the height (0..255); this historical order differs from <see cref="Section"/>, which takes (x, y, z).
+    /// Coordinates are not range-checked (only y >= 256 is tolerated): callers must guard, and an out-of-range x or z
+    /// aliases another position or throws. Data values are 0..15; higher bits are masked off.
     /// </summary>
     public class AbstractRegion
     {

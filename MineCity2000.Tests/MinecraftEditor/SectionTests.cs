@@ -154,4 +154,23 @@ public class SectionTests
     Assert.Equal(7, copy.getData(2, 3, 4));
     Assert.Equal(Sandstone, copy.getBlock(0, 0, 0));
   }
+
+  [Theory]
+  [InlineData((byte)0)]
+  [InlineData(Sandstone)]
+  public void nbtTag_ofUniformSection_doesNotMaterialise_andEqualsTheMaterialisedBytes(byte uniformBlock)
+  {
+    var uniform = new Section(5, uniformBlock);
+    byte[] fromUniform = uniform.NBTTag.toBytesWithHeader();
+    Assert.False(uniform.isMaterialised);
+    Assert.Equal(uniformBlock == 0, uniform.isEmpty);
+
+    var materialised = new Section(5, uniformBlock);
+    materialised.getBlocks();
+    Assert.True(materialised.isMaterialised);
+    byte[] fromMaterialised = materialised.NBTTag.toBytesWithHeader();
+
+    Assert.Equal(fromMaterialised.Length, fromUniform.Length);
+    Assert.True(fromMaterialised.AsSpan().SequenceEqual(fromUniform), "NBT bytes differ");
+  }
 }

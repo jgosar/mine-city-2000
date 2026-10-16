@@ -40,6 +40,27 @@ public class AbstractRegionDifferentialTests
     assertSameSavedBytes(legacy, fresh, 0, 0);
   }
 
+  [Fact]
+  public void fillSection_matchesLegacyAfter4096PutBlocks()
+  {
+    var legacy = new LegacyAbstractRegion(3, 4);
+    var fresh = new AbstractRegion(3, 4);
+    const int chunkX = 5, chunkZ = 9, sectionY = 2;
+    for (int x = 0; x < 16; x++)
+    {
+      for (int z = 0; z < 16; z++)
+      {
+        for (int y = 0; y < 16; y++)
+        {
+          legacy.putBlock(16 * chunkX + x, 16 * chunkZ + z, 16 * sectionY + y, 24);
+        }
+      }
+    }
+    fresh.fillSection(chunkX, chunkZ, sectionY, 24);
+
+    assertSameSavedBytes(legacy, fresh, 3, 4);
+  }
+
   private static void runDifferential(int seed, int writes, int reads, int windowX, int windowZ, int windowSize, int scatteredWrites)
   {
     var rng = new Random(seed);

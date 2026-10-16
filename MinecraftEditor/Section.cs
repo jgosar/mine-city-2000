@@ -12,12 +12,25 @@ namespace com.mc2k.MinecraftEditor
         public override CompoundNBTTag NBTTag {
             get
             {
-                materialise();
+                byte[]? blocks = _blocks;
+                byte[]? data = _data;
+                byte[]? blockLight = _blockLight;
+                byte[]? skyLight = _skyLight;
+                if (blocks == null)
+                {
+                    // Uniform section: serialise from temporary arrays and leave the section itself unallocated,
+                    // so that saving a region does not inflate its memory.
+                    blocks = createUniformBlocks();
+                    data = new byte[2048];
+                    blockLight = new byte[2048];
+                    skyLight = createSkyLight();
+                }
+
                 List<AnyNBTTag> subTags = new List<AnyNBTTag>();
-                if (_blocks != null) { subTags.Add(new ByteArrayNBTTag("Blocks", _blocks)); }
-                if (_data != null) { subTags.Add(new ByteArrayNBTTag("Data", _data)); }
-                if (_blockLight != null) { subTags.Add(new ByteArrayNBTTag("BlockLight", _blockLight)); }
-                if (_skyLight != null) { subTags.Add(new ByteArrayNBTTag("SkyLight", _skyLight)); }
+                if (blocks != null) { subTags.Add(new ByteArrayNBTTag("Blocks", blocks)); }
+                if (data != null) { subTags.Add(new ByteArrayNBTTag("Data", data)); }
+                if (blockLight != null) { subTags.Add(new ByteArrayNBTTag("BlockLight", blockLight)); }
+                if (skyLight != null) { subTags.Add(new ByteArrayNBTTag("SkyLight", skyLight)); }
                 subTags.Add(new ByteNBTTag("Y", _y));
 
                 if (_add != null) { subTags.Add(new ByteArrayNBTTag("Add", _add)); }
@@ -97,7 +110,8 @@ namespace com.mc2k.MinecraftEditor
 
         /// <summary>
         /// Block id at the given position. Arguments are in (x, y, z) order, each 0..15, which matches Minecraft's
-        /// index formula <c>x + 16 * z + 256 * y</c>. Never allocates.
+        /// index formula <c>x + 16 * z + 256 * y</c>. Never allocates. Coordinates are not range-checked: callers
+        /// must guard, and an out-of-range value aliases another position (or throws past the array).
         /// </summary>
         public byte getBlock(int x, int y, int z)
         {
@@ -110,7 +124,8 @@ namespace com.mc2k.MinecraftEditor
         }
 
         /// <summary>
-        /// Data nibble (0..15) at the given position, in (x, y, z) order. Never allocates.
+        /// Data nibble (0..15) at the given position, in (x, y, z) order. Never allocates. Coordinates are not
+        /// range-checked (see <see cref="getBlock"/>).
         /// </summary>
         public byte getData(int x, int y, int z)
         {
@@ -127,6 +142,8 @@ namespace com.mc2k.MinecraftEditor
         /// <summary>
         /// Sets block id and data nibble at the given position, in (x, y, z) order. Allocates the arrays on the
         /// first write that differs from the uniform fill (a block other than the uniform block, or data other than 0).
+        /// <paramref name="data"/> is 0..15: higher bits are masked off. Coordinates are not range-checked (see
+        /// <see cref="getBlock"/>).
         /// </summary>
         public void putBlock(int x, int y, int z, byte block, byte data)
         {
@@ -179,8 +196,26 @@ namespace com.mc2k.MinecraftEditor
             return _y;
         }
 
+        private byte[] createUniformBlocks()
+        {
+            byte[] blocks = new byte[4096];
+            if (_uniformBlock != 0)
+            {
+                Array.Fill(blocks, _uniformBlock);
+            }
+            return blocks;
+        }
+
+        // Sky light is 255 (both nibbles 15) everywhere; the serialised world depends on it.
+        private static byte[] createSkyLight()
+        {
+            byte[] skyLight = new byte[2048];
+            Array.Fill(skyLight, (byte)255);
+            return skyLight;
+        }
+
         // Allocates the arrays of a uniform section (all positions hold _uniformBlock, data 0, block light 0,
-        // sky light 15). Returns the blocks array; does nothing else if they exist already.
+        // sky light 255, i.e. 15 in both nibbles). Returns the blocks array; does nothing if they exist already.
         private byte[] materialise()
         {
             if (_blocks != null)
@@ -188,15 +223,10 @@ namespace com.mc2k.MinecraftEditor
                 return _blocks;
             }
 
-            _blocks = new byte[4096];
-            if (_uniformBlock != 0)
-            {
-                Array.Fill(_blocks, _uniformBlock);
-            }
+            _blocks = createUniformBlocks();
             _data = new byte[2048];
             _blockLight = new byte[2048];
-            _skyLight = new byte[2048];
-            Array.Fill(_skyLight, (byte)255);
+            _skyLight = createSkyLight();
             return _blocks;
         }
     }
