@@ -13,3 +13,4 @@ release
 *.suo
 .vs
 ~$building_stats.xlsx
+MineCity2000/generated

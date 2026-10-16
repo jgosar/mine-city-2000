@@ -21,7 +21,7 @@ namespace com.mc2k.MineCity2000
 
     public static bool modelFileExists(String folder, byte typeCode, String modelVariant)
     {
-      return File.Exists(folder + "\\" + typeCode + modelVariant + ".mca");
+      return File.Exists(Path.Combine(folder, typeCode + modelVariant + ".mca"));
     }
 
     public BuildingModel(String folder, byte typeCode, String modelVariant)
@@ -38,7 +38,7 @@ namespace com.mc2k.MineCity2000
         }
       }
 
-      List<Chunk> chunks = MCAReader.readFile(folder + "\\" + typeCode + modelVariant + ".mca");
+      List<Chunk> chunks = MCAReader.readFile(Path.Combine(folder, typeCode + modelVariant + ".mca"));
 
       byte[][][][] tmpSectionData;
 

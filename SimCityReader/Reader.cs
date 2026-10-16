@@ -11,7 +11,7 @@ namespace com.mc2k.SimCityReader
         {
             byte[] fileBytes = System.IO.File.ReadAllBytes(fileName);
             Dictionary<String, Segment> segments = readSegmentsFromBytes(fileBytes);
-            String cityName = fileName.Split('\\').Last().Replace(".sc2", "").Replace(".SC2", ""); // Get city name from filename just in case it can't be read from the file contents
+            String cityName = Path.GetFileNameWithoutExtension(fileName); // Get city name from filename just in case it can't be read from the file contents
 
             CityData result = new CityData(segments, cityName);
 

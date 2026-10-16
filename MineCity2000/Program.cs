@@ -10,7 +10,7 @@ namespace com.mc2k.MineCity2000
     private static string helpText = @"Usage: ./MineCity2000 <SimCity2000 file> [OPTIONS]
 
 -o, --output
-            Output directory Recommended to be something like 'C:\Users\[username]\AppData\Roaming\.minecraft\saves' if you want to open the city directly in minecraft). If this parameter is not used, the generated cities will be placed into the `generated` subfolder of the current directory. Each city will be saved into a subfolder of the selected path, which will be named the same as the city file.
+            Output directory Recommended to be something like 'C:\Users\[username]\AppData\Roaming\.minecraft\saves' if you want to open the city directly in minecraft). If this parameter is not used, the cities are placed into the Minecraft saves folder of the current user if it exists, otherwise into a `generated` folder next to the program. Each city will be saved into a subfolder of the selected path, which will be named the same as the city file.
 
 -f, --fillUnderground
             Fills the underground sections of the city with sandstone, so you can't fall through when digging down. This will increase memory usage and generation time.
@@ -58,12 +58,12 @@ namespace com.mc2k.MineCity2000
     private static void parseArgs(string[] args, out string inputFile, out string buildingsDir, out string outputDir, out bool fillUnderground, out bool generateTerrain, out bool continueCmd)
     {
       inputFile = args[0];
-      String cityName = inputFile.ToLower().Split('\\').Last().Replace(".sc2", "");
+      String cityName = Path.GetFileNameWithoutExtension(inputFile).ToLower();
 
 
-      String workingDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-      String defaultArgsText = File.Exists($@"{workingDir}\default_args.txt") ? File.ReadAllText($@"{workingDir}\default_args.txt") : "";
-      String[] defaultArgs = defaultArgsText.Split("\r\n").Where(row => !row.StartsWith("#")).SelectMany(row => row.Split(" ")).ToArray();
+      String workingDir = AppContext.BaseDirectory;
+      String defaultArgsPath = Path.Combine(workingDir, "default_args.txt");
+      String[] defaultArgs = File.Exists(defaultArgsPath) ? DefaultArgs.parse(File.ReadAllText(defaultArgsPath)) : [];
 
       String[] allArgs = args.Concat(defaultArgs).ToArray();
 
@@ -72,14 +72,14 @@ namespace com.mc2k.MineCity2000
       String[]? generateTerrainArg = parseArg(["-g", "--generateTerrain"], 0, allArgs);
       String[]? continueArg = parseArg(["-c", "--continue"], 0, allArgs);
 
-      buildingsDir = $@"{workingDir}\buildings";
-      outputDir = $@"{workingDir}\generated";
+      buildingsDir = Path.Combine(workingDir, "buildings");
+      outputDir = DefaultArgs.defaultSavesDir() ?? Path.Combine(workingDir, "generated");
       if (outputArg != null)
       {
         outputDir = outputArg[0];
       }
 
-      outputDir = @$"{outputDir}\{cityName}";
+      outputDir = Path.Combine(outputDir, cityName);
 
       fillUnderground = false;
       if (fillUndergroundArg != null)

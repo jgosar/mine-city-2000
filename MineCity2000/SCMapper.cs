@@ -717,12 +717,12 @@ namespace com.mc2k.MineCity2000
     public static void createLevelDat(String outputDir, String cityName, double[] playerPos, MapperOptions options)
     {
       LevelDat ld = new LevelDat(cityName, playerPos, options.generateTerrain);
-      ld.saveToFile(outputDir + "\\level.dat");
+      ld.saveToFile(Path.Combine(outputDir, "level.dat"));
     }
 
     public static void saveRegion(AbstractRegion region, String outputDir)
     {
-      region.saveToFolder(outputDir + "\\region");
+      region.saveToFolder(Path.Combine(outputDir, "region"));
     }
 
     private void reportProgress()

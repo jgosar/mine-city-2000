@@ -49,13 +49,13 @@ namespace com.mc2k.MinecraftEditor
       dir.CreateSubdirectory("region");
 
       LevelDat ld = new LevelDat("Generated world", new double[] { 0.0, 0.0, 0.0 }, false);
-      ld.saveToFile(outputDir + "\\level.dat");
+      ld.saveToFile(Path.Combine(outputDir, "level.dat"));
 
       for (int i = 0; i < _regions.Length; i++)
       {
         for (int j = 0; j < _regions[i].Length; j++)
         {
-          _regions[i][j].saveToFolder(outputDir + "\\region");
+          _regions[i][j].saveToFolder(Path.Combine(outputDir, "region"));
         }
       }
     }
