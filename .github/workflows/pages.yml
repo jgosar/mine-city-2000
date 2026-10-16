@@ -21,18 +21,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: MineCity2000-Web/package-lock.json
-      - run: npm ci
-        working-directory: MineCity2000-Web
-      - run: npm test
-        working-directory: MineCity2000-Web
-      - run: npm run build -- --base-href /mine-city-2000/
-        working-directory: MineCity2000-Web
-      - run: touch MineCity2000-Web/dist/MineCity2000-Web/browser/.nojekyll
+      - run: dotnet publish MineCity2000.Wasm -c Release
+      - run: node --test "MineCity2000.Wasm/tests/*.test.mjs"
+      - run: node MineCity2000.Wasm/tests/e2e/chrome-e2e.mjs
+      - run: touch MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: MineCity2000-Web/dist/MineCity2000-Web/browser
+          path: MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot
 
   deploy:
     needs: build
