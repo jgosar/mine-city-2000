@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinecraftEditor", "Minecraf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimCityReader", "SimCityReader\SimCityReader.csproj", "{27BF9F2E-5050-4AAF-88B3-5079DE5D2F83}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCity2000.Tests", "MineCity2000.Tests\MineCity2000.Tests.csproj", "{A46B8089-AEF6-47E7-BB73-E3B65FC7A2A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{27BF9F2E-5050-4AAF-88B3-5079DE5D2F83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27BF9F2E-5050-4AAF-88B3-5079DE5D2F83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27BF9F2E-5050-4AAF-88B3-5079DE5D2F83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A46B8089-AEF6-47E7-BB73-E3B65FC7A2A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A46B8089-AEF6-47E7-BB73-E3B65FC7A2A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A46B8089-AEF6-47E7-BB73-E3B65FC7A2A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A46B8089-AEF6-47E7-BB73-E3B65FC7A2A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
