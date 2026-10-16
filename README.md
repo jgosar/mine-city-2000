@@ -95,11 +95,10 @@ The repository contains these projects:
 - MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
 - MineCity2000.Cli: The command-line interface
 - MineCity2000-GUI: A rudimentary GUI for running the program. It no longer builds (see below) and is removed in the next PR
-- MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser
-- MineCity2000-Web: The Angular web app (the page behind the web app link above)
+- MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser and the plain HTML/CSS/JS page behind the web app link above (in `wwwroot`)
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the web app additionally needs Node.js (see below). The projects are set up for development with Visual Studio Code.
+For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the web app additionally needs the `wasm-tools` workload (see below). The projects are set up for development with Visual Studio Code.
 
 `MineCity2000-GUI` no longer builds: it targets `net8.0-windows` while the engine moved to .NET 10, and a .NET 8 project cannot reference a .NET 10 one. It is removed in the next PR. The CLI and the web app are the supported front ends; if you open the project with Visual Studio Code, you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu.
 
@@ -117,7 +116,7 @@ Stuff that does NOT work yet:
 
 `MineCity2000.Wasm` is built with the .NET `wasm-tools` workload (`dotnet workload install wasm-tools`); because it is part of `mine-city-2000.sln`, building the whole solution needs this workload too.
 
-`MineCity2000-Web` needs Node.js: run `npm ci` and then `npm run build` inside it. The build publishes `MineCity2000.Wasm` and copies it into the app. See [MineCity2000-Web/README.md](MineCity2000-Web/README.md) for details.
+For development run `dotnet run --project MineCity2000.Wasm` and open the printed URL (an interpreter build: a conversion takes about 11 seconds). `dotnet publish MineCity2000.Wasm -c Release` produces the complete site in `MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot`; serve it with any static web server (a `file://` URL does not work for module workers).
 
 ### Running the tests
 
@@ -126,7 +125,7 @@ The golden-master tests compare generated worlds with the baseline worlds in `Mi
 to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden`, then run `dotnet test MineCity2000.Tests` normally afterwards.
 Regenerating rewrites both baseline zips (zip entries carry timestamps), so they show as ~16 MB changed even when the content is identical; only commit them after a golden test failed for an intended output change.
 
-The web app's unit tests (`npm test` inside `MineCity2000-Web`) run in the `Pages` GitHub Actions workflow, before the web app is built.
+The web page's unit tests run with `node --test "MineCity2000.Wasm/tests/*.test.mjs"` (Node.js 22 or newer, no packages to install).
 
 ## If you would like to help
 

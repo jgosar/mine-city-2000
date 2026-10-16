@@ -21,10 +21,3 @@ MineCity2000.Tests/obj
 MineCity2000.Wasm/bin
 MineCity2000.Wasm/obj
 MineCity2000.Wasm/wwwroot/buildings.zip
-MineCity2000-Web/node_modules
-MineCity2000-Web/dist
-MineCity2000-Web/.angular
-MineCity2000-Web/src/assets/_framework
-MineCity2000-Web/src/assets/buildings.zip
-MineCity2000-Web/src/assets/worker.js
-MineCity2000-Web/src/assets/main.js
