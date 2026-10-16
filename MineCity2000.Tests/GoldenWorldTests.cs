@@ -54,6 +54,21 @@ public class GoldenWorldTests
     Assert.True(buildingBlocks > 100000, "only " + buildingBlocks + " non-terrain blocks in r.1.1.mca");
   }
 
+  // Verification hook for worlds produced outside this process (e.g. by the browser build): set MC2K_COMPARE_DIR to an
+  // extracted world folder and it is compared with the default baseline. Without it the test passes trivially (xUnit has no dynamic skip).
+  [Fact]
+  public void externalWorld_matchesBaseline_whenCompareDirSet()
+  {
+    string? dir = Environment.GetEnvironmentVariable("MC2K_COMPARE_DIR");
+    if (string.IsNullOrEmpty(dir))
+    {
+      return;
+    }
+
+    string baseline = Path.Combine(AppContext.BaseDirectory, "Fixtures", "baseline", "default.zip");
+    WorldComparer.assertWorldsEqual(baseline, dir);
+  }
+
   private static void run(bool fill, string baselineName)
   {
     string outDir = Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "mc2k-golden-" + Guid.NewGuid());
