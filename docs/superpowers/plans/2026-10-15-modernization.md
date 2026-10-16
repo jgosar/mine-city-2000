@@ -449,6 +449,8 @@ Plus `SectionTests`: uniform sandstone section → `getBlock` anywhere is 24 and
 
 - [ ] **Step 3: Implement `Section`** per the interface. Storage: `byte[]? _blocks` (4096), `byte[]? _data` (2048), `byte _uniformBlock`. `putBlock`: if arrays null and `block == _uniformBlock && data == 0` return; else materialize (`Array.Fill(_blocks, _uniformBlock)`), then write. `NBTTag` getter materializes first. Keep `_blockLight`/`_skyLight` as today (allocated on materialize, skyLight 255).
 
+- [ ] **Step 3b (added 2026-10-16): fix the pre-existing read transposition.** The old `getBlockData` reads `section[x%16][y%16][z%16]` while `putBlock` writes `section[x%16][z%16][y%16]`. The new implementation must read and write the same index (`x + 16*z + 256*y`). Remove the `Skip` from the PR 3 round-trip tests in `AbstractRegionTests` (`putBlock_thenGetBlock_returnsSameValue`, `putBlockData_storesDataNibble`), and verify the golden baselines are unchanged (the only reader, `fillWithWaterUpToWaterLevel`, runs before buildings exist, so the fix should be output-neutral; if a baseline changes, stop and report the diff before regenerating).
+
 - [ ] **Step 4: Implement `AbstractRegion`** over `Section?[,,] _sections = new Section?[32, 32, 16]`. `getBlock` returns 0 for `y >= 256` or null section (**no allocation** — this removes the discarded-allocation bug). `saveToFolder` iterates sections, skips null and `isEmpty`, builds chunks exactly as today (same chunk ordering: i then j, sections ascending k). `fillSection(cx,cz,sy,block)` sets `_sections[cx,cz,sy] = new Section((byte)sy, block)` (used by the fill-underground path).
 
 - [ ] **Step 5: Run the differential test + SectionTests** → pass. Commit `refactor: flat Section storage in AbstractRegion`.
