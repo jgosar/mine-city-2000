@@ -14,3 +14,5 @@ release
 .vs
 ~$building_stats.xlsx
 MineCity2000/generated
+MineCity2000.Tests/bin
+MineCity2000.Tests/obj

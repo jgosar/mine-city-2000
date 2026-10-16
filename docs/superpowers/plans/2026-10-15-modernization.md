@@ -44,7 +44,7 @@
 
 ## Review Focus
 
-1. A `.sc2` whose embedded CNAM name is empty or garbage → world folder and `LevelName` must fall back to the file name without extension (test in PR 3, `CityDataTests.cityName_fallsBackToFileName`).
+1. A `.sc2` whose embedded CNAM name is empty or whitespace-only → `LevelName` must fall back to the file name without extension (the world folder already comes from the file name) (tests in PR 3, `CityDataTests.cityName_*_fallsBackToFileName`). Non-printable "garbage" names are not detected; revisit in PR 6, where browser uploads make odd files likelier.
 2. An output path containing spaces on any OS → must be used verbatim (test in PR 1 `DefaultArgsTests.value_with_spaces_is_kept`).
 3. A region file produced on Windows and one produced on macOS from the same city → identical decompressed chunk NBT (golden test runs on all 3 CI OSes in PR 3).
 4. A building model `.mca` with a section containing only data nibbles (block id 0, data ≠ 0) → must still be loaded as an existing section (PR 5 `BuildingModelTests.allModels_matchBaselineHashes` covers all 162 real models; the differential test covers synthetic cases).
@@ -448,6 +448,8 @@ public void randomWrites_matchLegacyImplementation()
 Plus `SectionTests`: uniform sandstone section → `getBlock` anywhere is 24 and `getBlocks()` is 4096×24; writing air into a uniform section materializes and keeps the rest 24; nibble packing: `putBlock(1,0,0,b,0xF)` then `getData()[0] == 0xF0`, `putBlock(0,0,0,b,0xF)` → `getData()[0] == 0xFF`.
 
 - [ ] **Step 3: Implement `Section`** per the interface. Storage: `byte[]? _blocks` (4096), `byte[]? _data` (2048), `byte _uniformBlock`. `putBlock`: if arrays null and `block == _uniformBlock && data == 0` return; else materialize (`Array.Fill(_blocks, _uniformBlock)`), then write. `NBTTag` getter materializes first. Keep `_blockLight`/`_skyLight` as today (allocated on materialize, skyLight 255).
+
+- [ ] **Step 3b (added 2026-10-16): fix the pre-existing read transposition.** The old `getBlockData` reads `section[x%16][y%16][z%16]` while `putBlock` writes `section[x%16][z%16][y%16]`. The new implementation must read and write the same index (`x + 16*z + 256*y`). Replace the PR 3 characterisation test `AbstractRegionTests.getBlock_readsZAndYSwappedWithinSection_currentBehaviour` with a proper asymmetric round-trip (`putBlock(1,2,3,24)` then `getBlock(1,2,3)==24` and `getBlock(1,3,2)==0`), and verify the golden baselines are unchanged (the only reader, `fillWithWaterUpToWaterLevel`, runs before buildings exist, so the fix should be output-neutral; if a baseline changes, stop and report the diff before regenerating).
 
 - [ ] **Step 4: Implement `AbstractRegion`** over `Section?[,,] _sections = new Section?[32, 32, 16]`. `getBlock` returns 0 for `y >= 256` or null section (**no allocation** — this removes the discarded-allocation bug). `saveToFolder` iterates sections, skips null and `isEmpty`, builds chunks exactly as today (same chunk ordering: i then j, sections ascending k). `fillSection(cx,cz,sy,block)` sets `_sections[cx,cz,sy] = new Section((byte)sy, block)` (used by the fill-underground path).
 

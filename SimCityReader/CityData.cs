@@ -20,6 +20,10 @@ namespace com.mc2k.SimCityReader
             if (segments.ContainsKey("CNAM")) // Read city name from file contents, if it is included in the file, otherwise use the name passed to the constructor
             {
                 interpretCNAM(segments["CNAM"]);
+                if (string.IsNullOrWhiteSpace(_cityName))
+                {
+                    _cityName = cityName; // Empty name in the file: fall back to the name passed to the constructor
+                }
             }
             else
             {
