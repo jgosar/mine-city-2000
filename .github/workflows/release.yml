@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   # Validate the build job on pull requests that touch the CLI or this workflow (no release is created).
   pull_request:
-    paths: ['.github/workflows/release.yml', 'MineCity2000.Cli/**', 'MineCity2000/**']
+    paths: ['.github/workflows/release.yml', 'global.json', 'MineCity2000.Cli/**', 'MineCity2000/**', 'SimCityReader/**', 'AnvilFile/**', 'MinecraftEditor/**', 'buildings/**']
 
 permissions:
   contents: read
