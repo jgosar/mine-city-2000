@@ -13,6 +13,7 @@ namespace com.mc2k.MineCity2000
     private int _progress;
     private const int CITY_WIDTH_IN_REGIONS = 4;//How many Minecraft regions are in a SimCity city
     private const int REGION_SIZE = 512;//How many pixels/blocks are in a Minecraft region
+    private const int CHUNK_SIZE = 16;//How many blocks wide and long a Minecraft chunk is
     private const int SQUARE_SIZE = 16;//How many pixels/blocks are in a SimCity square
     private const int SQUARES_IN_REGION = REGION_SIZE / SQUARE_SIZE;//How many SimCity squares are in a Minecraft region
     private const int SECTIONS_IN_CHUNK = 16;//How many Minecraft sections are in a Minecraft chunk (by height)
@@ -297,17 +298,45 @@ namespace com.mc2k.MineCity2000
 
     private void mapRegionLandscape(AbstractRegion newRegion, int[][] terrainHeightsForRegion, byte waterLevel, Boolean fillUnderground)
     {
-      for (int x = 0; x < REGION_SIZE; x++)
+      // Every column holds sandstone at terrainHeight and terrainHeight + 1, or at every height from 0 to terrainHeight + 1 when filling underground.
+      // When filling, the sections that lie completely below the lowest column of a chunk are filled as a whole instead of block by block.
+      for (int chunkX = 0; chunkX < REGION_SIZE / CHUNK_SIZE; chunkX++)
       {
-        for (int z = 0; z < REGION_SIZE; z++)
+        for (int chunkZ = 0; chunkZ < REGION_SIZE / CHUNK_SIZE; chunkZ++)
         {
-          int bottomOfFilledGround = fillUnderground ? 0 : terrainHeightsForRegion[x][z];
-          for (int y = terrainHeightsForRegion[x][z] + 1; y >= bottomOfFilledGround; y--)
+          int filledSections = 0;
+          if (fillUnderground)
           {
-            newRegion.putBlock(x, z, y, SANDSTONE_BLOCK);
+            int lowestTop = int.MaxValue;
+            for (int x = chunkX * CHUNK_SIZE; x < (chunkX + 1) * CHUNK_SIZE; x++)
+            {
+              for (int z = chunkZ * CHUNK_SIZE; z < (chunkZ + 1) * CHUNK_SIZE; z++)
+              {
+                lowestTop = Math.Min(lowestTop, terrainHeightsForRegion[x][z] + 1);
+              }
+            }
+
+            // section sy is entirely sandstone if its top block, SECTION_HEIGHT * sy + SECTION_HEIGHT - 1, is at most lowestTop
+            while (filledSections < SECTIONS_IN_CHUNK && SECTION_HEIGHT * filledSections + SECTION_HEIGHT - 1 <= lowestTop)
+            {
+              newRegion.fillSection(chunkX, chunkZ, filledSections, SANDSTONE_BLOCK);
+              filledSections++;
+            }
           }
 
-          fillWithWaterUpToWaterLevel(terrainHeightsForRegion, newRegion, waterLevel, x, z);
+          for (int x = chunkX * CHUNK_SIZE; x < (chunkX + 1) * CHUNK_SIZE; x++)
+          {
+            for (int z = chunkZ * CHUNK_SIZE; z < (chunkZ + 1) * CHUNK_SIZE; z++)
+            {
+              int bottomOfFilledGround = fillUnderground ? filledSections * SECTION_HEIGHT : terrainHeightsForRegion[x][z];
+              for (int y = terrainHeightsForRegion[x][z] + 1; y >= bottomOfFilledGround; y--)
+              {
+                newRegion.putBlock(x, z, y, SANDSTONE_BLOCK);
+              }
+
+              fillWithWaterUpToWaterLevel(terrainHeightsForRegion, newRegion, waterLevel, x, z);
+            }
+          }
         }
       }
     }
