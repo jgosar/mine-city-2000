@@ -66,7 +66,7 @@ namespace com.mc2k.MineCity2000
 
       if (!options.generateTerrain)
       {
-        createBorderRegions(outputDir);
+        createBorderRegions(outputDir, options);
       }
 
       _progress = 100;
@@ -82,7 +82,7 @@ namespace com.mc2k.MineCity2000
           int[][] terrainHeightsForRegion = getTerrainHeightsForRegion(terrainHeights, regionX, regionZ);
           AbstractRegion newRegion = mapRegion(data, terrainHeightsForRegion, regionX, regionZ, options);
 
-          saveRegion(newRegion, outputDir);
+          saveRegion(newRegion, outputDir, (int)options.timestamp);
 
           _progress += 4;
           reportProgress();
@@ -107,7 +107,7 @@ namespace com.mc2k.MineCity2000
       return terrainHeightsForRegion;
     }
 
-    private void createBorderRegions(String outputDir)
+    private void createBorderRegions(String outputDir, MapperOptions options)
     {
       for (int i = 0; i < CITY_WIDTH_IN_REGIONS; i++)
       {
@@ -127,10 +127,10 @@ namespace com.mc2k.MineCity2000
           buildWallSection(borderRegionWest, 0, sectionNum);
         }
 
-        saveRegion(borderRegionNorth, outputDir);
-        saveRegion(borderRegionSouth, outputDir);
-        saveRegion(borderRegionEast, outputDir);
-        saveRegion(borderRegionWest, outputDir);
+        saveRegion(borderRegionNorth, outputDir, (int)options.timestamp);
+        saveRegion(borderRegionSouth, outputDir, (int)options.timestamp);
+        saveRegion(borderRegionEast, outputDir, (int)options.timestamp);
+        saveRegion(borderRegionWest, outputDir, (int)options.timestamp);
 
         _progress += 4;
         reportProgress();
@@ -716,13 +716,13 @@ namespace com.mc2k.MineCity2000
 
     public static void createLevelDat(String outputDir, String cityName, double[] playerPos, MapperOptions options)
     {
-      LevelDat ld = new LevelDat(cityName, playerPos, options.generateTerrain);
+      LevelDat ld = new LevelDat(cityName, playerPos, options.generateTerrain, options.timestamp, options.randomSeed);
       ld.saveToFile(Path.Combine(outputDir, "level.dat"));
     }
 
-    public static void saveRegion(AbstractRegion region, String outputDir)
+    public static void saveRegion(AbstractRegion region, String outputDir, int timestamp)
     {
-      region.saveToFolder(Path.Combine(outputDir, "region"));
+      region.saveToFolder(Path.Combine(outputDir, "region"), timestamp);
     }
 
     private void reportProgress()

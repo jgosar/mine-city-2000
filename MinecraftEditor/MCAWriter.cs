@@ -6,9 +6,19 @@ using com.mc2k.AnvilFile.Tags;
 
 namespace com.mc2k.MinecraftEditor
 {
-    class MCAWriter
+    public class MCAWriter
     {
         public static void writeToFile(List<Chunk> chunks, String fileName)
+        {
+            writeToFile(chunks, fileName, (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        }
+
+        public static void writeToFile(List<Chunk> chunks, String fileName, int timestamp)
+        {
+            System.IO.File.WriteAllBytes(fileName, toBytes(chunks, timestamp));
+        }
+
+        public static byte[] toBytes(List<Chunk> chunks, int timestamp)
         {
             List<byte> output = new List<byte>();
 
@@ -16,8 +26,6 @@ namespace com.mc2k.MinecraftEditor
             byte[] timestamps = new byte[4096];
             List<byte> chunkContents = new List<byte>();
 
-            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
-            int timestamp = (int)t.TotalSeconds;
             byte[] timestampBytes = ByteConverter.intBytes(timestamp);
 
             foreach (Chunk chunk in chunks)
@@ -44,7 +52,7 @@ namespace com.mc2k.MinecraftEditor
             output.AddRange(timestamps);
             output.AddRange(chunkContents);
 
-            System.IO.File.WriteAllBytes(fileName, output.ToArray());
+            return output.ToArray();
         }
 
         private static byte[] chunkToBytes(Chunk chunk)

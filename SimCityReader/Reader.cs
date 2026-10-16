@@ -10,8 +10,14 @@ namespace com.mc2k.SimCityReader
         public static CityData readFile(String fileName)
         {
             byte[] fileBytes = System.IO.File.ReadAllBytes(fileName);
-            Dictionary<String, Segment> segments = readSegmentsFromBytes(fileBytes);
             String cityName = Path.GetFileNameWithoutExtension(fileName); // Get city name from filename just in case it can't be read from the file contents
+
+            return read(fileBytes, cityName);
+        }
+
+        public static CityData read(byte[] fileBytes, String cityName)
+        {
+            Dictionary<String, Segment> segments = readSegmentsFromBytes(fileBytes);
 
             CityData result = new CityData(segments, cityName);
 

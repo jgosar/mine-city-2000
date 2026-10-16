@@ -10,8 +10,11 @@ namespace com.mc2k.MinecraftEditor
     {
         public static List<Chunk> readFile(String fileName)
         {
-            byte[] fileBytes = System.IO.File.ReadAllBytes(fileName);
+            return read(System.IO.File.ReadAllBytes(fileName));
+        }
 
+        public static List<Chunk> read(byte[] fileBytes)
+        {
             List<Chunk> chunks = new List<Chunk>();
 
             for (int offset = 0; offset < 4096; offset += 4)

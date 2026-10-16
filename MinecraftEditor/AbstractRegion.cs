@@ -130,6 +130,11 @@ namespace com.mc2k.MinecraftEditor
 
         public void saveToFolder(String outputFolder)
         {
+            saveToFolder(outputFolder, (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        }
+
+        public void saveToFolder(String outputFolder, int timestamp)
+        {
             String fileName = "r." + _regionX + "." + _regionZ + ".mca";
             List<Chunk> chunks = new List<Chunk>();
 
@@ -158,7 +163,7 @@ namespace com.mc2k.MinecraftEditor
                 }
             }
 
-            MCAWriter.writeToFile(chunks, Path.Combine(outputFolder, fileName));
+            MCAWriter.writeToFile(chunks, Path.Combine(outputFolder, fileName), timestamp);
         }
 
         private void fillSection(Section tmpSection, byte[][][][] blockDatas)
