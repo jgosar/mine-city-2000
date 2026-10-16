@@ -42,11 +42,15 @@ public class WebConverterTests
     }
   }
 
-  [Fact]
-  public void convert_rejectsInvalidFile()
+  [Theory]
+  [InlineData(false)]
+  [InlineData(true)]
+  public void convert_rejectsInvalidFile(bool tiny)
   {
     var options = new MapperOptions(false, false, timestamp: 1700000000, randomSeed: 12345);
-    byte[] notACity = System.Text.Encoding.ASCII.GetBytes("This is definitely not a SimCity 2000 file, just some text.");
+    byte[] notACity = tiny
+      ? new byte[] { 1, 2, 3 }
+      : System.Text.Encoding.ASCII.GetBytes("This is definitely not a SimCity 2000 file, just some text.");
 
     var ex = Assert.Throws<InvalidDataException>(() =>
       WebConverter.convertToZip(notACity, "bad", new DirectoryBuildingSource(TestPaths.buildingsDir()), options, null, newWorkDir()));
@@ -65,5 +69,59 @@ public class WebConverterTests
       WebConverter.convertToZip(truncated, "cut", new DirectoryBuildingSource(TestPaths.buildingsDir()), options, null, workDir));
 
     Assert.False(Directory.Exists(workDir), "workDir should be deleted even when conversion fails");
+  }
+
+  [Theory]
+  [InlineData("../evil/..")]
+  [InlineData("")]
+  public void convertToZip_sanitisesCityName(string cityName)
+  {
+    string parent = Path.Combine(Path.GetTempPath(), "mc2k-web-parent-" + Guid.NewGuid());
+    string workDir = Path.Combine(parent, "work");
+    try
+    {
+      Directory.CreateDirectory(parent);
+      var options = new MapperOptions(false, false, timestamp: 1700000000, randomSeed: 12345);
+
+      byte[] zip = WebConverter.convertToZip(File.ReadAllBytes(FixtureCity), cityName, new DirectoryBuildingSource(TestPaths.buildingsDir()), options, null, workDir);
+
+      Assert.NotEmpty(zip);
+      Assert.False(Directory.Exists(workDir), "workDir should be deleted");
+      Assert.False(Directory.Exists(Path.Combine(parent, "evil")));
+      Assert.Empty(Directory.GetFileSystemEntries(parent));
+    }
+    finally
+    {
+      TempDirs.deleteBestEffort(parent);
+    }
+  }
+
+  [Fact]
+  public void convert_rejectsFileTruncatedOnSegmentBoundary()
+  {
+    var options = new MapperOptions(false, false, timestamp: 1700000000, randomSeed: 12345);
+    byte[] city = File.ReadAllBytes(FixtureCity);
+
+    // walk the IFF header: 12 bytes, then name(4) + length(4) + body per segment
+    int offset = 12;
+    var boundaries = new List<int>();
+    while (offset < city.Length && boundaries.Count < 2)
+    {
+      int length = (city[offset + 4] << 24) | (city[offset + 5] << 16) | (city[offset + 6] << 8) | city[offset + 7];
+      offset += 8 + length;
+      boundaries.Add(offset);
+    }
+
+    foreach (int boundary in boundaries)
+    {
+      byte[] cut = city.Take(boundary).ToArray();
+      string workDir = newWorkDir();
+
+      var ex = Assert.Throws<InvalidDataException>(() =>
+        WebConverter.convertToZip(cut, "cut", new DirectoryBuildingSource(TestPaths.buildingsDir()), options, null, workDir));
+
+      Assert.Contains("truncated", ex.Message);
+      Assert.False(Directory.Exists(workDir));
+    }
   }
 }

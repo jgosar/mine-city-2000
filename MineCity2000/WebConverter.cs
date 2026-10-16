@@ -12,7 +12,8 @@ namespace com.mc2k.MineCity2000
     /// Converts the city and returns the world as a zip (entries "level.dat" and "region/r.X.Z.mca").
     /// </summary>
     /// <param name="sc2">The contents of the .sc2 file.</param>
-    /// <param name="cityName">Used as the file name of the city and the folder name of the world inside <paramref name="workDir"/>.</param>
+    /// <param name="cityName">Used as the file name of the city and the folder name of the world inside <paramref name="workDir"/>.
+    /// It is sanitised first: any directory part is dropped, invalid file name characters become '_', and an empty, "." or ".." result becomes "city".</param>
     /// <param name="buildings">Where the building models come from.</param>
     /// <param name="options">Conversion options.</param>
     /// <param name="progress">Receives progress in percent, or null.</param>
@@ -24,6 +25,8 @@ namespace com.mc2k.MineCity2000
       {
         throw new InvalidDataException("Not a SimCity 2000 city file");
       }
+
+      cityName = sanitiseCityName(cityName);
 
       try
       {
@@ -51,6 +54,17 @@ namespace com.mc2k.MineCity2000
         {
         }
       }
+    }
+
+    private static string sanitiseCityName(string cityName)
+    {
+      string name = Path.GetFileName(cityName);
+      foreach (char invalid in Path.GetInvalidFileNameChars())
+      {
+        name = name.Replace(invalid, '_');
+      }
+      name = name.Trim();
+      return name.Length == 0 || name == "." || name == ".." ? "city" : name;
     }
 
     // An IFF file: "FORM", a 4 byte length, then the form type "SCDH".

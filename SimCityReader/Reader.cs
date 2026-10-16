@@ -64,6 +64,14 @@ namespace com.mc2k.SimCityReader
                 // a truncated file ends in the middle of a segment header or body; a corrupt length is negative or past the end
                 throw new InvalidDataException("City file is truncated or corrupt", ex);
             }
+
+            foreach (String required in new[] { "ALTM", "XBLD", "XTER", "MISC" })
+            {
+                if (!segments.ContainsKey(required))
+                {
+                    throw new InvalidDataException("City file is truncated or corrupt");
+                }
+            }
             return segments;
         }
 

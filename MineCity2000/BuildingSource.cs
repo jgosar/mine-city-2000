@@ -29,9 +29,15 @@ namespace com.mc2k.MineCity2000
     /// <inheritdoc/>
     public byte[]? read(string fileName)
     {
+      string path = Path.Combine(_dir, fileName);
+      if (!File.Exists(path))
+      {
+        return null;
+      }
+
       try
       {
-        return File.ReadAllBytes(Path.Combine(_dir, fileName));
+        return File.ReadAllBytes(path);
       }
       catch (FileNotFoundException)
       {
