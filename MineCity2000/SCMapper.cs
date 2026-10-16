@@ -148,7 +148,6 @@ namespace com.mc2k.MineCity2000
     private AbstractRegion mapRegion(CityData data, int[][] terrainHeightsForRegion, int regionX, int regionZ, MapperOptions options)
     {
       AbstractRegion newRegion;
-      byte[][][][][] buildingChunkData;
 
       byte waterLevel = data.getWaterLevel();
       newRegion = new AbstractRegion(regionX, regionZ);
@@ -199,10 +198,10 @@ namespace com.mc2k.MineCity2000
 
             if (buildingModel != null)
             {
-              buildingChunkData = buildingModel.getChunkData(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ);
               for (int section = 0; section < SECTIONS_IN_CHUNK; section++)
               {
-                if (buildingChunkData[section] != null)
+                Section? buildingSection = buildingModel.getSection(thisSquare.buildingOffsetX, thisSquare.buildingOffsetZ, section);
+                if (buildingSection != null)
                 {
                   for (int sx = 0; sx < SQUARE_SIZE; sx++)
                   {
@@ -214,25 +213,26 @@ namespace com.mc2k.MineCity2000
                         int blockZ = squareZIndex * SQUARE_SIZE + sz;
                         int blockY = section * SECTION_HEIGHT + sy + 2 - SECTION_HEIGHT;
 
-                        byte[] buildingBlock = buildingChunkData[section][sx][sz][sy];
+                        byte buildingBlock = buildingSection.getBlock(sx, sy, sz);
+                        byte buildingData = buildingSection.getData(sx, sy, sz);
 
                         if (overridesSlope)
                         {
                           // Structures that override slopes, such as hydro power and tunnel entrances should not conform to the landscape like sloped roads do
                           // Also their air blocks should override whatever terrain was defined in the same place previously
-                          newRegion.putBlockData(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock);
+                          newRegion.putBlock(blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT), buildingBlock, buildingData);
                         }
-                        else if (buildingBlock[0] != AIR_BLOCK) // For all other structures ignore air blocks from the building model
+                        else if (buildingBlock != AIR_BLOCK) // For all other structures ignore air blocks from the building model
                         {
                           bool isAboveWaterLevel = terrainHeightsForRegion[blockX][blockZ] >= (waterLevel * SECTION_HEIGHT);
 
                           if (isAboveWaterLevel) // Adjust placement of blocks to height of terrain below the building
                           {
-                            newRegion.putBlockData(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock);
+                            newRegion.putBlock(blockX, blockZ, blockY + terrainHeightsForRegion[blockX][blockZ], buildingBlock, buildingData);
                           }
                           else // This structure is built on water (e.g. bridge or marina), place it on the water's surface
                           {
-                            newRegion.putBlockData(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock);
+                            newRegion.putBlock(blockX, blockZ, blockY + (waterLevel * SECTION_HEIGHT), buildingBlock, buildingData);
                           }
                         }
 
@@ -243,11 +243,11 @@ namespace com.mc2k.MineCity2000
                           {
                             if (thisSquare.buildingType == 63)
                             {
-                              repeatBlockUntilTunnelEndsX(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                              repeatBlockUntilTunnelEndsX(data, newRegion, buildingBlock, buildingData, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                             }
                             if (thisSquare.buildingType == 64)
                             {
-                              repeatBlockUntilTunnelEndsZ(data, newRegion, buildingBlock, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
+                              repeatBlockUntilTunnelEndsZ(data, newRegion, buildingBlock, buildingData, squareX, squareZ, blockX, blockZ, blockY + (thisSquare.altitude * SECTION_HEIGHT));
                             }
                           }
                         }
@@ -327,7 +327,7 @@ namespace com.mc2k.MineCity2000
       }
     }
 
-    private static void repeatBlockUntilTunnelEndsZ(CityData data, AbstractRegion newRegion, byte[] blockData, int squareX, int squareZ, int blockX, int blockZ, int fixedBlockY)
+    private static void repeatBlockUntilTunnelEndsZ(CityData data, AbstractRegion newRegion, byte block, byte dataValue, int squareX, int squareZ, int blockX, int blockZ, int fixedBlockY)
     {
       SquareData tmpSquare;
       int tunnelLength = 0;
@@ -345,12 +345,12 @@ namespace com.mc2k.MineCity2000
       {
         if (blockZ - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
         {
-          newRegion.putBlockData(blockX, blockZ - (SQUARE_SIZE * tl), fixedBlockY, blockData);
+          newRegion.putBlock(blockX, blockZ - (SQUARE_SIZE * tl), fixedBlockY, block, dataValue);
         }
       }
     }
 
-    private static void repeatBlockUntilTunnelEndsX(CityData data, AbstractRegion newRegion, byte[] blockData, int squareX, int squareZ, int blockX, int blockZ, int fixedBlockY)
+    private static void repeatBlockUntilTunnelEndsX(CityData data, AbstractRegion newRegion, byte block, byte dataValue, int squareX, int squareZ, int blockX, int blockZ, int fixedBlockY)
     {
       SquareData tmpSquare;
       int tunnelLength = 0;
@@ -368,7 +368,7 @@ namespace com.mc2k.MineCity2000
       {
         if (blockX - (SQUARE_SIZE * tl) >= 0) //TODO: This isn't ok because now tunnels can't continue from one region to another
         {
-          newRegion.putBlockData(blockX - (SQUARE_SIZE * tl), blockZ, fixedBlockY, blockData);
+          newRegion.putBlock(blockX - (SQUARE_SIZE * tl), blockZ, fixedBlockY, block, dataValue);
         }
       }
     }

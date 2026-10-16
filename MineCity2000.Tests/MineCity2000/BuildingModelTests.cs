@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using com.mc2k.MineCity2000;
+using com.mc2k.MinecraftEditor;
 using com.mc2k.SimCityReader;
 
 namespace MineCity2000.Tests;
@@ -63,32 +64,16 @@ public class BuildingModelTests
     {
       for (int cz = 0; cz < size; cz++)
       {
-        byte[][][][][] chunk = model.getChunkData(cx, cz);
         for (int sy = 0; sy < 16; sy++)
         {
-          byte[][][][]? section = chunk[sy];
+          Section? section = model.getSection(cx, cz, sy);
           if (section == null)
           {
             continue;
           }
 
-          var blocks = new byte[4096];
-          var data = new byte[2048];
-          for (int x = 0; x < 16; x++)
-          {
-            for (int z = 0; z < 16; z++)
-            {
-              for (int y = 0; y < 16; y++)
-              {
-                int index = x + 16 * z + 256 * y;
-                blocks[index] = section[x][z][y][0];
-                int nibble = section[x][z][y][1] & 0xF;
-                data[index / 2] |= (byte)(index % 2 == 0 ? nibble : nibble << 4);
-              }
-            }
-          }
-          sha.AppendData(blocks);
-          sha.AppendData(data);
+          sha.AppendData(section.getBlocks());
+          sha.AppendData(section.getData());
         }
       }
     }
