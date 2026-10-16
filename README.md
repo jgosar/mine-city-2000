@@ -79,8 +79,9 @@ The repository contains these projects:
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
 - MineCity2000: Creates the Minecraft world with terrain and buildings
 - MineCity2000-GUI: A rudimentary GUI for running the program
+- MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need .NET Core framework 8.0. The projects are set up for development with Visual Studio Code.
+For building the app from the source code you need the .NET SDK 8.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
 In order to develop the GUI, you will also need the dotnet MAUI workload.
 If you open the project with Visual Studio Code, you can launch it using the "Launch GUI" or "Launch CLI" commands under the "Run and Debug" menu.
 
@@ -93,6 +94,12 @@ Stuff that does NOT work yet:
 - Highways (mostly)
 - Underwater pipes?
 - ???
+
+### Running the tests
+
+Run `dotnet test MineCity2000.Tests`. Use `--filter Category!=Slow` to skip the ~2-minute fill-underground test.
+The golden-master tests compare generated worlds with the baseline worlds in `MineCity2000.Tests/Fixtures/baseline`;
+set the environment variable `MC2K_UPDATE_BASELINE=1` when running the tests to regenerate those baselines after an intentional output change.
 
 ## If you would like to help
 
