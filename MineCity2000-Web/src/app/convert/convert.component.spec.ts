@@ -93,5 +93,7 @@ describe('ConvertComponent with a worker that failed to start', () => {
     input.dispatchEvent(new Event('change'));
     await fixture.whenStable();
     expect(root.querySelector('.error')?.textContent).toContain('failed to load');
+    expect(root.querySelector('.status')?.textContent).not.toContain('Ready to convert');
+    expect((root.querySelector('button') as HTMLButtonElement).disabled).toBe(true);
   });
 });
