@@ -13,6 +13,7 @@ public class IffBuilder
   private readonly byte[] _xter = new byte[16384];  // 128 * 128 terrain codes
   private readonly byte[] _misc = new byte[4096];
   private byte[]? _cnam;
+  private int? _altmLength;
 
   public IffBuilder altitude(int x, int z, byte altitude)
   {
@@ -46,6 +47,13 @@ public class IffBuilder
     return this;
   }
 
+  // Stores only the first <length> bytes of ALTM, producing a well-formed segment whose body is too short.
+  public IffBuilder altmLength(int length)
+  {
+    _altmLength = length;
+    return this;
+  }
+
   public IffBuilder rawCnam(byte[] cnam)
   {
     _cnam = cnam;
@@ -57,7 +65,7 @@ public class IffBuilder
     var body = new List<byte>();
     body.AddRange(Encoding.ASCII.GetBytes("SCDH"));
     if (_cnam != null) body.AddRange(segment("CNAM", _cnam));
-    body.AddRange(segment("ALTM", _altm));
+    body.AddRange(segment("ALTM", _altmLength is int n ? _altm.Take(n).ToArray() : _altm));
     body.AddRange(segment("XBLD", rle(_xbld)));
     body.AddRange(segment("XTER", rle(_xter)));
     body.AddRange(segment("MISC", rle(_misc)));

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MineCity 2000</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <!-- Static markup; app.js owns all state and updates it in render(). Relative URLs only: the site is served under /mine-city-2000/ on GitHub Pages and under / locally. -->
+  <main>
+    <h1>MineCity 2000</h1>
+    <p>
+      Turn a SimCity 2000 city into a Minecraft world. The conversion runs entirely in your browser;
+      your file is never uploaded.
+      <a href="https://github.com/jgosar/mine-city-2000">Source on GitHub</a>
+    </p>
+
+    <div class="drop-zone" id="drop-zone">
+      <p id="file-name">Drop a .sc2 file here</p>
+      <label>
+        or choose a file
+        <input type="file" id="file-input" accept=".sc2">
+      </label>
+    </div>
+
+    <div class="options">
+      <label title="The area under the city is filled with sandstone instead of left empty, so you cannot fall through when digging down.">
+        <input type="checkbox" id="fill">
+        Fill underground area
+      </label>
+      <label title="Minecraft generates its normal terrain outside of the city.">
+        <input type="checkbox" id="terrain">
+        Generate terrain around the city
+      </label>
+    </div>
+
+    <button type="button" id="convert" disabled>Convert</button>
+
+    <progress id="progress" max="100" hidden></progress>
+    <p class="status" id="status" role="status"></p>
+    <p class="error" id="error" role="alert" hidden></p>
+    <a class="download" id="download" hidden></a>
+  </main>
+</body>
+</html>

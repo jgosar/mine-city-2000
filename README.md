@@ -21,6 +21,21 @@ https://www.youtube.com/watch?v=Z3FkM7GLxKo
 
 https://www.youtube.com/watch?v=EhIF_1SuZLs
 
+## Using the web app
+
+You can try MineCity 2000 without installing anything: https://jgosar.github.io/mine-city-2000/
+
+The conversion runs entirely in your browser; your city file is never uploaded anywhere.
+
+1. Drop your *.sc2 city file onto the page (or choose it with the file picker).
+2. Tick "Fill underground area" and/or "Generate terrain around the city" if you want them (see "Running the compiled app" below for what they do).
+3. Click "Convert" and wait for the progress bar to finish.
+4. Download the resulting zip. It contains a folder named after your city: unzip it into the `saves` folder of your Minecraft install directory, so that `saves/<city>/level.dat` exists.
+
+The first conversion downloads about 24 MB of building models, so the first run takes a bit longer. A conversion takes a few seconds on a modern laptop.
+
+It has been tested in current versions of Chrome and Firefox, and in the WebKit engine that Safari is built on (Safari itself has not been tested yet).
+
 ## Download link for the compiled app
 
 This is a link to the compiled app, so you don't have to build it from the source code yourself:
@@ -37,7 +52,7 @@ https://github.com/jgosar/mine-city-2000/releases/download/v0.3.0/mc2k-release-l
 
 ## Running the compiled app
 
-Run the compiled app using MineCity2000-GUI.exe.
+Run the compiled app using MineCity2000-GUI.exe. (This describes the already released GUI build; the GUI can no longer be built from the source code, see "Projects" below. Use the web app or the CLI instead.)
 
 With the first browse button, choose your *.sc2 city file. A good place to look for it would be `C:\Program Files\Maxis\SimCity 2000\Cities`. But if you can't find it, open it in SimCity 2000, click "File->Save city as" and put it in a place where you will find it.
 
@@ -77,13 +92,15 @@ The repository contains these projects:
 - SimCityReader: Reads information about the city map from a *.sc2 city file
 - AnvilFile: Contains utility classes for working with Minecraft's Anvil file format
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
-- MineCity2000: Creates the Minecraft world with terrain and buildings
-- MineCity2000-GUI: A rudimentary GUI for running the program
+- MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
+- MineCity2000.Cli: The command-line interface
+- MineCity2000-GUI: A rudimentary GUI for running the program. It no longer builds (see below) and is removed in the next PR
+- MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser and the plain HTML/CSS/JS page behind the web app link above (in `wwwroot`)
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 8.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
-In order to develop the GUI, you will also need the dotnet MAUI workload.
-If you open the project with Visual Studio Code, you can launch it using the "Launch GUI" or "Launch CLI" commands under the "Run and Debug" menu.
+For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the web app additionally needs the `wasm-tools` workload (see below). The projects are set up for development with Visual Studio Code.
+
+`MineCity2000-GUI` no longer builds: it targets `net8.0-windows` while the engine moved to .NET 10, and a .NET 8 project cannot reference a .NET 10 one. It is removed in the next PR. The CLI and the web app are the supported front ends; if you open the project with Visual Studio Code, you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu.
 
 This is a development version, so do not be surprised if something doesn't work. Please open an issue on GitHub if you encounter any problems.
 
@@ -95,12 +112,22 @@ Stuff that does NOT work yet:
 - Underwater pipes?
 - ???
 
+### Building the web app
+
+`MineCity2000.Wasm` is built with the .NET `wasm-tools` workload (`dotnet workload install wasm-tools`); because it is part of `mine-city-2000.sln`, building the whole solution needs this workload too.
+
+For development run `dotnet run --project MineCity2000.Wasm` and open the printed URL (an interpreter build: a conversion takes about 11 seconds). `dotnet publish MineCity2000.Wasm -c Release` produces the complete site in `MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot`; serve that folder with any static web server, for example `python3 -m http.server 8765 -d MineCity2000.Wasm/bin/Release/net10.0/publish/wwwroot`, and open `http://localhost:8765/` (a `file://` URL does not work for module workers).
+
+The page's tests need no packages: the unit tests run with `node --test "MineCity2000.Wasm/tests/*.test.mjs"`, and the end-to-end check, which converts the test city in headless Chrome through the real page and compares the result with the golden baseline, runs with `node MineCity2000.Wasm/tests/e2e/chrome-e2e.mjs` after a Release publish. Both need Node.js 22 or newer, and the end-to-end check also needs Chrome (set `CHROME` if it is not in the usual place).
+
 ### Running the tests
 
 Run `dotnet test MineCity2000.Tests`. Use `--filter Category!=Slow` to skip the ~2-minute fill-underground test.
 The golden-master tests compare generated worlds with the baseline worlds in `MineCity2000.Tests/Fixtures/baseline`;
 to regenerate those baselines after an intentional output change, run `MC2K_UPDATE_BASELINE=1 dotnet test MineCity2000.Tests --filter Category=Golden`, then run `dotnet test MineCity2000.Tests` normally afterwards.
 Regenerating rewrites both baseline zips (zip entries carry timestamps), so they show as ~16 MB changed even when the content is identical; only commit them after a golden test failed for an intended output change.
+
+The web page has its own tests, see "Building the web app" above.
 
 ## If you would like to help
 

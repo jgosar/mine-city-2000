@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MineCity2000</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MineCity2000\MineCity2000.csproj" />
+    <BuildingFiles Include="..\buildings\*.mca" />
+    <DefaultArgsFile Include="default_args.txt" />
+  </ItemGroup>
+  <Target Name="CopyBuildingsAfterBuild" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\buildings" />
+    <Copy SourceFiles="@(DefaultArgsFile)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MineCity2000.Tests" />
+  </ItemGroup>
+
+</Project>

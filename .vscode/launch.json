@@ -18,8 +18,8 @@
       "request": "launch",
       "preLaunchTask": "build-cli",
       "program": "dotnet",
-      "args": ["${workspaceFolder}/MineCity2000/bin/Debug/net8.0/MineCity2000.dll", "C:\\Program Files\\Maxis\\SimCity 2000\\CITIES\\bugville.sc2", "-c"], //Change this on your dev environment
-      "cwd": "${workspaceFolder}/MineCity2000",
+      "args": ["${workspaceFolder}/MineCity2000.Cli/bin/Debug/net10.0/MineCity2000.dll", "C:\\Program Files\\Maxis\\SimCity 2000\\CITIES\\bugville.sc2", "-c"], //Change this on your dev environment
+      "cwd": "${workspaceFolder}/MineCity2000.Cli",
       "console": "integratedTerminal",
       "stopAtEntry": false
     }

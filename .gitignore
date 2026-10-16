@@ -2,6 +2,8 @@ AnvilFile/obj
 AnvilFile/bin
 MineCity2000/obj
 MineCity2000/bin
+MineCity2000.Cli/obj
+MineCity2000.Cli/bin
 MineCity2000-GUI/obj
 MineCity2000-GUI/bin
 MinecraftEditor/obj
@@ -13,6 +15,9 @@ release
 *.suo
 .vs
 ~$building_stats.xlsx
-MineCity2000/generated
+MineCity2000.Cli/generated
 MineCity2000.Tests/bin
 MineCity2000.Tests/obj
+MineCity2000.Wasm/bin
+MineCity2000.Wasm/obj
+MineCity2000.Wasm/wwwroot/buildings.zip
