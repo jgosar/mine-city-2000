@@ -1,0 +1,50 @@
+name: Pages
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet workload install wasm-tools
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: MineCity2000-Web/package-lock.json
+      - run: npm ci
+        working-directory: MineCity2000-Web
+      - run: npm run build -- --base-href /mine-city-2000/
+        working-directory: MineCity2000-Web
+      - run: touch MineCity2000-Web/dist/MineCity2000-Web/browser/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: MineCity2000-Web/dist/MineCity2000-Web/browser
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
