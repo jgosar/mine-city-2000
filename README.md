@@ -81,7 +81,7 @@ The repository contains these projects:
 - MineCity2000-GUI: A rudimentary GUI for running the program
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 8.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
+For building the app from the source code you need the .NET SDK 10.0. The engine, the CLI and the tests build and run on Windows, macOS and Linux; the GUI additionally needs Windows. The projects are set up for development with Visual Studio Code.
 In order to develop the GUI, you will also need the dotnet MAUI workload.
 If you open the project with Visual Studio Code, you can launch it using the "Launch GUI" or "Launch CLI" commands under the "Run and Debug" menu.
 
