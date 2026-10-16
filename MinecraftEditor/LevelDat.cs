@@ -13,28 +13,33 @@ namespace com.mc2k.MinecraftEditor
     private String _levelName;
     private String _generatorName;
     private double[] _playerPos;
+    private long _lastPlayedSeconds;
+    private long _randomSeed;
 
     public LevelDat(String levelName, double[] playerPosition, Boolean generateTerrain)
+      : this(levelName, playerPosition, generateTerrain, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), new Random().Next())
+    {
+    }
+
+    public LevelDat(String levelName, double[] playerPosition, Boolean generateTerrain, long lastPlayedSeconds, long randomSeed)
     {
       _levelName = levelName;
       _playerPos = playerPosition;
       _generatorName = generateTerrain ? "default" : "flat";
+      _lastPlayedSeconds = lastPlayedSeconds;
+      _randomSeed = randomSeed;
     }
 
     public CompoundNBTTag toNBTTag()
     {
-      TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
-      long timestamp = (long)t.TotalSeconds;
-      Random random = new Random();
-
       List<AnyNBTTag> subTags = new List<AnyNBTTag>();
 
 
       subTags.Add(new ByteNBTTag("thundering", (byte)0));
-      subTags.Add(new LongNBTTag("LastPlayed", timestamp * 1000));
+      subTags.Add(new LongNBTTag("LastPlayed", _lastPlayedSeconds * 1000));
       subTags.Add(new PlayerData(_playerPos).toNBTTag());
       subTags.Add(new ByteNBTTag("initialized", (byte)1));
-      subTags.Add(new LongNBTTag("RandomSeed", (long)random.Next()));
+      subTags.Add(new LongNBTTag("RandomSeed", _randomSeed));
       subTags.Add(new IntNBTTag("GameType", 1));
       subTags.Add(new ByteNBTTag("MapFeatures", (byte)0));
       subTags.Add(new IntNBTTag("version", 19133));
@@ -59,18 +64,25 @@ namespace com.mc2k.MinecraftEditor
       return new CompoundNBTTag("", subTags2);
     }
 
-    public void saveToFile(String fileName)
+    public byte[] toBytes()
     {
       CompoundNBTTag tag = toNBTTag();
 
       byte[] output = tag.toBytesWithHeader();
 
-      Stream outFile = new FileStream(fileName, FileMode.Create);
+      MemoryStream memoryStream = new MemoryStream();
 
-      using (Stream outGzipStream = new GZipStream(outFile, CompressionMode.Compress))
+      using (Stream outGzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
       {
         outGzipStream.Write(output, 0, output.Length);
       }
+
+      return memoryStream.ToArray();
+    }
+
+    public void saveToFile(String fileName)
+    {
+      File.WriteAllBytes(fileName, toBytes());
     }
   }
 

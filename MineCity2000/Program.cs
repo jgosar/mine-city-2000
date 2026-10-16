@@ -19,7 +19,10 @@ namespace com.mc2k.MineCity2000
             Lets Minecraft generate its own terain around the city instead creating a wall around the city with nothing outside.
 
 -c, --continue
-            Continues console execution after the command is finished, instead of waiting for the user to press a key after reading the output.";
+            Continues console execution after the command is finished, instead of waiting for the user to press a key after reading the output.
+
+--timestamp <unix seconds>, --seed <number>
+            Fix the timestamps and random seed written into the world, so that two runs produce identical files (used by the tests).";
 
     static void Main(string[] args)
     {
@@ -34,7 +37,8 @@ namespace com.mc2k.MineCity2000
 
       string inputFile, buildingsDir, outputDir;
       bool fillUnderground, generateTerrain, continueCmd;
-      parseArgs(args, out inputFile, out buildingsDir, out outputDir, out fillUnderground, out generateTerrain, out continueCmd);
+      long? timestamp, seed;
+      parseArgs(args, out inputFile, out buildingsDir, out outputDir, out fillUnderground, out generateTerrain, out continueCmd, out timestamp, out seed);
 
       Console.WriteLine($"Converting city {inputFile}");
       Console.WriteLine($"Writing output to {outputDir}");
@@ -43,7 +47,7 @@ namespace com.mc2k.MineCity2000
 
       SCMapper mapper = new SCMapper(buildingsDir, progressCallback);
 
-      MapperOptions options = new MapperOptions(fillUnderground, generateTerrain);
+      MapperOptions options = new MapperOptions(fillUnderground, generateTerrain, timestamp, seed);
       mapper.makeMap(inputFile, outputDir, options);
 
       Console.WriteLine($"\nDone!");
@@ -55,7 +59,7 @@ namespace com.mc2k.MineCity2000
       }
     }
 
-    private static void parseArgs(string[] args, out string inputFile, out string buildingsDir, out string outputDir, out bool fillUnderground, out bool generateTerrain, out bool continueCmd)
+    private static void parseArgs(string[] args, out string inputFile, out string buildingsDir, out string outputDir, out bool fillUnderground, out bool generateTerrain, out bool continueCmd, out long? timestamp, out long? seed)
     {
       inputFile = args[0];
       String cityName = Path.GetFileNameWithoutExtension(inputFile).ToLower();
@@ -71,6 +75,8 @@ namespace com.mc2k.MineCity2000
       String[]? fillUndergroundArg = parseArg(["-f", "--fillUnderground"], 0, allArgs);
       String[]? generateTerrainArg = parseArg(["-g", "--generateTerrain"], 0, allArgs);
       String[]? continueArg = parseArg(["-c", "--continue"], 0, allArgs);
+      String[]? timestampArg = parseArg(["--timestamp"], 1, allArgs);
+      String[]? seedArg = parseArg(["--seed"], 1, allArgs);
 
       buildingsDir = Path.Combine(workingDir, "buildings");
       outputDir = DefaultArgs.defaultSavesDir() ?? Path.Combine(workingDir, "generated");
@@ -98,6 +104,9 @@ namespace com.mc2k.MineCity2000
       {
         continueCmd = true;
       }
+
+      timestamp = timestampArg != null ? long.Parse(timestampArg[0]) : null;
+      seed = seedArg != null ? long.Parse(seedArg[0]) : null;
     }
 
     private static string[]? parseArg(string[] aliases, int length, string[] args)
