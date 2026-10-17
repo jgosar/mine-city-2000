@@ -6,7 +6,7 @@ export const MAX_FILE_BYTES = 16 * 1024 * 1024;
 type WorkerMessage =
   | { type: 'ready' }
   | { type: 'progress'; percent: number }
-  | { type: 'done'; zip: Uint8Array }
+  | { type: 'done'; zip: Uint8Array<ArrayBuffer> }
   | { type: 'error'; message: string };
 
 /** Fixed timestamp and seed, so the output world is reproducible (verification only; the UI does not use it). */
@@ -27,7 +27,7 @@ export interface ConvertOptions {
 }
 
 interface Job {
-  resolve: (zip: Uint8Array) => void;
+  resolve: (zip: Uint8Array<ArrayBuffer>) => void;
   reject: (error: Error) => void;
   onProgress?: (percent: number) => void;
 }
@@ -66,13 +66,13 @@ export class ConverterClient {
     return this.#ready;
   }
 
-  /** Resolves with the world zip. */
+  /** Resolves with the world zip (it arrives by structured clone of a worker message, so it is always backed by a plain ArrayBuffer). */
   async convert(
     file: FileLike,
     fill: boolean,
     terrain: boolean,
     { onProgress, deterministic }: ConvertOptions = {},
-  ): Promise<Uint8Array> {
+  ): Promise<Uint8Array<ArrayBuffer>> {
     if (file.size > MAX_FILE_BYTES) {
       throw new Error('File is too large to be a SimCity 2000 city (max 16 MB)');
     }
@@ -81,7 +81,7 @@ export class ConverterClient {
     if (this.#dead) throw new Error('The converter worker has stopped; reload the page');
     if (this.#busy) throw new Error('A conversion is already running');
     this.#busy = true;
-    return new Promise<Uint8Array>((resolve, reject) => {
+    return new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
       const job: Job = { resolve, reject, onProgress };
       this.#job = job;
       const failJob = (e: unknown, what: string) => {

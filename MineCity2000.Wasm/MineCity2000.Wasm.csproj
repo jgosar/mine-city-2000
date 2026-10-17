@@ -45,10 +45,20 @@
   </Target>
   <Target Name="BuildWebApp" DependsOnTargets="NpmCi" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild"
           Inputs="@(WebSource);$(MSBuildProjectFullPath)" Outputs="wwwroot\app.js;wwwroot\converter-client.js">
+    <!-- Source maps left by `npm run watch` must not be published. -->
+    <ItemGroup>
+      <StaleMap Include="wwwroot\*.map" />
+    </ItemGroup>
+    <Delete Files="@(StaleMap)" />
     <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
   <ItemGroup>
     <Watch Include="web\**\*" />
+  </ItemGroup>
+  <!-- Development files that are not part of the site. -->
+  <ItemGroup>
+    <Content Remove="wwwroot\*.map" />
+    <Content Remove="package.json;package-lock.json;tsconfig.json" />
   </ItemGroup>
 
 </Project>

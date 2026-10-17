@@ -70,13 +70,13 @@ function App() {
 
   async function convert() {
     if (!client || !file || !canConvert(ready, file, job)) return;
+    if (job.kind === 'converting') return; // the disabled button normally prevents this; the guard covers two clicks in the same task
     dispatch({ type: 'start' });
     try {
       const zip = await client.convert(file, fill, terrain, {
         onProgress: (percent) => dispatch({ type: 'progress', percent }),
       });
-      // The zip arrives from the worker by structured clone, so it is never backed by a SharedArrayBuffer.
-      const blob = new Blob([zip as Uint8Array<ArrayBuffer>], { type: 'application/zip' });
+      const blob = new Blob([zip], { type: 'application/zip' });
       dispatch({ type: 'done', url: URL.createObjectURL(blob), name: `${cityNameOf(file)}.zip`, size: blob.size });
     } catch (e) {
       dispatch({ type: 'fail', message: messageOf(e) });
