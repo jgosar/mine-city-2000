@@ -1,0 +1,19 @@
+{
+  "name": "minecity2000-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild web/app.tsx web/converter-client.ts --bundle --format=esm --target=es2022 --jsx=automatic --jsx-import-source=preact --minify --outdir=wwwroot",
+    "watch": "esbuild web/app.tsx web/converter-client.ts --bundle --format=esm --target=es2022 --jsx=automatic --jsx-import-source=preact --sourcemap --outdir=wwwroot --watch",
+    "check": "tsc --noEmit",
+    "test": "node --test \"tests/*.test.ts\""
+  },
+  "dependencies": {
+    "preact": "~11.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "~26.6.5",
+    "esbuild": "~0.28.2",
+    "typescript": "~7.0.2"
+  }
+}
