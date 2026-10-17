@@ -35,4 +35,20 @@
     <ZipDirectory SourceDirectory="..\buildings" DestinationFile="wwwroot\buildings.zip" />
   </Target>
 
+  <!-- The page: esbuild bundles web/ into wwwroot/app.js and wwwroot/converter-client.js. Git-ignored build output. -->
+  <ItemGroup>
+    <WebSource Include="web\**\*;package.json;package-lock.json;tsconfig.json" />
+  </ItemGroup>
+  <!-- npm writes node_modules/.package-lock.json, so this also catches a stale node_modules. -->
+  <Target Name="NpmCi" Inputs="package-lock.json" Outputs="node_modules\.package-lock.json">
+    <Exec Command="npm ci" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+  <Target Name="BuildWebApp" DependsOnTargets="NpmCi" BeforeTargets="ResolveStaticWebAssetsInputs;BeforeBuild"
+          Inputs="@(WebSource);$(MSBuildProjectFullPath)" Outputs="wwwroot\app.js;wwwroot\converter-client.js">
+    <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+  <ItemGroup>
+    <Watch Include="web\**\*" />
+  </ItemGroup>
+
 </Project>
