@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+  # Validate the build job on pull requests that touch the CLI or this workflow (no release is created).
+  pull_request:
+    paths: ['.github/workflows/release.yml', 'global.json', 'MineCity2000.Cli/**', 'MineCity2000/**', 'SimCityReader/**', 'AnvilFile/**', 'MinecraftEditor/**', 'buildings/**']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, osx-arm64, osx-x64, linux-x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet publish MineCity2000.Cli/MineCity2000.Cli.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o out/${{ matrix.rid }}
+      - name: Zip
+        working-directory: out/${{ matrix.rid }}
+        run: zip -r ../../mc2k-cli-${{ matrix.rid }}.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mc2k-cli-${{ matrix.rid }}.zip
+          path: mc2k-cli-${{ matrix.rid }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: mc2k-cli-*.zip
+          generate_release_notes: true
+          # Tags like v1.0.0-rc1 are pre-releases and must not become releases/latest.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            Command-line builds of MineCity 2000 for Windows (`win-x64`), macOS (`osx-arm64`, `osx-x64`) and Linux (`linux-x64`). Unzip and run `MineCity2000 city.sc2`.
+
+            No download needed? Use the web app: https://jgosar.github.io/mine-city-2000/

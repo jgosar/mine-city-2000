@@ -17,6 +17,10 @@
     <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(OutDir)\buildings" />
     <Copy SourceFiles="@(DefaultArgsFile)" DestinationFolder="$(OutDir)" />
   </Target>
+  <Target Name="CopyBuildingsAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="@(BuildingFiles)" DestinationFolder="$(PublishDir)buildings" />
+    <Copy SourceFiles="@(DefaultArgsFile)" DestinationFolder="$(PublishDir)" />
+  </Target>
 
   <ItemGroup>
     <InternalsVisibleTo Include="MineCity2000.Tests" />

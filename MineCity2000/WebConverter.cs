@@ -59,7 +59,9 @@ namespace com.mc2k.MineCity2000
 
     private static string sanitiseCityName(string cityName)
     {
-      string name = Path.GetFileName(cityName);
+      // Treat a backslash as a path separator on every OS: on Linux (and so in wasm) it is a legal file-name
+      // character, but the zip is unpacked on Windows too, and the result must not depend on the host.
+      string name = Path.GetFileName(cityName.Replace('\\', '/'));
       foreach (char invalid in Path.GetInvalidFileNameChars())
       {
         name = name.Replace(invalid, '_');

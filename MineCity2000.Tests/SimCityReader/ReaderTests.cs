@@ -81,7 +81,7 @@ public class ReaderTests
   [Fact]
   public void missingSegment_throws()
   {
-    // FORM header + SCDH with no segments at all: ALTM is required.
+    // FORM header + SCDH with no segments at all: all four segments (ALTM, XBLD, XTER, MISC) are required.
     byte[] bytes = new byte[] { (byte)'F', (byte)'O', (byte)'R', (byte)'M', 0, 0, 0, 4, (byte)'S', (byte)'C', (byte)'D', (byte)'H' };
     var ex = Assert.Throws<InvalidDataException>(() => Reader.read(bytes, "x"));
     Assert.Contains("truncated", ex.Message);
