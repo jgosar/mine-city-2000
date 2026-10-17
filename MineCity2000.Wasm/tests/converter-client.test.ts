@@ -1,33 +1,44 @@
-// Unit tests for wwwroot/converter-client.js on Node's built-in runner: `node --test "MineCity2000.Wasm/tests/*.test.mjs"`.
+// Unit tests for web/converter-client.ts on Node's built-in runner (it strips the types itself): `npm test` in MineCity2000.Wasm.
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
-import { ConverterClient, MAX_FILE_BYTES, cityNameOf } from '../wwwroot/converter-client.js';
+import { ConverterClient, MAX_FILE_BYTES, cityNameOf } from '../web/converter-client.ts';
+import type { FileLike } from '../web/converter-client.ts';
+
+interface PostedMessage {
+  type: string;
+  sc2: Uint8Array;
+  cityName: string;
+  fill: boolean;
+  terrain: boolean;
+  timestamp?: number;
+  seed?: number;
+}
 
 /** Stand-in for the module worker: records posted messages and lets a test emit worker messages. */
 class FakeWorker {
-  onmessage = null;
-  onerror = null;
-  onmessageerror = null;
-  posted = [];
-  transfers = [];
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onerror: ((event: { message: string }) => void) | null = null;
+  onmessageerror: ((event: object) => void) | null = null;
+  posted: PostedMessage[] = [];
+  transfers: Transferable[][] = [];
 
-  postMessage(message, transfer = []) {
+  postMessage(message: PostedMessage, transfer: Transferable[] = []) {
     this.posted.push(message);
     this.transfers.push(transfer);
   }
 
-  emit(data) {
+  emit(data: unknown) {
     this.onmessage?.({ data });
   }
 
-  fail(message) {
+  fail(message: string) {
     this.onerror?.({ message });
   }
 }
 
 /** A plain object is enough for the client: it only reads name, size and arrayBuffer(). */
-function fakeFile(name, bytes = [1, 2, 3], size = bytes.length) {
-  const file = {
+function fakeFile(name: string, bytes = [1, 2, 3], size = bytes.length) {
+  const file: FileLike & { reads: number } = {
     name,
     size,
     reads: 0,
@@ -42,13 +53,13 @@ function fakeFile(name, bytes = [1, 2, 3], size = bytes.length) {
 const tick = () => new Promise((resolve) => setTimeout(resolve));
 
 describe('ConverterClient', () => {
-  let worker;
-  let client;
+  let worker: FakeWorker;
+  let client: ConverterClient;
   const file = fakeFile('Springfield.sc2');
 
   beforeEach(() => {
     worker = new FakeWorker();
-    client = new ConverterClient(() => worker);
+    client = new ConverterClient(() => worker as unknown as Worker);
   });
 
   it('resolves ready, then reports progress values, then resolves the zip', async () => {
@@ -58,7 +69,7 @@ describe('ConverterClient', () => {
     await tick();
     assert.equal(ready, true);
 
-    const percents = [];
+    const percents: number[] = [];
     const result = client.convert(file, true, false, { onProgress: (p) => percents.push(p) });
     await tick();
     assert.equal(worker.posted.length, 1);
@@ -163,7 +174,7 @@ describe('ConverterClient', () => {
 
   it('treats onmessageerror as a crash too', async () => {
     worker.emit({ type: 'ready' });
-    worker.onmessageerror({});
+    worker.onmessageerror!({});
     await assert.rejects(client.convert(file, true, true), /worker has stopped/);
   });
 
@@ -201,8 +212,8 @@ describe('ConverterClient', () => {
   });
 
   it('a rejected ready that nobody awaits does not raise unhandledRejection', async () => {
-    let unhandled = null;
-    const onUnhandled = (reason) => (unhandled = reason);
+    let unhandled: unknown = null;
+    const onUnhandled = (reason: unknown) => (unhandled = reason);
     process.once('unhandledRejection', onUnhandled);
     try {
       worker.fail('failed to load');

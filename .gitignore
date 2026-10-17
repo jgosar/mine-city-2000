@@ -6,3 +6,9 @@
 ~$building_stats.xlsx
 MineCity2000.Cli/generated
 MineCity2000.Wasm/wwwroot/buildings.zip
+
+# web toolchain
+MineCity2000.Wasm/node_modules
+MineCity2000.Wasm/wwwroot/app.js
+MineCity2000.Wasm/wwwroot/converter-client.js
+MineCity2000.Wasm/wwwroot/*.map

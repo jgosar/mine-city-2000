@@ -1,43 +1,55 @@
-// @ts-check
 // Promise API over the module worker that hosts the .NET runtime (message contract: see worker.js).
 
 /** Real SimCity 2000 cities are well under 1 MB; anything this large is certainly the wrong file. */
 export const MAX_FILE_BYTES = 16 * 1024 * 1024;
 
-/**
- * @typedef {{ type: 'ready' }
- *   | { type: 'progress', percent: number }
- *   | { type: 'done', zip: Uint8Array }
- *   | { type: 'error', message: string }} WorkerMessage
- * @typedef {{ timestamp: number, seed: number }} Deterministic Fixed timestamp and seed, so the output world is reproducible (verification only; the UI does not use it).
- * @typedef {{ name: string, size: number, arrayBuffer(): Promise<ArrayBuffer> }} FileLike
- * @typedef {{ resolve: (zip: Uint8Array) => void, reject: (error: Error) => void, onProgress?: (percent: number) => void }} Job
- */
+type WorkerMessage =
+  | { type: 'ready' }
+  | { type: 'progress'; percent: number }
+  | { type: 'done'; zip: Uint8Array<ArrayBuffer> }
+  | { type: 'error'; message: string };
 
-/**
- * The city name used for the world folder and the download: the file name without its extension.
- * @param {{ name: string }} file
- */
-export function cityNameOf(file) {
+/** Fixed timestamp and seed, so the output world is reproducible (verification only; the UI does not use it). */
+export interface Deterministic {
+  timestamp: number;
+  seed: number;
+}
+
+export interface FileLike {
+  name: string;
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+export interface ConvertOptions {
+  onProgress?: (percent: number) => void;
+  deterministic?: Deterministic;
+}
+
+interface Job {
+  resolve: (zip: Uint8Array<ArrayBuffer>) => void;
+  reject: (error: Error) => void;
+  onProgress?: (percent: number) => void;
+}
+
+/** The city name used for the world folder and the download: the file name without its extension. */
+export function cityNameOf(file: { name: string }): string {
   return file.name.replace(/\.[^.]*$/, '') || 'city';
 }
 
 export class ConverterClient {
-  #worker;
-  #ready;
-  #resolveReady = () => {};
-  #rejectReady = (/** @type {Error} */ _error) => {};
+  #worker: Worker;
+  #ready: Promise<void>;
+  #resolveReady: () => void = () => {};
+  #rejectReady: (error: Error) => void = () => {};
   #isReady = false;
   #busy = false;
   #dead = false;
-  /** @type {Job | null} */
-  #job = null;
+  #job: Job | null = null;
 
-  /**
-   * @param {() => Worker} createWorker creates the module worker; replace in tests with a fake.
-   */
-  constructor(createWorker = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })) {
-    this.#ready = new Promise((resolve, reject) => {
+  /** @param createWorker creates the module worker; replace in tests with a fake. */
+  constructor(createWorker: () => Worker = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })) {
+    this.#ready = new Promise<void>((resolve, reject) => {
       this.#resolveReady = resolve;
       this.#rejectReady = reject;
     });
@@ -50,18 +62,17 @@ export class ConverterClient {
   }
 
   /** Resolves once the .NET runtime is booted; rejects if the worker cannot start. */
-  get ready() {
+  get ready(): Promise<void> {
     return this.#ready;
   }
 
-  /**
-   * @param {FileLike} file
-   * @param {boolean} fill
-   * @param {boolean} terrain
-   * @param {{ onProgress?: (percent: number) => void, deterministic?: Deterministic }} [options]
-   * @returns {Promise<Uint8Array>} the world zip
-   */
-  async convert(file, fill, terrain, { onProgress, deterministic } = {}) {
+  /** Resolves with the world zip (it arrives by structured clone of a worker message, so it is always backed by a plain ArrayBuffer). */
+  async convert(
+    file: FileLike,
+    fill: boolean,
+    terrain: boolean,
+    { onProgress, deterministic }: ConvertOptions = {},
+  ): Promise<Uint8Array<ArrayBuffer>> {
     if (file.size > MAX_FILE_BYTES) {
       throw new Error('File is too large to be a SimCity 2000 city (max 16 MB)');
     }
@@ -70,11 +81,10 @@ export class ConverterClient {
     if (this.#dead) throw new Error('The converter worker has stopped; reload the page');
     if (this.#busy) throw new Error('A conversion is already running');
     this.#busy = true;
-    return new Promise((resolve, reject) => {
-      /** @type {Job} */
-      const job = { resolve, reject, onProgress };
+    return new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
+      const job: Job = { resolve, reject, onProgress };
       this.#job = job;
-      const failJob = (/** @type {unknown} */ e, /** @type {string} */ what) => {
+      const failJob = (e: unknown, what: string) => {
         if (this.#job === job) this.#fail(`${what}: ${e instanceof Error ? e.message : String(e)}`);
       };
       file.arrayBuffer().then(
@@ -95,8 +105,7 @@ export class ConverterClient {
     });
   }
 
-  /** @param {WorkerMessage} data */
-  #handle(data) {
+  #handle(data: WorkerMessage): void {
     switch (data.type) {
       case 'ready':
         this.#isReady = true;
@@ -115,19 +124,18 @@ export class ConverterClient {
   }
 
   /** The worker itself is gone or unusable: fail the current job and refuse all later ones. */
-  #crash(/** @type {string} */ message) {
+  #crash(message: string): void {
     this.#dead = true;
     this.#fail(message);
   }
 
-  #fail(/** @type {string} */ message) {
+  #fail(message: string): void {
     const error = new Error(message);
     if (!this.#isReady) this.#rejectReady(error);
     this.#finish((job) => job.reject(error));
   }
 
-  /** @param {(job: Job) => void} action */
-  #finish(action) {
+  #finish(action: (job: Job) => void): void {
     const job = this.#job;
     this.#job = null;
     this.#busy = false;
