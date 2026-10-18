@@ -73,6 +73,13 @@ On macOS the first run may be blocked because the program is downloaded from the
 
 Your antivirus might think that MineCity 2000 is a virus. It's not. If Windows SmartScreen warns about an unsigned app, choose "More info" and then "Run anyway".
 
+## Building the app from source code
+
+- Install the Microsoft .NET SDK 10
+- In the repo root run `dotnet workload restore`
+- In the `MineCity2000.Wasm` subdirectory run `npm install`
+- In the repo root run `dotnet build`
+
 ## Opening generated worlds in Minecraft Bedrock Edition
 
 This project was started quite some time ago (2014), so it only generates Minecraft Java Edition worlds. To be exact, the generated worlds are based on Minecraft Java edition v1.3.2, so they should work on any Minecraft Java edition version that's newer than that.
