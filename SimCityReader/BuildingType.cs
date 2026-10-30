@@ -825,9 +825,28 @@ namespace com.mc2k.SimCityReader
       }
     }
 
+    // Buildings that have a direction and therefore a rotated ("r") model variant: see CityData.computeOrientations
     public static bool isRotatable(byte code)
     {
-      return isBridgePart(code) || code == 221 || code == 223;
+      return isBridgePart(code) || isRunway(code) || isPier(code);
+    }
+
+    // Straight runway piece (DD). The runway crossing (DE) is symmetric and has no direction.
+    public static bool isRunway(byte code)
+    {
+      return code == 221;
+    }
+
+    // Pier (DF): a strip of pier tiles ending in a crane
+    public static bool isPier(byte code)
+    {
+      return code == 223;
+    }
+
+    // Crane (E0) at the end of a pier
+    public static bool isCrane(byte code)
+    {
+      return code == 224;
     }
 
     // Returns true if other code is part of a bridge AND both squares are roads, rails or power lines

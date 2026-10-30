@@ -12,6 +12,11 @@ namespace com.mc2k.SimCityReader
 
         private SquareData[][] _squares;
         private byte _waterLevel;
+        private int _compass;
+
+        private const int MISC_COMPASS_OFFSET = 8;        // 4-byte big-endian number of 90 degree rotations of the view when the city was saved (0..3)
+        private const int MISC_WATER_LEVEL_OFFSET = 3651;
+        private const byte XBIT_ROTATE = 0x02;            // "rotate the tile by 90 degrees" flag
 
         public CityData(Dictionary<String, Segment> segments, String cityName)
         {
@@ -32,9 +37,14 @@ namespace com.mc2k.SimCityReader
             interpretALTM(segments["ALTM"]); // Read altitude map
             interpretXBLD(segments["XBLD"]); // Read building positions
             interpretXTER(segments["XTER"]); // Read positions of groundwater
-            interpretMISC(segments["MISC"]); // Read general water level
+            interpretMISC(segments["MISC"]); // Read general water level and the compass
+            if (segments.ContainsKey("XBIT")) // Per-square flags; every city saved by the game has it, hand-built test cities may not
+            {
+                interpretXBIT(segments["XBIT"]);
+            }
 
             setWaterOnCoastalSquares();
+            computeOrientations();
         }
 
         private void initializeSquares()
@@ -169,7 +179,98 @@ namespace com.mc2k.SimCityReader
         {
             byte[] content = miscSegment.getContent();
 
-            _waterLevel = content[3651];
+            _compass = (int)Reader.readNumber(content, MISC_COMPASS_OFFSET, 4);
+            _waterLevel = content[MISC_WATER_LEVEL_OFFSET];
+        }
+
+        private void interpretXBIT(Segment xbitSegment)
+        {
+            byte[] content = xbitSegment.getContent();
+
+            int offset = 0;
+
+            for (int i = 0; i < 128; i++)
+            {
+                for (int j = 0; j < 128; j++)
+                {
+                    _squares[i][j].rotateFlag = (content[offset] & XBIT_ROTATE) != 0;
+                    offset++;
+                }
+            }
+        }
+
+        // Works out which way each directional building runs. The rules were checked against the cities that ship with the game:
+        // - Bridges: the rotate flag is set when the bridge runs along x, independent of the compass.
+        // - Runways: the game keeps the flag relative to the view, so its meaning flips when the city was saved with the map
+        //   turned by 90 or 270 degrees (odd compass).
+        // - Piers: the flag is often stale, so (like the game) the direction is taken from where the crane is; the flag is only
+        //   used when the pier has cranes in both directions or none.
+        private void computeOrientations()
+        {
+            bool compassIsOdd = _compass % 2 == 1;
+
+            for (int i = 0; i < 128; i++)
+            {
+                for (int j = 0; j < 128; j++)
+                {
+                    SquareData sd = _squares[i][j];
+                    byte code = sd.buildingType;
+
+                    if (BuildingType.isBridgePart(code))
+                    {
+                        sd.orientation = sd.rotateFlag ? Orientation.AlongX : Orientation.AlongZ;
+                    }
+                    else if (BuildingType.isRunway(code))
+                    {
+                        sd.orientation = orientationFromFlag(sd.rotateFlag, compassIsOdd);
+                    }
+                    else if (BuildingType.isPier(code))
+                    {
+                        bool craneAlongX = craneInDirection(i, j, 1, 0) || craneInDirection(i, j, -1, 0);
+                        bool craneAlongZ = craneInDirection(i, j, 0, 1) || craneInDirection(i, j, 0, -1);
+
+                        if (craneAlongX != craneAlongZ)
+                        {
+                            sd.orientation = craneAlongX ? Orientation.AlongX : Orientation.AlongZ;
+                        }
+                        else
+                        {
+                            sd.orientation = orientationFromFlag(sd.rotateFlag, compassIsOdd);
+                        }
+                    }
+                    else
+                    {
+                        sd.orientation = Orientation.None;
+                    }
+                }
+            }
+        }
+
+        private static Orientation orientationFromFlag(bool rotateFlag, bool compassIsOdd)
+        {
+            return (rotateFlag != compassIsOdd) ? Orientation.AlongX : Orientation.AlongZ;
+        }
+
+        // Walks from (x, z) in the given direction over pier squares and tells whether the strip ends in a crane there
+        private bool craneInDirection(int x, int z, int dx, int dz)
+        {
+            x += dx;
+            z += dz;
+            while (x >= 0 && x < 128 && z >= 0 && z < 128)
+            {
+                byte code = _squares[x][z].buildingType;
+                if (BuildingType.isCrane(code))
+                {
+                    return true;
+                }
+                if (!BuildingType.isPier(code))
+                {
+                    return false;
+                }
+                x += dx;
+                z += dz;
+            }
+            return false;
         }
 
         private void setWaterOnCoastalSquares()
@@ -200,6 +301,12 @@ namespace com.mc2k.SimCityReader
         public byte getWaterLevel()
         {
             return _waterLevel;
+        }
+
+        /// <summary>How many times (0..3) the map was turned by 90 degrees when the city was saved.</summary>
+        public int getCompass()
+        {
+            return _compass;
         }
 
         public List<Building> getBuildings()
