@@ -63,70 +63,40 @@ public class OrientationTests
   }
 
   [Theory]
-  [InlineData(0, true, Orientation.AlongX)]
-  [InlineData(0, false, Orientation.AlongZ)]
-  [InlineData(1, true, Orientation.AlongZ)]
-  [InlineData(1, false, Orientation.AlongX)]
-  [InlineData(2, true, Orientation.AlongX)]
-  [InlineData(2, false, Orientation.AlongZ)]
-  [InlineData(3, true, Orientation.AlongZ)]
-  [InlineData(3, false, Orientation.AlongX)]
-  public void runway_flagMeaningFlipsWithAnOddCompass(int compass, bool flag, Orientation expected)
+  [InlineData(RUNWAY, 0, true, Orientation.AlongX)]
+  [InlineData(RUNWAY, 0, false, Orientation.AlongZ)]
+  [InlineData(RUNWAY, 1, true, Orientation.AlongZ)]
+  [InlineData(RUNWAY, 1, false, Orientation.AlongX)]
+  [InlineData(RUNWAY, 2, true, Orientation.AlongX)]
+  [InlineData(RUNWAY, 2, false, Orientation.AlongZ)]
+  [InlineData(RUNWAY, 3, true, Orientation.AlongZ)]
+  [InlineData(RUNWAY, 3, false, Orientation.AlongX)]
+  [InlineData(PIER, 0, true, Orientation.AlongX)]
+  [InlineData(PIER, 0, false, Orientation.AlongZ)]
+  [InlineData(PIER, 1, true, Orientation.AlongZ)]
+  [InlineData(PIER, 1, false, Orientation.AlongX)]
+  [InlineData(PIER, 2, true, Orientation.AlongX)]
+  [InlineData(PIER, 2, false, Orientation.AlongZ)]
+  [InlineData(PIER, 3, true, Orientation.AlongZ)]
+  [InlineData(PIER, 3, false, Orientation.AlongX)]
+  public void runwayAndPier_flagMeaningFlipsWithAnOddCompass(byte code, int compass, bool flag, Orientation expected)
   {
-    var builder = new IffBuilder().compass(compass).building(5, 5, RUNWAY).xbit(5, 5, flag ? IffBuilder.XBIT_ROTATE : (byte)0);
+    var builder = new IffBuilder().compass(compass).building(5, 5, code).xbit(5, 5, flag ? IffBuilder.XBIT_ROTATE : (byte)0);
     CityData city = Reader.read(builder.build(), "x");
     Assert.Equal(expected, city.getSquare(5, 5).orientation);
   }
 
   [Fact]
-  public void pier_runsTowardsItsCrane_regardlessOfTheFlag()
+  public void pier_ignoresWhereItsCraneIs()
   {
-    // Pier strip along x ending in a crane at x = 13, and one along z ending in a crane at z = 20
+    // A pier strip along x ending in a crane, but with the flag saying along z: the game draws it by the flag
     var builder = new IffBuilder();
     for (int x = 10; x <= 12; x++) builder.building(x, 5, PIER).xbit(x, 5, 0);
     builder.building(13, 5, CRANE);
-    for (int z = 17; z <= 19; z++) builder.building(30, z, PIER).xbit(30, z, IffBuilder.XBIT_ROTATE);
-    builder.building(30, 20, CRANE);
 
     CityData city = Reader.read(builder.build(), "x");
-    for (int x = 10; x <= 12; x++) Assert.Equal(Orientation.AlongX, city.getSquare(x, 5).orientation);
-    for (int z = 17; z <= 19; z++) Assert.Equal(Orientation.AlongZ, city.getSquare(30, z).orientation);
+    for (int x = 10; x <= 12; x++) Assert.Equal(Orientation.AlongZ, city.getSquare(x, 5).orientation);
     Assert.Equal(Orientation.None, city.getSquare(13, 5).orientation);
-  }
-
-  [Fact]
-  public void pier_craneBehindTheStartOfTheStrip_alsoCounts()
-  {
-    CityData city = Reader.read(new IffBuilder().building(10, 5, CRANE).building(11, 5, PIER).building(12, 5, PIER).build(), "x");
-    Assert.Equal(Orientation.AlongX, city.getSquare(12, 5).orientation);
-  }
-
-  [Fact]
-  public void pier_withCranesOnBothAxesOrNone_fallsBackToFlagAndCompass()
-  {
-    var builder = new IffBuilder().compass(1)
-      // cranes in both directions
-      .building(10, 10, PIER).xbit(10, 10, IffBuilder.XBIT_ROTATE).building(11, 10, CRANE).building(10, 11, CRANE)
-      // no crane at all
-      .building(20, 20, PIER).xbit(20, 20, 0);
-    CityData city = Reader.read(builder.build(), "x");
-    Assert.Equal(Orientation.AlongZ, city.getSquare(10, 10).orientation); // flag set, odd compass
-    Assert.Equal(Orientation.AlongX, city.getSquare(20, 20).orientation); // flag clear, odd compass
-  }
-
-  [Fact]
-  public void pier_walkStopsAtANonPierTile()
-  {
-    CityData city = Reader.read(new IffBuilder().building(10, 5, PIER).building(11, 5, HOUSE).building(12, 5, CRANE).build(), "x");
-    Assert.Equal(Orientation.AlongZ, city.getSquare(10, 5).orientation); // no crane found: flag clear, compass 0
-  }
-
-  [Fact]
-  public void pier_walkStopsAtTheMapEdge()
-  {
-    CityData city = Reader.read(new IffBuilder().building(127, 127, PIER).building(0, 0, PIER).build(), "x");
-    Assert.Equal(Orientation.AlongZ, city.getSquare(127, 127).orientation);
-    Assert.Equal(Orientation.AlongZ, city.getSquare(0, 0).orientation);
   }
 
   [Fact]

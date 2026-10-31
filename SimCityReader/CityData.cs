@@ -199,12 +199,11 @@ namespace com.mc2k.SimCityReader
             }
         }
 
-        // Works out which way each directional building runs. The rules were checked against the cities that ship with the game:
-        // - Bridges: the rotate flag is set when the bridge runs along x, independent of the compass.
-        // - Runways: the game keeps the flag relative to the view, so its meaning flips when the city was saved with the map
-        //   turned by 90 or 270 degrees (odd compass).
-        // - Piers: the flag is often stale, so (like the game) the direction is taken from where the crane is; the flag is only
-        //   used when the pier has cranes in both directions or none.
+        // Works out which way each directional building runs. The game draws the tile's sprite mirrored when the rotate flag is set,
+        // which turns it by 90 degrees in the isometric view (SIMCITY.EXE, tile drawing at 0x43C730, rotating the view at 0x465490):
+        // - Bridges: rotating the view flips the flag along with the map, so the flag set always means "along x", whatever the compass.
+        // - Runways and piers: rotating the view leaves the flag alone and the game mirrors them by "flag XOR odd compass" instead,
+        //   so the flag's meaning flips when the city was saved with the map turned by 90 or 270 degrees.
         private void computeOrientations()
         {
             bool compassIsOdd = _compass % 2 == 1;
@@ -220,23 +219,9 @@ namespace com.mc2k.SimCityReader
                     {
                         sd.orientation = sd.rotateFlag ? Orientation.AlongX : Orientation.AlongZ;
                     }
-                    else if (BuildingType.isRunway(code))
+                    else if (BuildingType.isRunway(code) || BuildingType.isPier(code))
                     {
-                        sd.orientation = orientationFromFlag(sd.rotateFlag, compassIsOdd);
-                    }
-                    else if (BuildingType.isPier(code))
-                    {
-                        bool craneAlongX = craneInDirection(i, j, 1, 0) || craneInDirection(i, j, -1, 0);
-                        bool craneAlongZ = craneInDirection(i, j, 0, 1) || craneInDirection(i, j, 0, -1);
-
-                        if (craneAlongX != craneAlongZ)
-                        {
-                            sd.orientation = craneAlongX ? Orientation.AlongX : Orientation.AlongZ;
-                        }
-                        else
-                        {
-                            sd.orientation = orientationFromFlag(sd.rotateFlag, compassIsOdd);
-                        }
+                        sd.orientation = (sd.rotateFlag != compassIsOdd) ? Orientation.AlongX : Orientation.AlongZ;
                     }
                     else
                     {
@@ -244,33 +229,6 @@ namespace com.mc2k.SimCityReader
                     }
                 }
             }
-        }
-
-        private static Orientation orientationFromFlag(bool rotateFlag, bool compassIsOdd)
-        {
-            return (rotateFlag != compassIsOdd) ? Orientation.AlongX : Orientation.AlongZ;
-        }
-
-        // Walks from (x, z) in the given direction over pier squares and tells whether the strip ends in a crane there
-        private bool craneInDirection(int x, int z, int dx, int dz)
-        {
-            x += dx;
-            z += dz;
-            while (x >= 0 && x < 128 && z >= 0 && z < 128)
-            {
-                byte code = _squares[x][z].buildingType;
-                if (BuildingType.isCrane(code))
-                {
-                    return true;
-                }
-                if (!BuildingType.isPier(code))
-                {
-                    return false;
-                }
-                x += dx;
-                z += dz;
-            }
-            return false;
         }
 
         private void setWaterOnCoastalSquares()

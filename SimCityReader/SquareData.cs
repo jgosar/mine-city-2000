@@ -25,7 +25,7 @@ namespace com.mc2k.SimCityReader
         public Boolean hasWater;
         /// <summary>The raw "rotate the tile by 90 degrees" flag from the XBIT segment (mask 0x02).</summary>
         public bool rotateFlag;
-        /// <summary>The direction of the building on this square, derived from rotateFlag, the compass and the neighbours; see CityData.computeOrientations.</summary>
+        /// <summary>The direction of the building on this square, derived from rotateFlag and the compass; see CityData.computeOrientations.</summary>
         public Orientation orientation = Orientation.None;
 
         public SquareData()

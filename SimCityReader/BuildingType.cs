@@ -843,12 +843,6 @@ namespace com.mc2k.SimCityReader
       return code == 223;
     }
 
-    // Crane (E0) at the end of a pier
-    public static bool isCrane(byte code)
-    {
-      return code == 224;
-    }
-
     // Returns true if other code is part of a bridge AND both squares are roads, rails or power lines
     public static bool isSameKindOfBridgePart(byte thisCode, byte otherCode)
     {
