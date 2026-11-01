@@ -236,9 +236,13 @@ def describe(value):
         used = [(i, s) for i, s in enumerate(value) if s]
         return "%d strings, %d non-empty: %s%s" % (
             len(value), len(used), ", ".join("%d=%r" % u for u in used[:6]), " ..." if len(used) > 6 else "")
-    if isinstance(value, list) and len(value) > 8:
+    if isinstance(value, list) and len(value) > 8 and not isinstance(value[0], dict):
         return "%d values: %s ..." % (len(value), ", ".join(map(str, value[:8])))
-    return repr(value)
+    text = repr(value)
+    if len(text) > 160:
+        size = "%d entries" % len(value) if isinstance(value, (list, dict)) else ""
+        return "%s %s ... (full value with --json)" % (size, text[:120])
+    return text
 
 
 # --- ALTM and XTER (docs/sc2-format/segments/altm.md, xter.md) ---------------
@@ -528,6 +532,333 @@ def decode_xgrp(data):
     """16 graph series of 52 signed 32-bit values."""
     values = struct.unpack(">832i", data)
     return {name: list(values[i * 52:(i + 1) * 52]) for i, name in enumerate(XGRP_SERIES)}
+
+
+# --- MISC (docs/sc2-format/segments/misc/README.md) ----------------------------
+#
+# 1200 big-endian 32-bit words. The game copies each into a variable of 32, 16 or
+# 8 bits (loader 0x431330), so only the low 16 or 8 bits of the narrower words
+# count: some files store a negative 16-bit value as 0x0000FFxx, not 0xFFFFFFxx.
+
+def _words(*spans):
+    return frozenset(i for a, b in spans for i in range(a, b + 1))
+
+
+# Words the game loads into 16-bit variables (read as signed) and 8-bit ones (unsigned)
+MISC_16_BIT = _words((1, 3), (7, 8), (22, 23), (28, 28), (30, 30), (124, 437), (454, 478),
+                     (912, 912), (1002, 1019), (1027, 1031), (1033, 1034), (1036, 1041),
+                     (1043, 1043)) | frozenset(
+    w for k in range(11) for w in (91 + 3 * k, 92 + 3 * k)) | frozenset(
+    438 + 4 * k for k in range(4)) | frozenset(
+    w for s in range(9) for w in (946 + 6 * s, 947 + 6 * s))
+MISC_8_BIT = _words((24, 27), (915, 945)) | frozenset(
+    w for s in range(9) for w in range(948 + 6 * s, 952 + 6 * s))
+
+
+def misc_words(data):
+    """The 1200 MISC words as the game loads them (see MISC_16_BIT and MISC_8_BIT)."""
+    out = []
+    for i, v in enumerate(struct.unpack(">1200i", data)):
+        if i in MISC_16_BIT:
+            v &= 0xFFFF
+            v -= 0x10000 if v & 0x8000 else 0
+        elif i in MISC_8_BIT:
+            v &= 0xFF
+        out.append(v)
+    return tuple(out)
+
+
+# --- MISC: general words 0-30, 911-915, 1018-1199 (docs/sc2-format/segments/misc/general.md)
+
+CITY_MODES = ("terrain editor", "city", "disaster")
+DIFFICULTIES = ("none", "easy", "medium", "hard")
+WEATHER = ("cold", "clear", "hot", "foggy", "chilly", "overcast", "snow", "rain", "windy",
+           "blizzard", "hurricane", "tornado")
+DISASTERS = ("none", "fire", "flood", "riot", "toxic spill", "air crash", "earthquake", "tornado",
+             "monster", "meltdown", "microwave", "volcano", "firestorm", "mass riots", "major flood",
+             "pollution accident", "hurricane", "helicopter crash", "plane crash")
+MILITARY_BASES = ("not offered", "declined or no site", "army base", "air force base", "navy base",
+                  "missile silos")
+REWARDS = ("mayor's house", "city hall", "statue", "braun llama dome", "arcologies")
+SPEEDS = (None, "paused", "turtle", "llama", "cheetah", "african swallow")
+
+
+def _name(table, v):
+    return table[v] if 0 <= v < len(table) and table[v] is not None else "unknown %d" % v
+
+
+def misc_general(w):
+    """MISC words 0-30, 911-915 and 1018-1199 as named fields; w = the 1200 signed words."""
+    view = w[1028]
+    return {
+        "version": w[0],
+        "city_mode": _name(CITY_MODES, w[1]),
+        "compass": w[2],
+        "founding_year": w[3],
+        "days": w[4],
+        "date": {"year": w[3] + w[4] // 300, "month": w[4] // 25 % 12, "day": w[4] % 25},
+        "funds": w[5],
+        "bonds_outstanding": w[6],
+        "difficulty": _name(DIFFICULTIES, w[7]),
+        "reward_level": w[8],
+        "city_value": w[9],
+        "land_value_total": w[10],
+        "crime_total": w[11],
+        "traffic_total": w[12],
+        "pollution_total": w[13],
+        "unused_14_15": [w[14], w[15]],
+        "population_months": w[16],
+        "workforce_percent": w[17],
+        "life_expectancy": w[18],
+        "education_quotient": w[19],
+        "national_population_thousands": w[20],
+        "gnp": w[21],
+        "fed_rate": w[22],
+        "national_trend": w[23],
+        "heat": w[24],
+        "wind": w[25],
+        "humidity": w[26],
+        "weather": _name(WEATHER, w[27]),
+        "pending_disaster": _name(DISASTERS, w[28]),
+        "residents_last_month": w[29],
+        "rewards_available": [REWARDS[b] for b in range(5) if w[30] >> b & 1],
+        "year_end_pending": w[911],
+        "sea_level": w[912],
+        "terrain_coast": w[913],
+        "terrain_river": w[914],
+        "military_base": _name(MILITARY_BASES, w[915]),
+        "subway_tiles": w[1018],
+        "speed": _name(SPEEDS, w[1019]),
+        "auto_budget": w[1020],
+        "auto_goto": w[1021],
+        "sound": w[1022],
+        "music": w[1023],
+        "no_disasters": w[1024],
+        "newspaper_subscription": w[1025],
+        "newspaper_extra": w[1026],
+        "newspaper_choice": w[1027],
+        "view_centre": None if view == -1 else {"low7": view & 0x7F, "high": view >> 8 & 0xFF},
+        "zoom": w[1029],
+        "building_centre": {"row": w[1030], "col": w[1031]},
+        "microsim_population": w[1032],
+        "unused_1033": w[1033],
+        "sports_teams": w[1034],
+        "zone_population": w[1035],
+        "industry_concentration_bonus": w[1036],
+        "heavy_industry_level": w[1037],
+        "police_arrests": w[1038],
+        "police_not_overloaded": w[1039],
+        "disaster_thing": w[1040],
+        "current_disaster": _name(DISASTERS, w[1041]),
+        "disaster_active": w[1042],
+        "water_treatment_ok": w[1043],
+        "other_version_1044_1070": list(w[1044:1071]) if any(w[1044:1071]) else None,
+        "tail_nonzero": any(w[1071:1200]),
+    }
+
+
+# --- MISC: population, industry and bonds (docs/sc2-format/segments/misc/population.md) ---
+
+AGE_GROUPS = 20                 # 5-year age groups, 0-4 ... 95-99
+INDUSTRIES = ("Steel/Mining", "Textiles", "Petrochemical", "Food", "Construction",
+              "Automotive", "Aerospace", "Finance", "Media", "Electronics", "Tourism")
+ZONE_POPULATION = ("total", "light_residential", "dense_residential", "light_commercial",
+                   "dense_commercial", "light_industrial", "dense_industrial", "abandoned")
+
+# Population units of a zone building by XBLD code (SIMCITY.EXE: level table 0x4e7458,
+# units per level 0x4e75b0 = 0, 1, 8, 12, 36). Construction sites count nothing.
+_LEVEL_RANGES = ((0x70, 0x87, 1), (0x8A, 0x8B, 1), (0x8C, 0x8F, 2), (0x90, 0x93, 3),
+                 (0x94, 0x98, 2), (0x99, 0x9D, 3), (0x9E, 0xA1, 2), (0xA2, 0xA5, 3),
+                 (0xAA, 0xAB, 2), (0xAC, 0xAD, 3), (0xAE, 0xC1, 4), (0xC4, 0xC5, 4))
+_UNITS = {1: 1, 2: 8, 3: 12, 4: 36}
+POPULATION_UNITS = {code: _UNITS[level]
+                    for lo, hi, level in _LEVEL_RANGES for code in range(lo, hi + 1)}
+ABANDONED = frozenset((0x8A, 0x8B, 0xAA, 0xAB, 0xAC, 0xAD, 0xC4, 0xC5))
+
+
+def zone_population_from_map(xbld, xzon, compass):
+    """MISC words 380-387 as a full pass of growth steps 3-18 would leave them.
+
+    Each zone building counts once, at its corner-D tile; word 380 is the sum of 381-386.
+    """
+    anchor = (0x80, 0x10, 0x20, 0x40)[compass & 3]
+    words = [0] * 8
+    for code, z in zip(xbld, xzon):
+        zone = z & 0x0F
+        if 1 <= zone <= 6 and z & anchor and code in POPULATION_UNITS:
+            words[7 if code in ABANDONED else zone] += POPULATION_UNITS[code]
+    words[0] = sum(words[1:7])
+    return words
+
+
+def misc_population(w):
+    bonds = max(0, min(w[6], 50))
+    return {
+        "age_groups": [{"ages": "%d-%d" % (5 * i, 5 * i + 4),
+                        "people": w[31 + 3 * i],
+                        "education_total": w[32 + 3 * i],
+                        "health_total": w[33 + 3 * i]} for i in range(AGE_GROUPS)],
+        "industries": [{"industry": name,
+                        "demand": w[91 + 3 * k],
+                        "tax_rate": w[92 + 3 * k],
+                        "size": w[93 + 3 * k]} for k, name in enumerate(INDUSTRIES)],
+        "zone_population": dict(zip(ZONE_POPULATION, w[380:388])),
+        "bond_rates": list(w[388:388 + bonds]),
+        "bond_rates_left_over": list(w[388 + bonds:438]),
+    }
+
+
+# --- MISC budget (docs/sc2-format/segments/misc/budget.md) -------------------
+
+BUDGET_FIRST_WORD = 479
+BUDGET_ENTRY_WORDS = 27
+BUDGET_ENTRIES = (
+    "residential_tax", "commercial_tax", "industrial_tax", "ordinances", "bonds",
+    "police", "fire", "health", "schools", "colleges",
+    "roads", "highways", "bridges", "rail", "subway", "tunnels",
+)
+# Divisor per entry (SIMCITY.EXE 0x4e9eb0): at the start of a year the game adds
+# ytd / (divisor * 12) to the funds; positive = income, negative = expense.
+BUDGET_DIVISORS = (75, 75, 75, 75, -100, -1, -1, -2, -4, -1, -1000, -500, -400, -250, -250, -250)
+
+ORDINANCES = (
+    "sales_tax", "income_tax", "legalized_gambling", "parking_fines",
+    "volunteer_fire_dept", "public_smoking_ban", "free_clinics", "junior_sports",
+    "pro_reading_campaign", "anti_drug_campaign", "cpr_training", "neighborhood_watch",
+    "tourist_advertising", "business_advertising", "city_beautification", "annual_carnival",
+    "energy_conservation", "nuclear_free_zone", "homeless_shelter", "pollution_controls",
+)
+
+
+def misc_budget(w):
+    entries = {}
+    for e, name in enumerate(BUDGET_ENTRIES):
+        b = BUDGET_FIRST_WORD + BUDGET_ENTRY_WORDS * e
+        entries[name] = {
+            "count": w[b],
+            "rate": w[b + 1],
+            "year_to_date": w[b + 2],
+            "months": [{"count": w[b + 3 + 2 * k], "rate": w[b + 4 + 2 * k]} for k in range(12)],
+        }
+    flags = w[1000]
+    return {
+        "budget": entries,
+        "ordinance_flags": flags,
+        "ordinances": [n for i, n in enumerate(ORDINANCES) if flags >> i & 1],
+    }
+
+
+# --- MISC: tile counts, neighbours, demand, technology, newspapers ------------
+# (docs/sc2-format/segments/misc/tile-counts.md, neighbours.md, demand.md,
+#  technology.md, newspapers.md)
+
+def _s16(v):
+    """The low 16 bits of a MISC word as a signed number, as the game loads it."""
+    v &= 0xFFFF
+    return v - 0x10000 if v & 0x8000 else v
+
+
+# Military count index -> XBLD code (index 0: every other tile in zone 7)
+MILITARY_CODES = (None, 0xDD, 0xDE, 0xEF, 0xF2, 0xEA, 0xE3, 0xE4, 0xE5,
+                  0xF1, 0xE0, 0xE2, 0xE7, 0xE8, 0xF6, 0xF9)
+
+# Neighbour name id -> name (id 0 is "Ocean"; ids 1-36 are strings 548-583 of SIMCITY.EXE)
+NEIGHBOUR_NAMES = (
+    "Ocean", "Oak Creek", "Denmont", "Fort Verdegris", "Schwinton", "Mill Valley",
+    "Petaluma", "PortVille", "Ashland", "Eubancs", "Aurac", "Tent Pegs", "Cherryton",
+    "Blake", "Pioneers", "Fortune", "Phippsville", "Jeromi", "Harpersville",
+    "Washers Grove", "Stars County", "Villa", "Serviland", "Newton", "Avon", "Dexter",
+    "Sinistrel", "Jenna", "Yestonia", "New Boots", "Hoek Creek", "Stimpleton",
+    "Little Rouge", "Krighton", "Cats Corner", "Rimmer", "Lister")
+
+# Map edge of neighbour k when the city is normalised to compass 0
+NEIGHBOUR_EDGES = ("row 127", "col 127", "row 0", "col 0")
+
+TECHNOLOGIES = (
+    "gas power", "nuclear power", "solar power", "wind power", "microwave power",
+    "fusion power", "airport", "highways", "buses", "subways", "water treatment",
+    "desalination", "plymouth arcology", "forest arcology", "darco arcology",
+    "launch arcology", "unused")
+
+NEWSPAPER_NAMES = ("Picayune", "Courier", "Herald", "Journal", "Times", "Chronicle")
+OPINION_COLUMNS = ("Fred's Opinion", "Editor's Corner", "Commentary", "Opinion Poll",
+                   "Survey", "MisSim's Advice")
+WEATHER_COLUMNS = ("Weather Corner", "Weather Report", "Today's Weather",
+                   "Weather with Merle", "Weather Forecast", "Weather Talk")
+
+
+def _pick(names, i):
+    return names[i] if 0 <= i < len(names) else i
+
+
+def misc_counts(w):
+    return {
+        "building_counts": [_s16(v) for v in w[124:380]],
+        "military_counts": {("other" if c is None else "0x%02X" % c): _s16(v)
+                            for c, v in zip(MILITARY_CODES, w[1002:1018])},
+    }
+
+
+def misc_neighbours(w):
+    out = []
+    for k in range(4):
+        name_id = _s16(w[438 + 4 * k])
+        out.append({
+            "edge_at_compass_0": NEIGHBOUR_EDGES[k],
+            "name_id": name_id,
+            "name": _pick(NEIGHBOUR_NAMES, name_id),
+            "population": w[439 + 4 * k] & 0xFFFFFFFF,
+            "economy": w[440 + 4 * k] & 0xFFFFFFFF,
+            "unused": w[441 + 4 * k],
+        })
+    return {"neighbours": out}
+
+
+def misc_demand(w):
+    return {
+        "demand": {"residential": _s16(w[454]), "commercial": _s16(w[455]),
+                   "industrial": _s16(w[456])},
+        "demand_unused": list(w[457:462]),
+    }
+
+
+def misc_technology(w):
+    # 0 = available; otherwise the year it becomes available
+    return {"technology_years": {n: _s16(v) for n, v in zip(TECHNOLOGIES, w[462:479])}}
+
+
+def misc_newspapers(w):
+    papers = []
+    for p in range(6):
+        b = [v & 0xFF for v in w[916 + 5 * p:921 + 5 * p]]
+        papers.append({
+            "name": _pick(NEWSPAPER_NAMES, b[0]),
+            "layout": b[1],
+            "price_style": b[2],
+            "opinion_column": _pick(OPINION_COLUMNS, b[3]),
+            "weather_column": _pick(WEATHER_COLUMNS, b[4]),
+        })
+    stories = []
+    for s in range(9):
+        r = w[946 + 6 * s:952 + 6 * s]
+        stories.append({
+            "slot": s,
+            "kind": "queue" if s < 7 else ("weather" if s == 7 else "opinion"),
+            "type": _s16(r[0]),
+            "priority": _s16(r[1]),
+            "parameter": r[2] & 0xFF,
+            "phrase_choices": [v & 0xFF for v in r[3:6]],
+        })
+    return {"newspapers": papers, "stories": stories}
+@decoder(b"MISC")
+def decode_misc(data):
+    """Named fields of all 1200 words, page by page."""
+    w = misc_words(data)
+    out = {}
+    for part in (misc_general, misc_population, misc_budget, misc_counts, misc_neighbours,
+                 misc_demand, misc_technology, misc_newspapers):
+        out.update(part(w))
+    return out
 
 
 # --- normalising to compass 0 (docs/sc2-format/conventions.md#orientation) --

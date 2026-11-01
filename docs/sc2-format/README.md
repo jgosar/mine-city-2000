@@ -47,7 +47,8 @@ flowchart TD
 | **Text:** [xtxt.md](segments/xtxt.md), [xlab.md](segments/xlab.md), [cnam.md](segments/cnam.md) | What each tile's text value points to (sign, microsim, moving object, connection), the 256 label texts, the city name | done |
 | **Statistics:** [minimaps.md](segments/minimaps.md), [xgrp.md](segments/xgrp.md) | The eight overlays (traffic, pollution, land value, crime, police, fire, density, growth) and the graph history | done |
 | **Code tables:** [text-codes-xtxt.md](reference/text-codes-xtxt.md) | Every XTXT value | done |
-| Other segment pages | MISC, XMIC, XTHG, scenario segments | planned |
+| **MISC:** [misc/README.md](segments/misc/README.md) (word index), [general.md](segments/misc/general.md), [population.md](segments/misc/population.md), [budget.md](segments/misc/budget.md), [ordinances.md](segments/misc/ordinances.md), [tile-counts.md](segments/misc/tile-counts.md), [neighbours.md](segments/misc/neighbours.md), [demand.md](segments/misc/demand.md), [technology.md](segments/misc/technology.md), [newspapers.md](segments/misc/newspapers.md) | All 1200 words of the city state | done |
+| Other segment pages | XMIC, XTHG, scenario segments | planned |
 | Other code tables | Thing ids | planned |
 | `cross-segment.md`, `implementing-a-reader.md` | How segments relate; a step-by-step parser recipe | planned |
 | [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | growing |

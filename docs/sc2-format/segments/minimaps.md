@@ -85,7 +85,7 @@ XPLT[r][c] = min(255, (2·S[r][c] + sum of S over the 4-neighbours inside the ma
   | `0xF4` water treatment | 10 | `0xFB`–`0xFE` arcologies | 25, 10, 12, 15 |
 
   All other codes emit 0. Names are from the [XBLD code table](../reference/tile-codes-xbld.md).
-- **k** = max(1, 4 + `0x4cb3dc` − `0x4c9428`), plus 1 more when bit `0x80000` of `0x4caa40` is set. `0x4cb3dc` is 1 when the city has enough water treatment plants (it compares the tile count of `0xF4` with a city total), `0x4c9428` grows with the share of heavy industry, and `0x4caa40` looks like the ordinance flags (**Inferred**). All three come from MISC and are described on the MISC pages (planned). A larger *k* makes pollution fade faster.
+- **k** = max(1, 4 + `0x4cb3dc` − `0x4c9428`), plus 1 more when bit `0x80000` of `0x4caa40` is set. `0x4cb3dc` is 1 when the city has enough water treatment plants (it compares the tile count of `0xF4` with a city total), `0x4c9428` is the heavy-industry level, MISC word 1037 ([population.md](misc/population.md#how-the-industries-change)), and bit `0x80000` of `0x4caa40` is the Pollution Controls ordinance ([ordinances.md](misc/ordinances.md#bits)). `0x4cb3dc` is MISC word 1043. A larger *k* makes pollution fade faster.
 - **Total**: the sum of the new XPLT is stored in `0x4cc910`, MISC word 13. **Verified (data)**: word 13 equals the sum of XPLT in 114/114 files.
 
 ### XVAL: land value
@@ -116,19 +116,19 @@ raw[r][c] = XPOP[r/2][c/2] − XVAL[r][c] / 4 − XPLC[r/2][c/2] / 2   (+16 if b
 XCRM[r][c] = clamp 0..255 of the average of raw over the cell and its 4-neighbours inside the map
 ```
 
-XPOP, XVAL and XPLC are the values just computed in the same step. Bit `0x4` of `0x4caa40` is presumably an ordinance that raises crime (**Inferred**, MISC pages). **Total**: the sum is stored in `0x4cb454`, MISC word 11 (**Verified (data)** 114/114).
+XPOP, XVAL and XPLC are the values just computed in the same step. Bit `0x4` of `0x4caa40` is the Legalized Gambling ordinance ([ordinances.md](misc/ordinances.md#bits)). **Total**: the sum is stored in `0x4cb454`, MISC word 11 (**Verified (data)** 114/114).
 
 ### XPLC: police coverage
 
 Step 2 clears XPLC and rebuilds it (**Confirmed (code)**, `0x46a840`):
 
 - Each police station (XBLD `0xD2`) adds its strength once, at its corner tile with XZON bit `0x80`, spread over a diamond around its 32 × 32 cell: full strength in the cell, then 4/5, then decreasing to the cells up to 3 away (`0x46ba90`, values capped at 255).
-- Strength = (`0x4ca1dc` + 5) × the police funding level / 2, halved if the station is not powered (XBIT `0x40`). The funding level is read from the budget data (`0x4cc4cc` + `0x294`); both inputs are MISC values (MISC pages, planned).
-- When bit `0x800` of `0x4caa40` is set (presumably an ordinance such as a neighbourhood watch, **Inferred**), every tile with an XBLD code up to `0xC5` adds 2 to its cell.
+- Strength = (`0x4ca1dc` + 5) × the police funding level / 2, halved if the station is not powered (XBIT `0x40`). The funding level is the police funding of the budget (MISC word 615, [budget.md](misc/budget.md#entries)); `0x4ca1dc` is the police bonus, MISC word 1039 ([general.md](misc/general.md#counters)).
+- When bit `0x800` of `0x4caa40` is set (the Neighborhood Watch ordinance, [ordinances.md](misc/ordinances.md#bits)), every tile with an XBLD code up to `0xC5` adds 2 to its cell.
 
 ### XFIR: fire coverage
 
-Built like XPLC in step 2 (**Confirmed (code)**): fire stations (XBLD `0xD3`) spread a strength of (fire funding level, `0x4cc4cc` + `0x304`) × 5 / 2, halved when unpowered; bit `0x10` of `0x4caa40` (presumably the volunteer fire department ordinance, **Inferred**) adds 2 per tile with a code up to `0xC5`. The fire code (`0x45f760`) uses XFIR + 8 as a probability when a fire spreads or is put out (**Inferred** which).
+Built like XPLC in step 2 (**Confirmed (code)**): fire stations (XBLD `0xD3`) spread a strength of (the fire funding, MISC word 642, [budget.md](misc/budget.md#entries)) × 5 / 2, halved when unpowered; bit `0x10` of `0x4caa40` (the Volunteer Fire Dept. ordinance) adds 2 per tile with a code up to `0xC5`. The fire code (`0x45f760`) uses XFIR + 8 as a probability when a fire spreads or is put out (**Inferred** which).
 
 ### XPOP: building density
 
@@ -199,7 +199,7 @@ Other uses (**Confirmed (code)** unless marked):
 
 - **Zone growth** (`0x4358b0`) needs land value above 31, 95 or 191 to develop a block to the next level, and rates a microsim location as XVAL / 32 − XCRM / 32 − XPLT / 32 + 12 (halved if unpowered).
 - A **new one-tile home** takes its wealth level from XVAL >> 6, capped at 2 (`0x436e80`).
-- A **disaster** of type 4 in `0x471bc0` starts at the most polluted cell above 149 (**Inferred**: which disaster).
+- **Disaster** 4 starts at the most polluted cell above 149 (`0x471bc0`). It is the toxic spill in OpenCity2k's disaster list (**Inferred**, [general.md § Disasters](misc/general.md#disasters)).
 - The **query tool**, the **map views** and the **city-view data overlays** show the values ([Values](#values)).
 
 ### What to trust

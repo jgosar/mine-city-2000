@@ -47,7 +47,7 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 | Tag | Stored | Decoded size | Shape | Byte order fix-up | Purpose | Page |
 |---|---|---|---|---|---|---|
 | `CNAM` | raw | 32 bytes in every file that has it | string | none | City name | [cnam.md](segments/cnam.md) |
-| `MISC` | RLE | 4800 | 1200 × int32 | each 4-byte word big-endian | General city state: date, funds, budget, tax rates, statistics, settings | planned |
+| `MISC` | RLE | 4800 | 1200 × int32 | each 4-byte word big-endian | City state: date, funds, budget and ordinances, population by age, industries, neighbours, inventions, newspapers, weather, options, counters | [misc/README.md](segments/misc/README.md) |
 | `ALTM` | raw | 32768 | 128 × 128 × uint16 | each 2-byte word big-endian | Altitude, water surface height and tunnel depth of each tile | [altm.md](segments/altm.md) |
 | `XTER` | RLE | 16384 | 128 × 128 × byte | none | Terrain shape (slopes), sea floor, shore and surface water | [xter.md](segments/xter.md) |
 | `XBLD` | RLE | 16384 | 128 × 128 × byte | none | What is built on each tile | [xbld.md](segments/xbld.md) |

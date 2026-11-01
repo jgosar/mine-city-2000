@@ -705,6 +705,425 @@ def xgrp_ranges(f):
     yield "Power % at most 100: " + str(max(ser[8]) <= 100)
 
 
+# --- MISC: raw words as stored (the decoders in sc2dump see misc_words) -----
+
+def _misc(f):
+    return struct.unpack(">1200i", _seg(f, b"MISC"))
+
+
+# --- MISC: general words (docs/sc2-format/segments/misc/general.md) -------------
+
+REWARD_THRESHOLDS = (2000, 10000, 30000, 60000, 90000, 120000, 500000, 1000000)   # SIMCITY.EXE 0x4e6984
+
+
+def _win95_cnam(f):
+    """True for files whose CNAM has the Windows 95 form: first, byte 0 = 0x1F."""
+    tags = [s.tag for s in f.c.segments]
+    cnam = _seg(f, b"CNAM")
+    return cnam is not None and cnam[0] == 0x1F and tags.index(b"CNAM") < tags.index(b"MISC")
+
+
+@check
+def misc_general_ranges(f):
+    w = _misc(f)
+    yield "word 1 (mode) = %d" % w[1]
+    yield "word 3 (founding year) in 1900/1950/2000/2050: %s" % (w[3] in (1900, 1950, 2000, 2050))
+    yield "word 7 (difficulty) = %d" % w[7]
+    yield "word 6 (bonds) <= 50: %s" % (0 <= w[6] <= 50)
+    yield "word 22 (fed rate) = 0 or 1..25: %s" % (w[22] == 0 or 1 <= w[22] <= 25)
+    yield "word 23 (national trend) in 0..3: %s" % (0 <= w[23] <= 3)
+    yield "word 27 (weather) in 0..11: %s" % (0 <= w[27] <= 11)
+    yield "words 14, 15, 28 all zero: %s" % (w[14] == w[15] == w[28] == 0)
+    yield "word 30 (rewards mask) < 32: %s" % (0 <= w[30] < 32)
+    yield "word 915 (military base) in 0..5: %s" % (0 <= w[915] <= 5)
+    yield "word 1019 (speed) in 1..5: %s" % (1 <= w[1019] <= 5)
+    flags = [w[i] for i in (911, 913, 914, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1039, 1043)]
+    yield "flag words only 0/1: %s" % all(v in (0, 1) for v in flags) if all(v in (0, 1, 255) for v in flags) \
+        else "flag word outside 0/1/255"
+    if any(v == 255 for v in flags):
+        yield "flag word = 255 (Windows 95 CNAM form: %s)" % _win95_cnam(f)
+    yield "word 1040 (disaster thing) = -1: %s" % (w[1040] == -1)
+    yield "word 1042 (disaster active) = 0: %s" % (w[1042] == 0)
+
+
+@check
+def misc_general_rewards(f):
+    w = _misc(f)
+    reached = sum(1 for t in REWARD_THRESHOLDS if t < w[1035])
+    yield "word 8 (reward level) %s thresholds passed by word 1035" % (
+        "==" if w[8] == reached else "<" if w[8] < reached else ">")
+    yield "rewards mask only has bits of levels reached: %s" % (
+        all(w[8] >= (1, 2, 3, 5, 6)[b] for b in range(5) if w[30] >> b & 1))
+
+
+@check
+def misc_general_links(f):
+    w = _misc(f)
+    xgrp = struct.unpack(">832i", _seg(f, b"XGRP"))
+    yield "word 29 == Residents graph slot 1: %s (Windows 95 CNAM form: %s)" % (w[29] == xgrp[52 + 1], _win95_cnam(f))
+    yield "word 1035 == 10 x word 380: %s" % (w[1035] == 10 * w[380])
+    xbld = _seg(f, b"XBLD")
+    n = rows = cols = 0
+    for i, code in enumerate(xbld):
+        if code >= 0x70:
+            n += 1
+            rows += i // 128
+            cols += i % 128
+    yield "words 1030, 1031 == building centre: %s" % (
+        (w[1030], w[1031]) == (rows // (2 * (n + 1)) * 2, cols // (2 * (n + 1)) * 2))
+    xund, xzon = _seg(f, b"XUND"), _seg(f, b"XZON")
+    subway = sum(1 for u, z in zip(xund, xzon)
+                 if (0x01 <= u <= 0x0F or u in (0x1F, 0x20, 0x22, 0x23)) and z & 0x0F != 7)
+    yield "word 1018 (subway tiles) %s count from XUND" % (
+        "==" if w[1018] == subway else "<" if w[1018] < subway else ">")
+
+
+@check
+def misc_general_other_version(f):
+    w = _misc(f)
+    tail = any(w[1044:1200])
+    yield "words 1044+ non-zero: %s, Windows 95 CNAM form: %s" % (tail, _win95_cnam(f))
+    yield "words 1071+ all zero: %s" % (not any(w[1071:1200]))
+    if not tail:
+        return
+    xgrp = struct.unpack(">832i", _seg(f, b"XGRP"))
+    yield "word 1048 == 100 - newest Power %% graph value: %s" % (w[1048] == 100 - xgrp[8 * 52])
+    yield "word 1049 == 100 - newest Water %% graph value: %s" % (w[1049] == 100 - xgrp[9 * 52])
+    xbld, xzon = _seg(f, b"XBLD"), _seg(f, b"XZON")
+    developed = sum(1 for b, z in zip(xbld, xzon) if b > 0x1C or z & 0x0F)
+    yield "word 1067 %s developed tiles" % (
+        "==" if w[1067] == developed else "within 1% of" if abs(w[1067] - developed) * 100 <= developed else "!=")
+    xtxt = _seg(f, b"XTXT")
+    yield "word 1044 == number of XTXT 0xFA tiles: %s" % (w[1044] == sum(1 for v in xtxt if v == 0xFA))
+
+
+# --- MISC: population, industry and bonds ---------------------------------------
+
+@check
+def misc_population_age_groups(f):
+    w = _misc(f)
+    people = [w[31 + 3 * i] for i in range(20)]
+    education = [w[32 + 3 * i] for i in range(20)]
+    health = [w[33 + 3 * i] for i in range(20)]
+    yield "no value negative: %s" % (min(people + education + health) >= 0)
+    if not any(people):
+        yield "age groups all zero"
+        return
+    yield "sum of people == word 1035: %s" % (sum(people) == w[1035])
+    workers = sum(people[4:11])
+    if workers:
+        yield "word 17 == workers x 100 / (word 1035 + 1): %s" % (w[17] == workers * 100 // ((w[1035] & 0xFFFFFFFF) + 1))
+        yield "word 18 == health of ages 20-54 / workers: %s" % (w[18] == sum(health[4:11]) // workers)
+        yield "word 19 == education of ages 20-54 / workers: %s" % (w[19] == sum(education[4:11]) // workers)
+
+
+@check
+def misc_population_zones(f):
+    w = _misc(f)
+    step = w[4] % 25
+    win95 = not any(w[1044:])
+    if step <= 2:
+        yield "steps 0-2, %s: words 380-387 all zero: %s" % (
+            "Windows 95 save" if win95 else "other version", not any(w[380:388]))
+        return
+    yield "word 380 == sum of 381-386, step %s: %s" % (
+        ">= 21" if step >= 21 else "3-20", w[380] == sum(w[381:387]))
+    if step < 19:
+        return
+    want = sc2.zone_population_from_map(_seg(f, b"XBLD"), _seg(f, b"XZON"), w[2])
+    have = w[381:388]
+    if list(have) == want[1:]:
+        yield "steps 19-24: words 381-387 == recount from XBLD/XZON: exact"
+    elif abs(sum(have) - sum(want[1:])) <= sum(want[1:]) // 50:
+        yield "steps 19-24: words 381-387 == recount from XBLD/XZON: total within 2%"
+    else:
+        yield "steps 19-24: words 381-387 == recount from XBLD/XZON: further off"
+
+
+@check
+def misc_population_industry(f):
+    w = _misc(f)
+    demand = [w[91 + 3 * k] for k in range(11)]
+    tax = [w[92 + 3 * k] for k in range(11)]
+    size = [w[93 + 3 * k] for k in range(11)]
+    yield "tax rates 0-20: %s" % all(0 <= t <= 20 for t in tax)
+    yield "tax rates all 7 (new-city default): %s" % all(t == 7 for t in tax)
+    yield "demand 0-127: %s" % all(0 <= d <= 127 for d in demand)
+    yield "sizes >= 0: %s" % all(s >= 0 for s in size)
+    total = sum(size)
+    if total:
+        heavy = (size[0] + size[1] + size[2] + size[5]) * 100 // (total + 1)
+        level = -1 if heavy < 20 else (heavy - 20) // 30
+        yield "word 1037 == heavy-industry level from the sizes: %s" % (w[1037] == level)
+
+
+@check
+def misc_population_bonds(f):
+    w = _misc(f)
+    count = w[6]
+    yield "bond count 0-50: %s" % (0 <= count <= 50)
+    rates = w[388:438]
+    if count:
+        yield "rates of outstanding bonds 1-20: %s" % all(1 <= r <= 20 for r in rates[:max(0, count)])
+    yield "slots after the last bond all zero: %s" % (not any(rates[max(0, count):]))
+
+
+# --- MISC budget and ordinances --------------------------------------------------
+
+def _kind(f):
+    return "scenario" if f.path.lower().endswith(".scn") else "city"
+
+
+def _r(a, b):
+    return range(a, b + 1)
+
+
+# XBLD codes the monthly update (0x4734a0) counts for each transit entry
+BUDGET_TRANSIT_CODES = {
+    "roads": list(_r(0x1D, 0x2B)) + list(_r(0x3F, 0x46)) + [0x4B, 0x4C] + list(_r(0x5D, 0x60)),
+    "highways": list(_r(0x49, 0x50)) + list(_r(0x61, 0x6B)),
+    "bridges": list(_r(0x51, 0x5C)) + [0x6A, 0x6B],
+    "rail": list(_r(0x2C, 0x3E)) + list(_r(0x45, 0x48)) + [0x4D, 0x4E] + list(_r(0x6C, 0x6F)),
+    "tunnels": list(_r(0x3F, 0x42)),
+}
+
+
+def _ordinance_amount(bit, budget, w):
+    """Monthly amount of one ordinance (0x42bca0); C division truncates toward zero."""
+    res = budget["residential_tax"]["count"]
+    com = budget["commercial_tax"]["count"]
+    ind = budget["industrial_tax"]["count"]
+    q = lambda a, d: int(a / d)
+    return (com, res, 2 * com, q(res, 2),
+            q(res, -3), q(com, -6), -q(res, 2), -q(res, 4),
+            q(res, -6), q(res, -5), q(res, -6), q(res, -3),
+            -com, -ind, -q(res, 4), q(com, -3),
+            -(w[1032] + w[1035]), 0, -q(res, 2), -ind)[bit]
+
+
+@check
+def misc_budget_year_to_date(f):
+    w = _misc(f)
+    budget = sc2.misc_budget(w)["budget"]
+    month = w[4] // 25 % 12
+    last = 11 if w[911] else month
+    ok = all(e["year_to_date"] == sum(m["count"] * m["rate"] for m in e["months"][:last + 1])
+             for e in budget.values())
+    yield "%s: year_to_date == sum of count x rate over months 0..current: %s" % (_kind(f), ok)
+
+
+@check
+def misc_budget_current_month(f):
+    w = _misc(f)
+    budget = sc2.misc_budget(w)["budget"]
+    m = w[4] // 25 % 12
+    for name in ("bonds", "police", "fire", "health", "schools", "colleges"):
+        e = budget[name]
+        yield "%s: month slot == current count and rate: %s" % (
+            name, (e["months"][m]["count"], e["months"][m]["rate"]) == (e["count"], e["rate"]))
+
+
+@check
+def misc_budget_counts(f):
+    w = _misc(f)
+    budget = sc2.misc_budget(w)["budget"]
+    tiles = w[124:380]
+    expected = {
+        "bonds": w[6],
+        "police": tiles[0xD2] // 9, "fire": tiles[0xD3] // 9, "health": tiles[0xD1] // 9,
+        "schools": tiles[0xD6] // 9, "colleges": tiles[0xD9] // 16,
+        "subway": tiles[0xE9] + w[1018],
+    }
+    for name, codes in BUDGET_TRANSIT_CODES.items():
+        expected[name] = sum(tiles[c] for c in codes)
+    expected["roads"] += tiles[0xEC] // 4 * 250
+    expected["rail"] += tiles[0xED]
+    for name, n in expected.items():
+        yield "%s count from MISC tile counts: %s" % (name, budget[name]["count"] == n)
+
+
+@check
+def misc_budget_bond_rate(f):
+    w = _misc(f)
+    n = w[6]
+    if n:
+        rate = sc2.misc_budget(w)["budget"]["bonds"]["rate"]
+        yield "bonds rate == sum of bond rates x 10000 / count: %s" % (rate == int(sum(w[388:388 + n]) * 10000 / n))
+
+
+@check
+def misc_budget_ordinance_total(f):
+    w = _misc(f)
+    if w[4] % 25 >= 21:
+        yield "saved on day 21 or later (tax bases changed since the monthly update)"
+        return
+    budget = sc2.misc_budget(w)["budget"]
+    total = sum(_ordinance_amount(b, budget, w) for b in range(20) if w[1000] >> b & 1)
+    yield "ordinances count == sum of enacted ordinance amounts: %s" % (budget["ordinances"]["count"] == total)
+
+
+@check
+def misc_budget_tax_base(f):
+    w = _misc(f)
+    if w[4] % 25 < 21:
+        yield "saved before day 21 (population words refilled since the last tax-base update)"
+        return
+    budget = sc2.misc_budget(w)["budget"]
+    ok = all(budget[n]["count"] == (w[381 + 2 * i] + w[382 + 2 * i]) * 10 + w[1032] // (6 if i == 0 else 12)
+             for i, n in enumerate(("residential_tax", "commercial_tax", "industrial_tax")))
+    yield "tax bases == (MISC 381+382, 383+384, 385+386) x 10 + share of MISC 1032: %s" % ok
+
+
+@check
+def misc_budget_rates(f):
+    w = _misc(f)
+    budget = sc2.misc_budget(w)["budget"]
+    taxes = [budget[n]["rate"] for n in ("residential_tax", "commercial_tax", "industrial_tax")]
+    yield "tax rates within 0-20: %s" % all(0 <= r <= 20 for r in taxes)
+    funding = [budget[n]["rate"] for n in sc2.BUDGET_ENTRIES[5:]]
+    yield "funding within 0-100: %s" % all(0 <= r <= 100 for r in funding)
+    yield "funding a multiple of 5: %s" % all(r % 5 == 0 for r in funding)
+    yield "ordinances rate: %d" % budget["ordinances"]["rate"]
+    industries = sum(w[92 + 3 * k] for k in range(11))
+    yield "%s: industrial tax rate == average of the 11 industry rates: %s" % (
+        _kind(f), taxes[2] == int((industries + 6) / 11))
+
+
+@check
+def misc_budget_year_end_flag(f):
+    w = _misc(f)
+    yield "word 911 = %d in month %d" % (w[911], w[4] // 25 % 12) if w[911] else "word 911 = 0"
+
+
+@check
+def misc_ordinance_flags(f):
+    w = _misc(f)
+    yield "bits 20-31 clear: %s" % (w[1000] >> 20 == 0)
+    yield "%s: any ordinance enacted: %s" % (_kind(f), w[1000] != 0)
+
+
+# --- MISC: tile counts, neighbours, demand, technology, newspapers ------------
+
+
+
+def _recount(f):
+    """Per-code counts outside zone 7, and military counts inside it (as 0x434f80 / 0x441f00)."""
+    xbld, xzon = _seg(f, b"XBLD"), _seg(f, b"XZON")
+    index = {c: i for i, c in enumerate(sc2.MILITARY_CODES) if c is not None}
+    counts, military = [0] * 256, [0] * 16
+    for code, zone in zip(xbld, xzon):
+        if zone & 0x0F == 7:
+            military[index.get(code, 0)] += 1
+        else:
+            counts[code] += 1
+    return counts, military
+
+
+@check
+def misc_counts_buildings(f):
+    w = _misc(f)
+    counts, _ = _recount(f)
+    stored = [sc2._s16(v) for v in w[124:380]]
+    yield "stored building counts equal a recount without zone 7: %s" % ("yes" if stored == counts else "no")
+    if any(v > 32767 for v in w[124:380]):
+        yield "some building count stored as 32768..65535 (negative, not sign-extended)"
+
+
+@check
+def misc_counts_military(f):
+    w = _misc(f)
+    _, military = _recount(f)
+    stored = [sc2._s16(v) for v in w[1002:1018]]
+    yield "stored military counts equal a recount of zone 7: %s" % ("yes" if stored == military else "no")
+    yield "military counts: %s" % ("some non-zero" if any(stored) else "all 0")
+
+
+@check
+def misc_neighbours_ids(f):
+    w = _misc(f)
+    ids = [w[438 + 4 * k] for k in range(4)]
+    yield "name ids within 0..36: %s" % all(0 <= i <= 36 for i in ids)
+    named = [i for i in ids if i]
+    yield "non-zero name ids all different: %s" % (len(set(named)) == len(named))
+    yield "neighbours with id 0 (Ocean): %s" % (tuple(k for k in range(4) if ids[k] == 0) or "none")
+    if ids[0] == 0:
+        yield "Ocean neighbour: population %s, economy %s, MISC word 913 %s" % (
+            w[439] == 0 and "0" or "non-zero", w[440] == 0 and "0" or "non-zero",
+            "set" if w[913] else "0")
+    yield "fourth word of every neighbour 0: %s" % all(w[441 + 4 * k] == 0 for k in range(4))
+
+
+@check
+def misc_neighbours_ocean_edge(f):
+    # On a coast map, the edge with the most salt water should be neighbour 0's edge:
+    # stored edge e (0 row 127, 1 col 127, 2 row 0, 3 col 0) holds neighbour (e + compass) & 3.
+    w = _misc(f)
+    if w[438] != 0:
+        return
+    xbit = _seg(f, b"XBIT")
+    edges = (
+        [127 * 128 + c for c in range(128)], [r * 128 + 127 for r in range(128)],
+        [c for c in range(128)], [r * 128 for r in range(128)])
+    sea = [sum(1 for i in e if xbit[i] & 0x05 == 0x05) for e in edges]
+    best = sea.index(max(sea))
+    yield "saltiest edge holds neighbour %d" % ((best + _compass(f)) & 3)
+
+
+@check
+def misc_demand_values(f):
+    w = _misc(f)
+    yield "R, C, I demand within -2000..2000: %s" % all(-2000 <= v <= 2000 for v in w[454:457])
+    yield "words 457-461 all 0: %s" % (not any(w[457:462]))
+
+
+TECH_BASE_YEARS = (1940, 1950, 1980, 1970, 2020, 2050, 1920, 1920, 1910, 1900,
+                   1925, 1980, 1990, 2040, 2090, 2140, 2190)
+
+
+@check
+def misc_technology_years(f):
+    w = _misc(f)
+    now = w[3] + w[4] // 300
+    if not any(w[462:479]):
+        yield "all 17 entries 0 (everything available)"
+    for base, year in zip(TECH_BASE_YEARS, w[462:479]):
+        if year == 0:
+            continue
+        if not base <= year <= base + 19:
+            yield "a year outside base..base+19"
+        elif year > now:
+            yield "non-zero years: some in the future"
+        else:
+            yield "non-zero years: some already due"
+
+
+@check
+def misc_newspapers_papers(f):
+    w = _misc(f)
+    for field, name in enumerate(("name", "layout", "price style", "opinion", "weather")):
+        col = sorted(w[916 + 5 * p + field] for p in range(6))
+        if col == [0, 1, 2, 3, 4, 5]:
+            yield "%s column is a permutation of 0..5" % name
+        elif col == [0, 0, 1, 1, 2, 2]:
+            yield "%s column is 0, 0, 1, 1, 2, 2" % name
+        else:
+            yield "%s column is something else" % name
+
+
+@check
+def misc_newspapers_stories(f):
+    w = _misc(f)
+    slots = [w[946 + 6 * s:952 + 6 * s] for s in range(9)]
+    pri = [s[1] for s in slots[:7]]
+    yield "slots 0-6 sorted by priority: %s" % all(pri[i] >= pri[i + 1] for i in range(6))
+    yield "slot 7 (type, priority): %s" % ("weather (0, 0)" if slots[7][:2] == (0, 0) else str(slots[7][:2]))
+    yield "slot 8 type: %s" % ("42..45" if 42 <= slots[8][0] <= 45 else str(slots[8][0]))
+    for s in slots[:7]:
+        if s[3:] != (255, 255, 255):
+            yield "some queued story has phrase choices made"
+            break
+
+
 # --- driver ----------------------------------------------------------------
 
 class Parsed:

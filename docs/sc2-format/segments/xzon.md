@@ -46,8 +46,8 @@ For a zoned tile with no building, the renderer draws a ground sprite chosen as 
 The military base is a special zone, and the game treats its tiles differently (**Confirmed (code)**):
 
 - **Placement** (`0x4142c0`): when the base is created, a tile in its 8 × 8 area gets zone 7 if it meets all of these conditions: XTER is 0 (flat, dry land), it is unzoned, nothing is built on it except trees or rubble (XBLD < `0x0D`), and XBIT bit `0x04` is clear. The base's ground tiles are military even where nothing is built, so 223 zone-7 tiles in the corpus are bare land (XBLD `0x00`).
-- **Building counts** (`0x434f80`): when the game recounts how many tiles carry each XBLD code (stored in MISC words 124–379), it skips zone 7. Military tiles never count as city buildings. Placement also decrements the count for each tile it claims.
-- **Subway count** (`0x442370`): subway pieces on a zone 7 tile are not added to the city's subway tile count.
+- **Building counts** (`0x434f80`): when the game recounts how many tiles carry each XBLD code (stored in MISC words 124–379, [tile-counts.md](misc/tile-counts.md#building-counts-words-124379)), it skips zone 7. The military tiles are counted separately, in MISC words 1002–1017. Military tiles never count as city buildings. Placement also decrements the count for each tile it claims.
+- **Subway count** (`0x442370`): subway pieces on a zone 7 tile are not added to the city's subway tile count (MISC word 1018, [general.md](misc/general.md#counters)).
 
 ## Corner bits
 

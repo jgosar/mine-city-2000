@@ -14,10 +14,12 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x430dc0` | `ReadRleSegment` | Reads `length` bytes and RLE-decodes them into a buffer of a given size | [compression.md](compression.md) |
 | `0x430d90` | `ReadRawSegment` | Reads `length` bytes into a buffer as they are (used for ALTM) | [container.md](container.md#segment-table) |
 | `0x4310c0` | `SkipSegment` | Reads `length` bytes and throws them away (unknown tags) | [container.md](container.md#missing-repeated-and-unknown-segments) |
-| `0x431330` | `LoadMisc` | RLE-decodes MISC, swaps it, checks word 0 == 0x122, copies every word into its variable | [container.md](container.md#version-check) |
+| `0x431330` | `LoadMisc` | RLE-decodes MISC, swaps it, checks word 0 == 0x122, copies words 0–1043 into their variables (many into 16- or 8-bit ones) | [container.md](container.md#version-check), [misc/README.md](segments/misc/README.md#how-the-words-are-stored) |
+| `0x433a40` | `SaveMisc` | The reverse of `0x431330`: packs the variables into words 0–1043 and writes zeros from word 1044 on; word 29 comes from the Residents graph, word 1028 from the view centre | [misc/README.md](segments/misc/README.md#how-the-words-are-stored), [general.md](segments/misc/general.md#layout) |
+| `0x4300e0` | `OpenCity` | Loads a file (`0x4302e0`, or the SimCity Classic import), then restores the view from MISC words 1028 and 1029 through `0x412570` | [general.md](segments/misc/general.md#view) |
 | `0x431ee0` | `NameFromFileName` | Sets the city name to the upper-cased file name without its directory | [container.md](container.md#after-the-walk), [cnam.md](segments/cnam.md#how-the-game-uses-it) |
-| `0x434b70` | `RecountAfterLoad` | Recounts statistics from XBLD, XZON and XTXT after loading (among them the road neighbour connections, from XTXT `0xFA`); resets the flood timer; calls `0x467860` and `0x464550` | [container.md](container.md#after-the-walk) |
-| `0x434f80` | `RecountBuildingCodes` | Rebuilds the 256-entry per-XBLD-code tile count (stored in MISC words 124–379), skipping military-zone tiles (XZON zone 7) | [container.md](container.md#after-the-walk) |
+| `0x434b70` | `RecountAfterLoad` | Recounts statistics from XBLD, XZON and XTXT after loading (among them the road neighbour connections, from XTXT `0xFA`); sums the outstanding bond rates (`0x4ca400`); resets the flood timer; calls `0x467860` and `0x464550` | [container.md](container.md#after-the-walk) |
+| `0x434f80` | `RecountBuildingCodes` | Rebuilds the 256-entry per-XBLD-code tile count (stored in MISC words 124–379), skipping military-zone tiles (XZON zone 7) | [container.md](container.md#after-the-walk), [tile-counts.md](segments/misc/tile-counts.md#building-counts-words-124379) |
 | `0x431fd0` | `ComputeGraphMaxima` | Sets each of the 16 graph maxima (`0x4cc6f0`) to the largest of its 52 XGRP values, at least the floor in `0x4e72b0`; series 1–3 take series 0's maximum | [xgrp.md](segments/xgrp.md#graph-scale-not-stored) |
 | `0x430c00` | `ConvertLabels` | Turns the 256 length-prefixed XLAB records into C strings, capping the length at 23 | [xlab.md](segments/xlab.md#layout) |
 | `0x430d50` | `ClearLabels` | Clears all 256 labels (used when XLAB is missing) | [container.md](container.md#after-the-walk) |
@@ -28,6 +30,10 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x432990` | `WriteCnam` | Writes the tag, length 32, byte `0x1F`, then 31 bytes starting at the name (whatever follows it in memory) | [cnam.md](segments/cnam.md#layout) |
 | `0x430c90` | `UnconvertLabels` | Before saving: turns the 256 C-string labels back into length + text; writes only bytes 0 … length | [xlab.md](segments/xlab.md#layout) |
 | `0x40e250` | `ResetCityData` | New city: clears the overlays (XROG to `0x7F`), zeroes all 832 XGRP values and sets the graph maxima from `0x4e6750`, resets the power and water figures | [minimaps.md](segments/minimaps.md#xrog-rate-of-growth), [xgrp.md](segments/xgrp.md#graph-scale-not-stored) |
+| `0x42e460` | `StartCity` | New game, after the terrain is made: founding year, difficulty, starting funds (20 000, 10 000, or 10 000 and one bond), national figures, technology years (base year + random 0–19), "Ocean" as neighbour 0 on a coast map | [general.md](segments/misc/general.md#money-and-difficulty), [technology.md](segments/misc/technology.md#how-the-game-uses-it), [neighbours.md](segments/misc/neighbours.md#how-the-game-uses-it) |
+| `0x4348e0` | `ResetGameState` | Clears the date, pending disaster, military base and some options; founding year 1900; building centre (64, 64) | [general.md](segments/misc/general.md#header-and-date) |
+| `0x408290` | `LoadOptions`? | Reads the speed, sound, music, auto-goto, auto-budget, disaster and autosave options from the `[OPTIONS]` settings | [general.md](segments/misc/general.md#game-options) |
+| `0x484cd0` | `ImportClassicSettings`? | SimCity Classic import: sea level, coast and river flags, national figures, technology years | [technology.md](segments/misc/technology.md#how-the-game-uses-it) |
 | `0x44cb60` | `NewCity` | Clears XTXT, labels 1–255 and XTHG; sets label 0 to the registered mayor's name | [xlab.md](segments/xlab.md#slot-0-the-mayor) |
 
 ## Byte-order helpers
@@ -45,7 +51,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 
 | Address | Our name | What it does | Cited in |
 |---|---|---|---|
-| `0x413520` | `SimulationStep` | Dispatcher of the 25-step cycle (step = MISC word 4 mod 25): step 1 → `0x467860` (power), step 2 → `0x46a840` (overlays), steps 3–18 → `0x4358b0` (zone growth), step 19 → `0x4586f0` (traffic decay), step 20 → `0x464550` (water), step 21 → `0x468150`, `0x468d30` and `0x413e50` (graphs) | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [xgrp.md](segments/xgrp.md#when-samples-are-taken), [xbit.md](segments/xbit.md#what-to-trust) |
+| `0x413520` | `SimulationStep` | Increments the day counter (MISC word 4), then runs step = day mod 25: step 0 → `0x40d400`, the year-end budget `0x4731e0` while MISC word 911 is set, the monthly budget `0x4734a0`, and clears MISC words 380–387; step 1 → `0x467860` (power); step 2 → `0x46a840` (overlays); steps 3–18 → `0x4358b0` (zone growth); step 19 → `0x4586f0` (traffic decay); step 20 → `0x464550` (water); step 21 → `0x468150`, `0x468d30` and `0x413e50` (graphs); step 22 → the population milestones (MISC words 8 and 30). In months 3 and 7 it opens the newspaper when subscribed | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [xgrp.md](segments/xgrp.md#when-samples-are-taken), [xbit.md](segments/xbit.md#what-to-trust), [population.md](segments/misc/population.md#zone-population), [budget.md](segments/misc/budget.md#every-month) |
 | `0x4570f0` | `YieldToWindows`? | Called every 5000 tiles during the floods (**Inferred**: message pump) | [xbit.md](segments/xbit.md#what-to-trust) |
 
 ## View rotation and screen position
@@ -73,7 +79,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x44d9a0` | `DrawTileText` | Draws a sign or connection text (when labels are shown), or the moving object of XTXT `0xC9`–`0xF0` via `0x450bb0` | [xtxt.md](segments/xtxt.md#how-the-game-uses-it) |
 | `0x450bb0` | `DrawThing` | Draws XTHG record *n* | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0) |
 | `0x46f4a2` | `DrawGraphs` | Graph window: draws slots 11 → 0, 31 → 12 or 51 → 32 of each series, scaled by `0x4cc6f0` | [xgrp.md](segments/xgrp.md#how-the-graph-window-reads-it) |
-| `0x47a240` | `ExpandMessage` | Expands message templates (with a temporary OEM conversion) | [xlab.md](segments/xlab.md#how-the-game-uses-it) |
+| `0x47a240` | `ExpandMessage` | Expands message and newspaper story templates (with a temporary OEM conversion); keeps a story's phrase choices in its slot | [xlab.md](segments/xlab.md#how-the-game-uses-it), [newspapers.md](segments/misc/newspapers.md#how-the-queue-works) |
 
 ## Terrain and water
 
@@ -104,7 +110,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | Address | Our name | What it does | Cited in |
 |---|---|---|---|
 | `0x45b1c0` | `FindBuildingAnchor` | Given a tile and its XBLD code, returns the footprint size and moves to the anchor (corner D: min row, max col); highways snap to the even 2 × 2 grid | [xbld.md](segments/xbld.md#the-anchor) |
-| `0x441f00` | `SetTile` | Writes an XBLD code and keeps the per-code tile count (`0x4ca4c8`) or, for military-zone tiles, the military count (`0x4ca934`) in step | [xbld.md](segments/xbld.md#how-the-game-uses-it) |
+| `0x441f00` | `SetTile` | Writes an XBLD code and keeps the per-code tile count (`0x4ca4c8`) or, for military-zone tiles, the military count (`0x4ca934`) in step | [xbld.md](segments/xbld.md#how-the-game-uses-it), [tile-counts.md](segments/misc/tile-counts.md#military-counts-words-10021017) |
 | `0x4382b0` | `PlaceTile` | Places runway and pier pieces and sets their XBIT `0x02` flag (also sets `0xC0`); places the 3 × 3 missile silo (XBLD `0xF9`, XUND `0x22`) and its corner bits from `0x4dc4d0` | [xbit.md](segments/xbit.md#0x02-mirror-rotate), [xund.md](segments/xund.md#values) |
 | `0x436e80` | `PlaceBuildingTile` | Places a building tile: corner bits `0xF0` for one-tile items, XBIT `0xE0` on every tile of the footprint; a new one-tile home's wealth comes from XVAL >> 6 (at most 2) | [xzon.md](segments/xzon.md#corner-bits), [xbit.md](segments/xbit.md#how-the-game-uses-it), [minimaps.md](segments/minimaps.md#how-the-game-uses-it) |
 | `0x440170` | `OnBuildingPlaced`? | Per-building side effects; for XBLD `0xE9` writes XUND `0x23` | [xund.md](segments/xund.md#how-the-game-uses-it) |
@@ -116,7 +122,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 
 | Address | Our name | What it does | Cited in |
 |---|---|---|---|
-| `0x4142c0` | `PlaceMilitaryBase` | Claims an 8 × 8 area: sets zone 7 on flat, dry, unzoned, unbuilt tiles and takes them out of the per-code tile count | [xzon.md](segments/xzon.md#zone-7-the-military-base) |
+| `0x4142c0` | `PlaceMilitaryBase` | Claims an 8 × 8 area: sets zone 7 on flat, dry, unzoned, unbuilt tiles and takes them out of the per-code tile count; records the outcome in MISC word 915 | [xzon.md](segments/xzon.md#zone-7-the-military-base), [general.md](segments/misc/general.md#terrain-options-and-the-military-base) |
 | `0x437f90` | `CornerToBlock` | Converts a corner bit to a view corner ((k − compass) & 3) and rebuilds the 2 × 2 block it belongs to | [xzon.md](segments/xzon.md#which-bit-is-at-which-corner) |
 | `0x437310` | `ClearZone`? | Clears a tile's zone, keeping the corner bits | [xzon.md](segments/xzon.md#how-the-game-uses-it) |
 | `0x442370` | `SetUnderground` | The only XUND writer; keeps the subway tile count | [xund.md](segments/xund.md#how-the-game-uses-it) |
@@ -134,7 +140,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x44d970` | `FindFreeSign` | First sign number 1–50 not in use | [xtxt.md](segments/xtxt.md#signs-0x010x32) |
 | `0x44ced0` | `DeleteText` | Removes a sign and its label; clears XTHG byte 10; leaves `0x34`–`0x3C` alone | [xtxt.md](segments/xtxt.md#how-the-game-uses-it) |
 | `0x44cf60` | `AllocMicrosim` | Picks an XMIC record for a building code (table `0x4e7c9a`), writes its byte 0 and default name, returns the XTXT value | [xtxt.md](segments/xtxt.md#microsims-0x3d0xc8) |
-| `0x44e390` | `UpdateMicrosims` | Microsim routine; among other things sums the word at offset 4 of the XMIC records of types `0xEC`, `0xED`, `0xF3`–`0xF5`, `0xF8`, `0xFA`–`0xFE` into MISC word 1032 | [xgrp.md](segments/xgrp.md#graph-series) |
+| `0x44e390` | `UpdateMicrosims` | Microsim routine; among other things sums the word at offset 4 of the XMIC records of types `0xEC`, `0xED`, `0xF3`–`0xF5`, `0xF8`, `0xFA`–`0xFE` into MISC word 1032, and sets the arrests and police bonus (MISC words 1038, 1039) | [xgrp.md](segments/xgrp.md#graph-series), [general.md](segments/misc/general.md#counters) |
 | `0x449bb0`, `0x449f50`, `0x4621f0` | `RoadTool`, `RailTool`, `HighwayTool` | At the map edge, offer a neighbour connection (strings 109, 110, 246) and write XTXT `0xFA` | [xtxt.md](segments/xtxt.md#neighbour-connections-0xfa) |
 | `0x450690`, `0x452d00`, `0x452fa0`, `0x453280`, `0x453460`, `0x453600`, `0x455500`, `0x45f090`, `0x442a30` | moving-object routines | Move XTHG objects and write XTXT `0xC9` + *n* on the tile of object *n* | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0) |
 
@@ -142,8 +148,8 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 
 | Address | Our name | What it does | Cited in |
 |---|---|---|---|
-| `0x45cf10` | `DispatchDisaster` | Starts the pending disaster (`0x4ca420`, cases 1–18) | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff) |
-| `0x471bc0` | `ChooseDisasterSpot`? | Picks where a disaster starts; case 4 starts at the most polluted 64 × 64 cell above 149 | [minimaps.md](segments/minimaps.md#how-the-game-uses-it) |
+| `0x45cf10` | `DispatchDisaster` | Starts the pending disaster (`0x4ca420`, MISC word 28, cases 1–18); keeps it in MISC word 1041, sets word 1042 while it runs and the city mode (word 1) to 2; sets word 1040 to −1 when it ends | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff), [general.md](segments/misc/general.md#disasters) |
+| `0x471bc0` | `ChooseDisaster` | Picks the next disaster into MISC word 28 (hurricane weather on a coast → 16, tornado weather → 7, …); case 4 (the toxic spill, **Inferred**) starts at the most polluted 64 × 64 cell above 149 | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [general.md](segments/misc/general.md#disasters) |
 | `0x45f760` | `UpdateDisasters` | Processes the XTXT markers `0xFB`–`0xFF` each tick; fire spreads with XFIR + 8 as a random threshold; zeroes XTRF under destroyed tiles | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff), [minimaps.md](segments/minimaps.md#xfir-fire-coverage) |
 | `0x460e10` | `StartFire` | Writes XTXT `0xFF`; zeroes XTRF under removed road or rail | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff) |
 | `0x4611e0` | `BurnOut` | Turns a burnt tile into rubble | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff) |
@@ -168,13 +174,58 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x46a840` | `OverlayStep` | Simulation step 2: rebuilds the XBIT `0x08` mask and recomputes XPLT, XVAL, XPLC, XFIR, XPOP, XROG and XCRM, in that order; stores the XVAL, XCRM and XPLT sums in MISC words 10, 11 and 13 | [minimaps.md](segments/minimaps.md#values), [xbit.md](segments/xbit.md#0x08-developed-land-mask-and-scratch-mark) |
 | `0x46ba90` | `SpreadCoverage` | Adds a police or fire station's strength to a diamond of 32 × 32 cells around it (full, then × 4/5, then less, out to distance 3) | [minimaps.md](segments/minimaps.md#xplc-police-coverage) |
 | `0x46ba20` | `AddCoverageCell` | Adds to one 32 × 32 cell, clamped to 0–255 and to the grid | [minimaps.md](segments/minimaps.md#xplc-police-coverage) |
-| `0x4358b0` | `ZoneGrowthStep`? | Simulation steps 3–18: grows the zones in one block of the map; needs XVAL above 31, 95 or 191; sends trips | [minimaps.md](segments/minimaps.md#how-the-game-uses-it) |
+| `0x4358b0` | `ZoneGrowthStep` | Simulation steps 3–18: step 3 + 4*r* + *c* visits the tiles with row ≡ *r* and col ≡ *c* (mod 4). Grows the zones (needs XVAL above 31, 95 or 191), sends trips, adds each zone building's population units to MISC words 381–386 (abandoned ones to 387), grows the military base (MISC word 915), and lets underfunded transport decay | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [population.md](segments/misc/population.md#zone-population) |
 | `0x457620` | `AddTripTraffic`? | Adds a trip's weight to XTRF along its route, capped at 255 | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
 | `0x4586f0` | `DecayTraffic` | Step 19: XTRF −= XTRF >> 2 everywhere; stores the sum in MISC word 12 | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
 | `0x4540c0` | `TrafficReport`? | Triggers the traffic helicopter report on a cell above 169, at most every 5 s | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
-| `0x468d30` | `IndustryMix`? | Computes the heavy-industry level `0x4c9428` (step 21) | [minimaps.md](segments/minimaps.md#xplt-pollution) |
-| `0x468150` | `SumPopulation` | Sets MISC word 380 to the sum of words 381–386 and the residents / commerce / industry inputs; runs before `0x413e50` | [xgrp.md](segments/xgrp.md#graph-series) |
+| `0x468d30` | `MonthlyPopulation` | Step 21: the national economy (MISC words 20–23) and the neighbours' figures; the age groups (deaths, ageing with schools and colleges, births with hospitals, migration) and MISC words 17–19; the industries (demand, sizes), the industry bonus and the heavy-industry level (words 1036, 1037) | [population.md](segments/misc/population.md#how-the-age-groups-change), [minimaps.md](segments/minimaps.md#xplt-pollution) |
+| `0x468150` | `SumPopulation` | Step 21, before `0x413e50`: MISC word 380 = sum of words 381–386, word 1035 = 10 × word 380 (also added to word 16); the people to add or remove; the three tax bases (budget entries 0–2) and the R, C, I demand; word 29 and the weather (words 24–27); one due invention (1 in 8); newspaper stories | [xgrp.md](segments/xgrp.md#graph-series), [population.md](segments/misc/population.md#zone-population), [demand.md](segments/misc/demand.md#how-the-game-uses-it) |
 | `0x413e50` | `UpdateGraphs` | Day 21 of each month: computes the 16 newest values, shifts the monthly block, and the half-year (months 0 and 6) and five-year (month 0 of years divisible by 5) blocks; raises the graph maxima | [xgrp.md](segments/xgrp.md#when-samples-are-taken) |
+
+## Budget, bonds and ordinances
+
+| Address | Our name | What it does | Cited in |
+|---|---|---|---|
+| `0x4734a0` | `MonthlyBudget` | Day 0 of each month: at the year end adds each entry's year to date ÷ (12 × divisor) to the funds and zeroes it; records the month's count and rate and adds count × rate to the year to date; sets MISC word 911 after month 11; recounts budget entries 3–15; may enact a random ordinance | [budget.md](segments/misc/budget.md#every-month), [ordinances.md](segments/misc/ordinances.md#how-the-game-uses-it) |
+| `0x4731e0` | `ShowYearBudget` | Opens the year's Budget window unless auto-budget is on | [budget.md](segments/misc/budget.md#the-year-end) |
+| `0x4189c0` | `UpdateBudgetWindow` | Each line's estimate for the year and the totals, as year to date ÷ (12 × divisor) | [budget.md](segments/misc/budget.md#layout) |
+| `0x418330` | `StepTaxRates` | Budget window arrows: all three property tax rates ± 1 (industry through `0x473d80`), 0–20 | [budget.md](segments/misc/budget.md#rates) |
+| `0x4184a0`, `0x418590`, `0x418680`, `0x418770`, `0x4188b0` | `StepFunding` | Budget window arrows for police, fire, health, education, transport: funding ± 5, 0–100 | [budget.md](segments/misc/budget.md#rates) |
+| `0x419b60`, `0x419f60`, `0x419fa0`, `0x419ff0` | property tax dialog | Shows and sets the residential, commercial and industrial rates | [budget.md](segments/misc/budget.md#rates) |
+| `0x41c2b0`, `0x41c880` … `0x41ca10` | transport dialog | Shows and sets the six transport fundings | [budget.md](segments/misc/budget.md#rates) |
+| `0x473d80` | `ChangeIndustryTaxes` | Adds a delta to all 11 industry tax rates (0–20) and stores their rounded average as the industrial tax rate | [budget.md](segments/misc/budget.md#rates), [population.md](segments/misc/population.md#industries) |
+| `0x41b270` | `BondButton` | Recomputes the city value (`0x46a270`) and offers a bond at the Fed Rate + 1, unless bonds × 2500 ÷ (value + 1) ≥ 6 | [population.md](segments/misc/population.md#bonds), [general.md](segments/misc/general.md#money-and-difficulty) |
+| `0x473a40` | `IssueBond` | Refuses at 50 bonds; on yes: funds + 10 000, the rate into the next slot, bond count + 1, budget entry 4's count and average rate. Ghidra shows the same code again as `0x473a5f` | [population.md](segments/misc/population.md#bonds), [budget.md](segments/misc/budget.md#rates) |
+| `0x46a270` | `ComputeCityValue` | MISC word 9 from the per-code tile counts minus the subway count | [general.md](segments/misc/general.md#money-and-difficulty) |
+| `0x40ca30` | `CheatCodes`? | Typed cheat codes; one issues a bond at 25 % | [population.md](segments/misc/population.md#bonds) |
+| `0x42bca0` | `OrdinanceAmount` | Monthly amount of ordinance *n* (0–19) from the tax bases | [ordinances.md](segments/misc/ordinances.md#amounts) |
+| `0x4194b0` | `InitOrdinanceWindow` | Ticks the enacted ordinances and totals their amounts per group of four and overall (budget entry 3) | [ordinances.md](segments/misc/ordinances.md#bits) |
+| `0x419680` | `ToggleOrdinance` | Flips bit *n* of MISC word 1000 and updates the totals | [ordinances.md](segments/misc/ordinances.md#how-the-game-uses-it) |
+| `0x41a490` | `AdvisorMessages` | Picks each advisor's message from the budget, ordinances, demand and statistics (the education advisor compares ages 5–14 and 15–19 with school and college capacity) | [budget.md](segments/misc/budget.md#what-the-rates-do-in-the-simulation), [ordinances.md](segments/misc/ordinances.md#bits), [population.md](segments/misc/population.md#how-the-game-uses-it) |
+
+## Population, rewards, technology and newspapers
+
+| Address | Our name | What it does | Cited in |
+|---|---|---|---|
+| `0x46db92` | `DrawPopulationWindow` | Population window: a bar per age group (people, average life expectancy, average education) and MISC words 17–19 | [population.md](segments/misc/population.md#age-groups) |
+| `0x47fcb0` | `Random7` | 16-bit shift-register random number (feedback `0x1BF5`), 0–127 | [population.md](segments/misc/population.md#how-the-industries-change) |
+| `0x441e50` | `SetRewardAvailable` | Sets or clears a bit of MISC word 30; updates the Rewards button when the mask changes between 0 and non-zero | [general.md](segments/misc/general.md#rewards) |
+| `0x43f220` | `PlaceReward`? | Clears a reward's bit of MISC word 30 when it is built | [general.md](segments/misc/general.md#rewards) |
+| `0x412290` | `CheatEverything`? | Clears the technology years, sets the reward level to 6 and the reward bits, adds 500 000 to the funds | [general.md](segments/misc/general.md#rewards), [technology.md](segments/misc/technology.md#how-the-game-uses-it) |
+| `0x46a080` | `UpdateToolMenus` | Rebuilds the build menus from the technology years (Nuclear Free Zone blocks nuclear) and the military base type | [technology.md](segments/misc/technology.md#layout) |
+| `0x46c562` | `DrawNeighboursWindow` | Neighbors window: neighbour (compass + 0/1/2/3) & 3 at bottom-right / bottom-left / top-left / top-right | [neighbours.md](segments/misc/neighbours.md#which-edge-each-neighbour-is-on) |
+| `0x422f10` | `DrawDemandIndicator` | R, C, I bars: value × half height ÷ 2000 | [demand.md](segments/misc/demand.md#how-the-game-uses-it) |
+| `0x406d70` | `BuildNewspaperMenu` | Lists papers 0 … min(MISC word 8, 5) by name; ticks MISC words 1025–1027; no menu in the terrain editor | [newspapers.md](segments/misc/newspapers.md#papers-words-916945) |
+| `0x479610` | `InitNewspapers` | Allocates the paper and story buffers, sets the newspaper options and calls `0x479730` | [newspapers.md](segments/misc/newspapers.md) |
+| `0x479730` | `ShuffleNewspapers` | Gives the six papers shuffled names, layouts, price styles and columns; fills the nine story slots with types 11–19 | [newspapers.md](segments/misc/newspapers.md#papers-words-916945) |
+| `0x47b5c0` | `PostStory` | Inserts a story into slots 0–6 by priority; opens the paper for major stories when MISC word 1026 is on | [newspapers.md](segments/misc/newspapers.md#how-the-queue-works) |
+| `0x479a70` | `DecayStories` | Monthly: lowers each queued story's priority and re-sorts slots 0–6 | [newspapers.md](segments/misc/newspapers.md#how-the-queue-works) |
+| `0x477880` | `OpenNewspaper` | Newspaper dialog: writes slot 7 (weather) and slot 8 (opinion column) | [newspapers.md](segments/misc/newspapers.md#the-three-kinds-of-slot) |
+| `0x477c12` | `DrawNewspaper` | Masthead, price wording by era, opinion and weather columns | [newspapers.md](segments/misc/newspapers.md#papers-words-916945) |
+| `0x47b400` | `WeatherReport` | Formats heat − 100, wind and humidity for the newspaper | [general.md](segments/misc/general.md#weather) |
+| `0x4791d0` | `LoadNewspaperData` | Loads the story templates and per-type tables from the `DATA` file (records 1000–1005) | [newspapers.md](segments/misc/newspapers.md#how-the-queue-works) |
+| `0x472510` | `OpinionPoll` | Samples 100 citizens over 7 problems, ranks them (`0x4c9410`) and sets the mayor rating (`0x4e9904`) | [newspapers.md](segments/misc/newspapers.md#the-three-kinds-of-slot) |
+| `0x445460` | `ViewCentreTile`? | The tile under a screen point, packed as low byte and high byte (used by the saver for MISC word 1028) | [general.md](segments/misc/general.md#view) |
 
 ## Variables
 
@@ -205,39 +256,81 @@ The map variables hold 128 row pointers into one 16 KB buffer (ALTM: 32 KB). The
 | `0x4cc470` | XGRP (16 pointers, one per series) | 16 × 52 × 4 |
 | `0x4ca1a0` | City name (MFC string; its length is at `0x4ca1a4`) | — |
 
+### MISC variables
+
+Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md](segments/misc/README.md#word-index)). "16" and "8" mark variables narrower than 32 bits.
+
+| Address | Holds | MISC word |
+|---|---|---|
+| `0x4e72a8` | Temporary buffer for the decoded segment | — |
+| `0x4ca42c` (16) | City mode: 0 terrain editor, 1 city, 2 disaster | 1 |
+| `0x4c942c` (16) | Compass (0–3) | 2 |
+| `0x4ca5f4` (16) | Founding year | 3 |
+| `0x4cae04` | Day counter: 25-day months, 300-day years; simulation step = value mod 25 | 4 |
+| `0x4ca444` | Funds | 5 |
+| `0x4cc4e8` | Bonds outstanding | 6 |
+| `0x4cb404` (16) | Difficulty 0–3 | 7 |
+| `0x4cb010` (16) | Reward level (population milestones passed) | 8 |
+| `0x4ca4d0` | City value | 9 |
+| `0x4ca440`, `0x4cb454`, `0x4cc6f4`, `0x4cc910` | Sums of XVAL, XCRM, XTRF (after the decay), XPLT | 10–13 |
+| `0x4cad28`, `0x4cb018` | Never used | 14, 15 |
+| `0x4ca5f0` | Population-months (written, never read) | 16 |
+| `0x4cb460`, `0x4cb410`, `0x4cc4b4` | Work force %, life expectancy, education quotient | 17–19 |
+| `0x4ca928`, `0x4cb014`, `0x4ca938` (16), `0x4ca1bc` (16) | National population (thousands), GNP, Fed Rate, national trend | 20–23 |
+| `0x4cade0`, `0x4cae0c`, `0x4cb3d4`, `0x4cb40c` (8 each) | Heat, wind, humidity, weather type | 24–27 |
+| `0x4ca420` (16) | Pending disaster | 28 |
+| `0x4ca194` | Residential population last month | 29 |
+| `0x4e9a24` | Rewards available (bit mask; the loader keeps 16 bits) | 30 |
+| `0x4c94b4`, `0x4c94bc`, `0x4caa70` | Pointers to the 20 age groups' people, education totals, health totals | 31–90 |
+| `0x4ca3f4` (16), `0x4cb3e0` (16), `0x4cb3f0` | Pointers to the 11 industries' demand, tax rate, size | 91–123 |
+| `0x4ca4c8` (16) | Tile count per XBLD code; recomputed on load | 124–379 |
+| `0x4ca428` | Population units: total, six zone types, abandoned buildings | 380–387 |
+| `0x4c9ef0` (16) | 50 bond rates, % | 388–437 |
+| `0x4cc4dc` (16), `0x4cad10`, `0x4ca804`, `0x4ca92c` | Pointers to the 4 neighbours' name ids, populations, economy figures, unused words | 438–453 |
+| `0x4cad58` | The four neighbour names, 32 bytes each, built by the loader from the name ids | 438, 442, 446, 450 |
+| `0x4cc8f8` (16) | R, C, I demand, then 5 unused | 454–461 |
+| `0x4cb430` (16) | 17 technology years | 462–478 |
+| `0x4cc4cc` | Budget table: 16 entries × `0x70` bytes; + `0x60` count, + `0x64` rate, + `0x68` year to date, + `0x6C` estimate (not saved), + 4*k* and + `0x30` + 4*k* month *k* count and rate | 479–910 |
+| `0x4cad2c` | Year-end flag | 911 |
+| `0x4ca818` (16) | Sea level | 912 |
+| `0x4c94c0`, `0x4cb3f8` | Coast and river terrain options | 913, 914 |
+| `0x4cc4e4` (8) | Military base: offer result and type | 915 |
+| `0x4cad24` (8) | Pointer to the 6 newspapers, 5 bytes each | 916–945 |
+| `0x4ca1c0` | Pointer to the 9 story slots, 8 bytes each | 946–999 |
+| `0x4caa40` | Ordinances in force (bits 0–19) | 1000 |
+| `0x4ca5f8` | Unemployment % (copy of the newest Unemployment graph value) | 1001 |
+| `0x4ca934` (16) | Pointer to the 16 military tile counts (index 0 other, then `0xDD`, `0xDE`, `0xEF`, `0xF2`, `0xEA`, `0xE3`, `0xE4`, `0xE5`, `0xF1`, `0xE0`, `0xE2`, `0xE7`, `0xE8`, `0xF6`, `0xF9`); not recomputed on load | 1002–1017 |
+| `0x4ca41c` (16) | Subway tiles (codes `0x01`–`0x0F`, `0x1F`, `0x20`, `0x22`, `0x23`, not in zone 7); kept by `0x442370`, not recomputed on load | 1018 |
+| window + `0x308` (16), `0x4cc4b0`, `0x4ca5d8`, window + `0x1e4`, window + `0x1e0`, `0x4cc4d4` | Speed, auto budget, auto goto, sound, music, no disasters | 1019–1024 |
+| `0x4cb3d0`, `0x4cc4bc`, `0x4ca808` (16) | Newspaper subscription, extras, choice | 1025–1027 |
+| `0x4c7cb0`, `0x4c7cb4`, `0x4c7cb8` | View centre (two halves), zoom; used once after loading | 1028, 1029 |
+| `0x4cb458`, `0x4cb45c` (16) | Centre of the buildings (row, col); recomputed in step 2 | 1030, 1031 |
+| `0x4c94c4` | People in large microsim buildings (**Inferred**) | 1032 |
+| `0x4caddc` (16) | Never used | 1033 |
+| `0x4cc4e0` (16) | Sports teams (bit mask) | 1034 |
+| `0x4caa74` | Population: 10 × word 380 | 1035 |
+| `0x4ca1e8` (16), `0x4c9428` (16) | Industry bonus; heavy-industry level (−1, or (heavy share − 20) ÷ 30) | 1036, 1037 |
+| `0x4ca430` (16), `0x4ca1dc` (16) | Arrests; police bonus | 1038, 1039 |
+| `0x4ca81c` (16), `0x4ca93c` (16), `0x4c9ee8` | XTHG record of the disaster's monster or tornado (−1 none); disaster most recently started; disaster under way | 1040–1042 |
+| `0x4cb3dc` (16) | 1 if the water treatment plants (XBLD `0xF4` tiles / 4 × 2000) cover the water delivered; recomputed by `0x464550` | 1043 |
+
 ### Other variables
 
-| Address | Holds | Loaded from |
+| Address | Holds | Source |
 |---|---|---|
-| `0x4e72a8` | Temporary buffer for the decoded MISC segment | MISC |
-| `0x4c942c` | Compass (0–3) | MISC word 2 |
-| `0x4cae04` | Day counter: 25-day months, 300-day years; simulation step = value mod 25 | MISC word 4 |
 | `0x4cb01c`, `0x4cb020` | Month index (days / 25 mod 12) and year (days / 300) | computed |
-| `0x4ca444` | Funds (**Inferred**: `0x4441c0` takes 25 off it per raised tile) | MISC word 5 |
-| `0x4ca440` | Land value total (sum of XVAL) | MISC word 10, recomputed in step 2 |
-| `0x4cb454` | Crime total (sum of XCRM) | MISC word 11, recomputed in step 2 |
-| `0x4cc6f4` | Traffic total (sum of XTRF after the decay) | MISC word 12, recomputed in step 19 |
-| `0x4cc910` | Pollution total (sum of XPLT) | MISC word 13, recomputed in step 2 |
-| `0x4ca420` | Pending disaster | MISC word 28 |
-| `0x4ca4c8` | Tile count per XBLD code (256 × 16-bit) | MISC words 124–379, then recomputed |
-| `0x4ca428` | Population: word 380 = sum of 381–386, then three pairs, then 387 unemployed | MISC words 380–387 |
-| `0x4ca818` | Sea level (16-bit) | MISC word 912 |
-| `0x4ca5f8` | Unemployment percentage (copy of the newest Unemployment graph value) | MISC word 1001 |
-| `0x4c94c4` | Population living in large microsim buildings (**Inferred**) | MISC word 1032 |
-| `0x4ca934` | Pointer to the 16-entry military tile count (index 0 other, then `0xDD`, `0xDE`, `0xEF`, `0xF2`, `0xEA`, `0xE3`, `0xE4`, `0xE5`, `0xF1`, `0xE0`, `0xE2`, `0xE7`, `0xE8`, `0xF6`, `0xF9`) | not checked yet (MISC, M3) |
-| `0x4ca41c` | Subway tile count (codes `0x01`–`0x0F`, `0x1F`, `0x20`, `0x22`, `0x23`, not in zone 7) | maintained by `0x442370`; not checked yet whether MISC stores it |
+| `0x4ca400` | Sum of the outstanding bond rates | recomputed by `0x434b70` |
+| `0x4ca930` | Residential, commercial, industrial population units (words 381 + 382, 383 + 384, 385 + 386) | computed by `0x468150` |
+| `0x4ca4cc`, `0x4cb1a8` | People to add / remove in this month's migration | computed by `0x468150`, `0x468d30` |
+| `0x4c7b08` | Ordinance subtotals per group of four (5 × int32) | computed by `0x4194b0` |
+| `0x4c9410` | Opinion poll problems, ranked (7 × 16-bit) | computed by `0x472510` |
+| `0x4e9904` | Mayor rating (percent of polled citizens without a complaint) | computed by `0x472510` |
 | `0x4caa50` | Power delivered as a percentage of total plant capacity (`0x4c93b0`), capped at 100; the Power % graph is 100 minus this | computed by `0x467860` |
 | `0x4cc4b8` | During the water flood: water delivered; afterwards the percentage of pump capacity (`0x4c93ac`); the Water % graph is 100 minus this | computed by `0x464550` |
-| `0x4cb3dc` | 1 if the water treatment plants (XBLD `0xF4` tiles / 4 × 2000) cover the water delivered | MISC (word not pinned yet, M3); recomputed by `0x464550` |
-| `0x4c9428` | Heavy-industry level | MISC (M3), recomputed by `0x468d30` |
-| `0x4caa40` | Ordinance flags (**Inferred**: bits `0x4`, `0x10`, `0x800`, `0x80000` change crime, fire, police and pollution in step 2) | MISC (M3) |
-| `0x4cc4cc` | Budget data; police funding at + `0x294`, fire at + `0x304` | MISC (M3) |
 | `0x4cc4d8` | Road neighbour connections | recounted by `0x434b70` from XTXT `0xFA` |
 | `0x4ca3f0` | Rail and highway neighbour connections | not traced yet |
-| `0x4cad58` | The four neighbour city names, 32 bytes each | not traced yet |
 | `0x4c93a8` | Flood timer | reset by `0x434b70` |
 | `0x4c93b4` | Developed tiles (XBLD above `0x1C`, or zoned) | recomputed by `0x434b70` and `0x46a840` |
-| `0x4cb458`, `0x4cb45c` | Centre of the buildings (row, col) | recomputed in step 2 |
 | `0x4cc6f0` | 16 graph maxima (y scale), not saved | computed by `0x431fd0` |
 | `0x4ca404` | City-view data overlay mode | — |
 | `0x4e9e54` | Label display switch | — |
@@ -274,4 +367,22 @@ The map variables hold 128 row pointers into one 16 KB buffer (ALTM: 32 KB). The
 | `0x4e7498` | Building class per XBLD code (1 construction, 2 abandoned) |
 | `0x4e72b0` | Graph scale floors used on load: 1, 1, 1, 1, 1, 1, 1, 1, 100, 100, 150, 90, 15, 1, 1, 15 |
 | `0x4e6750` | Graph scale floors for a new city (Health and Education 90 and 150: swapped compared with `0x4e72b0`) |
+| `0x4e6984` | Population milestones (uint32): 2 000, 10 000, 30 000, 60 000, 90 000, 120 000, 500 000, 1 000 000 |
+| `0x4e9538` | Demand factor per difficulty (double): 0, 1.2, 1.1, 0.95 |
+| `0x4e9558` | GNP growth per national trend (int16): 6, 3, 0, −3 |
+| `0x4dbeb8` | Weather transitions: 8 possible next types per weather type |
+| `0x4dc038`, `0x4dc048`, `0x4dc058` | Heat, wind and humidity targets per weather type (12 bytes each) |
+| `0x4e98d4` | String id per weather type |
+| `0x4e7458` | Population level per XBLD code − `0x70` (16-bit, codes `0x70`–`0xC5`): 1 = 1 × 1, 2 and 3 = lower and upper 2 × 2, 4 = 3 × 3 |
+| `0x4e75b0` | Population units per level (16-bit): 0, 1, 8, 12, 36 |
+| `0x4e7508` | The building-class table `0x4e7498` indexed by code − `0x70` |
+| `0x4e9458`, `0x4e9508` | National industry ratios: 4 eras (1900, 1950, 2000, 2050) × 11 int32, and from 2100 on |
+| `0x4e9eb0`, `0x4e6ad8` | Budget divisors per entry (16 × int16): 75, 75, 75, 75, −100, −1, −1, −2, −4, −1, −1000, −500, −400, −250, −250, −250 |
+| `0x4e6730` | New-city budget rates per entry (16 × int16): 7, 7, 7, 1, 0, then 100 × 11 |
+| `0x4e6b68`, `0x4e6af8`, `0x4e6b48`, `0x4e6c40` | Control ids of the Ordinances and Budget windows |
+| `0x4e99e8` | Technology base years (17 × int16): 1940, 1950, 1980, 1970, 2020, 2050, 1920, 1920, 1910, 1900, 1925, 1980, 1990, 2040, 2090, 2140, 2190 |
+| `0x4e9328` | Demand change by tax rate 0–22 (int16): 200, 160, 120, 100, 75, 50, 25, 0, −25, −50, −100, … −700 |
+| `0x4ea4b0`, `0x4ea4c8`, `0x4ea4e0` | String ids of the newspaper names (360–365), opinion columns (354–359), weather columns (347–352) |
+| `0x4ea158` | String ids of the newspaper price wordings, 3 styles × 5 eras (377–391) |
+| String ids 548–583 | Neighbour town names (name id 1–36; category 1000 of `0x42b520`) |
 | String ids 594–753 | Building and tile names (STRINGTABLE resource, UTF-16) |
