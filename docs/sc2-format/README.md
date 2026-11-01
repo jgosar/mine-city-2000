@@ -25,8 +25,9 @@ flowchart TD
     README --> conventions["conventions.md<br/>byte order, grids, coordinates"]
     overview --> container["container.md<br/>FORM header, segments, loader"]
     container --> compression["compression.md<br/>RLE"]
-    container --> segments["segments/*.md<br/>one page per segment (planned)"]
-    segments --> reference["reference/*.md<br/>code tables (planned)"]
+    container --> segments["segments/*.md<br/>one page per segment"]
+    segments --> reference["reference/*.md<br/>code tables"]
+    conventions --> segments
     README --> internals["game-internals.md<br/>SIMCITY.EXE address map"]
     README --> corrections["corrections.md"]
     README --> open["open-questions.md"]
@@ -38,11 +39,13 @@ flowchart TD
 | Page | Contents | Status |
 |---|---|---|
 | [overview.md](overview.md) | Every segment, its size and purpose, in one table | done |
-| [conventions.md](conventions.md) | Byte order, integer types, the 128×128 map, minimap grids, the compass | done |
+| [conventions.md](conventions.md) | Byte order, integer types, the 128×128 map, minimap grids, the compass, [orientation](conventions.md#orientation) and how to normalise a city to compass 0 | done |
 | [container.md](container.md) | The IFF `FORM` header, segment headers, how the game walks and dispatches segments | done |
 | [compression.md](compression.md) | The run-length encoding, exactly as the game decodes it | done |
-| `segments/` | One page per segment: ALTM, XTER, XBLD, XZON, XUND, XBIT, XTXT, XLAB, CNAM, the minimaps, XGRP, MISC, XMIC, XTHG, scenario segments | planned |
-| `reference/` | Lookup tables: building codes, terrain codes, underground codes, text codes, thing ids | planned |
+| **Map layers:** [altm.md](segments/altm.md), [xter.md](segments/xter.md), [xbld.md](segments/xbld.md), [xzon.md](segments/xzon.md), [xund.md](segments/xund.md), [xbit.md](segments/xbit.md) | Altitude and water, terrain shapes, buildings and their footprints, zones and corner bits, pipes and subways, per-tile flags | done |
+| **Code tables:** [tile-codes-xbld.md](reference/tile-codes-xbld.md), [terrain-codes-xter.md](reference/terrain-codes-xter.md), [underground-codes-xund.md](reference/underground-codes-xund.md) | Every XBLD, XTER and XUND code | done |
+| Other segment pages | XTXT, XLAB, CNAM, the minimaps, XGRP, MISC, XMIC, XTHG, scenario segments | planned |
+| Other code tables | Text codes, thing ids | planned |
 | `cross-segment.md`, `implementing-a-reader.md` | How segments relate; a step-by-step parser recipe | planned |
 | [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | growing |
 | [corrections.md](corrections.md) | Where we differ from the older public documents, and why | growing |

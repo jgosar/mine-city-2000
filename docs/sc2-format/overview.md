@@ -24,22 +24,22 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 
 ## Segment table
 
-"Decoded size" is the size the game decodes the segment into. It is fixed, and every file in the corpus matches it exactly (**Confirmed (code), Verified (data)** 114/114; see [container.md § Segment table](container.md#segment-table)). "Byte order fix-up" is what the loader does to the decoded bytes before use. The purpose column summarises the older documents and gets confirmed segment by segment in later pages.
+"Decoded size" is the size the game decodes the segment into. It is fixed, and every file in the corpus matches it exactly (**Confirmed (code), Verified (data)** 114/114; see [container.md § Segment table](container.md#segment-table)). "Byte order fix-up" is what the loader does to the decoded bytes before use. Where the Page column says *planned*, the purpose column still summarises the older documents; it gets confirmed when that page is written.
 
 | Tag | Stored | Decoded size | Shape | Byte order fix-up | Purpose | Page |
 |---|---|---|---|---|---|---|
 | `CNAM` | raw | 32 bytes in every file that has it | string | none | City name | planned |
 | `MISC` | RLE | 4800 | 1200 × int32 | each 4-byte word big-endian | General city state: date, funds, budget, tax rates, statistics, settings | planned |
-| `ALTM` | raw | 32768 | 128 × 128 × uint16 | each 2-byte word big-endian | Altitude of each tile, plus flags | planned |
-| `XTER` | RLE | 16384 | 128 × 128 × byte | none | Terrain shape (slopes) and surface water | planned |
-| `XBLD` | RLE | 16384 | 128 × 128 × byte | none | What is built on each tile | planned |
-| `XZON` | RLE | 16384 | 128 × 128 × byte | none | Zone type, and building-corner bits | planned |
-| `XUND` | RLE | 16384 | 128 × 128 × byte | none | Underground: pipes, subways, tunnels | planned |
+| `ALTM` | raw | 32768 | 128 × 128 × uint16 | each 2-byte word big-endian | Altitude, water surface height and tunnel depth of each tile | [altm.md](segments/altm.md) |
+| `XTER` | RLE | 16384 | 128 × 128 × byte | none | Terrain shape (slopes), sea floor, shore and surface water | [xter.md](segments/xter.md) |
+| `XBLD` | RLE | 16384 | 128 × 128 × byte | none | What is built on each tile | [xbld.md](segments/xbld.md) |
+| `XZON` | RLE | 16384 | 128 × 128 × byte | none | Zone type, and building-corner bits | [xzon.md](segments/xzon.md) |
+| `XUND` | RLE | 16384 | 128 × 128 × byte | none | Underground: pipes, subways, subway stations | [xund.md](segments/xund.md) |
 | `XTXT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile index of a sign label or microsim | planned |
 | `XLAB` | RLE | 6400 | 256 × 25-byte string | none (see note) | Label texts (signs, city name, …) | planned |
 | `XMIC` | RLE | 1200 | 150 × 8-byte record | per record: bytes 0–1 as is, then three big-endian uint16 | Microsimulation records (stadiums, …) | planned |
 | `XTHG` | RLE | 480 | records | none | Moving things: planes, ships, monsters, … | planned |
-| `XBIT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile flags (powered, watered, rotate, …) | planned |
+| `XBIT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile flags: power, water, salt, sprite mirror | [xbit.md](segments/xbit.md) |
 | `XTRF` | RLE | 4096 | 64 × 64 × byte | none | Traffic density | planned |
 | `XPLT` | RLE | 4096 | 64 × 64 × byte | none | Pollution | planned |
 | `XVAL` | RLE | 4096 | 64 × 64 × byte | none | Land value | planned |

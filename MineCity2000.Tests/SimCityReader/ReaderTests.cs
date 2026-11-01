@@ -95,9 +95,63 @@ public class ReaderTests
   [Fact]
   public void squaresOneBelowWaterLevel_areMarkedAsCoastalWater()
   {
-    CityData city = Reader.read(new IffBuilder().waterLevel(5).altitude(10, 10, 4).altitude(11, 11, 3).build(), "x");
+    // 0x20 is a shore square: sea floor one level below the water surface
+    CityData city = Reader.read(new IffBuilder().waterLevel(5).altitude(10, 10, 4).terrain(10, 10, 0x20).altitude(11, 11, 3).build(), "x");
     Assert.True(city.getSquare(10, 10).hasWater);
     Assert.False(city.getSquare(11, 11).hasWater);
+  }
+
+  [Fact]
+  public void dryLandOneBelowWaterLevel_staysDry()
+  {
+    // The game can leave dry land (terrain code below 0x10) one level below the sea
+    CityData city = Reader.read(new IffBuilder().waterLevel(5).altitude(10, 10, 4).terrain(10, 10, 0x00).build(), "x");
+    Assert.False(city.getSquare(10, 10).hasWater);
+  }
+
+  [Fact]
+  public void buildingFragment_doesNotBecomeAPhantomBuilding()
+  {
+    // A leftover square of a 3x3 apartment block (0xAE) just before a 2x2 apartment (0x8C) in scan order: read as the
+    // corner of a whole 3x3 building, it would swallow the 2x2 one.
+    CityData city = Reader.read(new IffBuilder().withXzon().building(20, 19, 0x8C).buildingSquare(20, 18, 0xAE).build(), "x");
+
+    Building building = Assert.Single(city.getBuildings());
+    Assert.Equal(0x8C, building.getCode());
+    Assert.Equal(0, city.getSquare(20, 18).buildingType);
+    Assert.Equal(0x8C, city.getSquare(21, 20).buildingType);
+    Assert.Equal(1, city.getSquare(21, 20).buildingOffsetX);
+    Assert.Equal(1, city.getSquare(21, 20).buildingOffsetZ);
+  }
+
+  [Fact]
+  public void buildingFragmentsOfTheSameKind_doNotShiftABuilding()
+  {
+    // Two leftover 0x8C squares right before a whole 0x8C building make a 2x2 block of the same code one square too early;
+    // only the corner bits in XZON tell where the real building is.
+    CityData city = Reader.read(new IffBuilder().withXzon().building(20, 19, 0x8C)
+      .buildingSquare(20, 18, 0x8C).buildingSquare(21, 18, 0x8C).build(), "x");
+
+    Building building = Assert.Single(city.getBuildings());
+    Assert.Equal(20, building.getXPos());
+    Assert.Equal(19, building.getZPos());
+    Assert.Equal(0, city.getSquare(20, 18).buildingType);
+  }
+
+  [Theory]
+  [InlineData(0)]
+  [InlineData(1)]
+  [InlineData(2)]
+  [InlineData(3)]
+  public void buildingCorners_dependOnTheCompass(int compass)
+  {
+    // The corner bits rotate with the compass; the building must be found at the same place for every compass value
+    CityData city = Reader.read(new IffBuilder().compass(compass).withXzon().building(40, 50, 201).build(), "x");
+
+    Building building = Assert.Single(city.getBuildings());
+    Assert.Equal(40, building.getXPos());
+    Assert.Equal(50, building.getZPos());
+    Assert.Equal(3, city.getSquare(43, 53).buildingOffsetX);
   }
 
   [Fact]

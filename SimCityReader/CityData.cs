@@ -11,12 +11,16 @@ namespace com.mc2k.SimCityReader
     private List<Building> _buildings = new List<Building>();
 
     private SquareData[][] _squares;
+    private byte[] _terrainCodes = new byte[128 * 128];
     private byte _waterLevel;
     private int _compass;
 
     private const int MISC_COMPASS_OFFSET = 8;        // 4-byte big-endian number of 90 degree rotations of the view when the city was saved (0..3)
     private const int MISC_WATER_LEVEL_OFFSET = 3651;
     private const byte XBIT_ROTATE = 0x02;            // "rotate the tile by 90 degrees" flag
+    private const byte XZON_CORNERS = 0xF0;           // corner bits marking the corners of a building's footprint
+    private const byte FIRST_BUILDING_CODE = 0x70;    // XBLD codes from here on are buildings; their footprints are marked in XZON
+    private const byte FIRST_WATER_TERRAIN = 0x10;    // XTER codes from here on are under water (sea floor, shore or surface water)
 
     public CityData(Dictionary<String, Segment> segments, String cityName)
     {
@@ -35,9 +39,10 @@ namespace com.mc2k.SimCityReader
         _cityName = cityName;
       }
       interpretALTM(segments["ALTM"]); // Read altitude map
-      interpretXBLD(segments["XBLD"]); // Read building positions
-      interpretXTER(segments["XTER"]); // Read positions of groundwater
       interpretMISC(segments["MISC"]); // Read general water level and the compass
+      // Read building positions; XZON marks their footprints. Every city saved by the game has it, hand-built test cities may not
+      interpretXBLD(segments["XBLD"], segments.ContainsKey("XZON") ? segments["XZON"] : null);
+      interpretXTER(segments["XTER"]); // Read positions of groundwater
       if (segments.ContainsKey("XBIT")) // Per-square flags; every city saved by the game has it, hand-built test cities may not
       {
         interpretXBIT(segments["XBIT"]);
@@ -91,62 +96,91 @@ namespace com.mc2k.SimCityReader
       }
     }
 
-    private void interpretXBLD(Segment xbldSegment)
+    // Figures out which building is positioned where. Every square of a building holds the building's code, and the game marks
+    // the corners of each footprint in XZON. Like the game, we find a building from its corner with the lowest x and the highest z,
+    // whose corner bit depends on the compass (docs/sc2-format/segments/xbld.md#footprints-and-anchors).
+    // Squares of multi-square codes that belong to no complete footprint (left over from demolished or damaged buildings,
+    // or from the "Magic Eraser" cheat) are left empty instead of being guessed into phantom buildings.
+    private void interpretXBLD(Segment xbldSegment, Segment? xzonSegment)
     {
-      byte[] content = xbldSegment.getContent();
+      byte[] codes = xbldSegment.getContent();
+      byte[]? zones = xzonSegment?.getContent();
+      bool[,] claimed = new bool[128, 128];
 
-      // Rad 128x128 map of which building type is on which field
-      int offset = 0;
-
-      byte[][] buildingTypesMap = new byte[128][];
-      for (int i = 0; i < 128; i++)
+      if (zones != null)
       {
-        buildingTypesMap[i] = new byte[128];
-        for (int j = 0; j < 128; j++)
+        byte anchorCornerBit = (byte)(0x10 << ((3 + _compass) & 3));
+        for (int x = 0; x < 128; x++)
         {
-          buildingTypesMap[i][j] = content[offset];
-          offset++;
-        }
-      }
-
-      // Figure out which building is positioned where.
-      // All buildings have fixed sizes, so once we find the first firld that is part of the building, we can guess where the rest are located
-      Building tmpBuilding;
-
-      for (byte i = 0; i < 128; i++)
-      {
-        for (byte j = 0; j < 128; j++)
-        {
-          if (buildingTypesMap[i][j] != 0)
+          for (int z = 0; z < 128; z++)
           {
-            // We have found the upper left corner of a building
-            tmpBuilding = new Building(i, j, buildingTypesMap[i][j]);
-            _buildings.Add(tmpBuilding);
-            _squares[i][j].buildingType = buildingTypesMap[i][j];
-
-            // Walk throught the rest of the building's fields and take note of their offsets relative to the upper left corner
-            for (byte i2 = 0; i2 < tmpBuilding.getSize(); i2++)
+            byte code = codes[x * 128 + z];
+            int size = BuildingType.getByCode(code).getSize();
+            if (code >= FIRST_BUILDING_CODE && size > 1 && (zones[x * 128 + z] & XZON_CORNERS) == anchorCornerBit)
             {
-              for (byte j2 = 0; j2 < tmpBuilding.getSize(); j2++)
-              {
-                if (i + i2 < 128 && j + j2 < 128)
-                {
-                  _squares[i + i2][j + j2].buildingType = _squares[i][j].buildingType;
-                  _squares[i + i2][j + j2].buildingOffsetX = i2;
-                  _squares[i + i2][j + j2].buildingOffsetZ = j2;
-
-                  buildingTypesMap[i + i2][j + j2] = 0; // Mark all of the fields with zeros in the temporary map, so this code will not take note of them again
-                }
-                else
-                {
-                  // This normally isn't possible, except if somebody used the "Magic Eraser" SimCity 2000 cheat near the edge of the map.
-                  // But since even the game renders these cases wrong, we don't need to worry about them here, so we can safely do nothing.
-                }
-              }
+              tryPlaceBuilding(codes, claimed, x, z - size + 1, code, size);
             }
           }
         }
       }
+
+      for (int x = 0; x < 128; x++)
+      {
+        for (int z = 0; z < 128; z++)
+        {
+          byte code = codes[x * 128 + z];
+          if (code == 0 || claimed[x, z])
+          {
+            continue;
+          }
+          int size = BuildingType.getByCode(code).getSize();
+          if (size == 1)
+          {
+            tryPlaceBuilding(codes, claimed, x, z, code, size);
+          }
+          else if (code < FIRST_BUILDING_CODE)
+          {
+            tryPlaceBuilding(codes, claimed, x & ~1, z & ~1, code, size); // 2x2 highway pieces lie on an even 2x2 grid
+          }
+          else if (zones == null)
+          {
+            tryPlaceBuilding(codes, claimed, x, z, code, size); // No corner bits: the first square found is the corner with the lowest x and z
+          }
+        }
+      }
+    }
+
+    // Places a building with its lowest x and z corner at (x, z) if its whole footprint holds its code and is still free
+    private bool tryPlaceBuilding(byte[] codes, bool[,] claimed, int x, int z, byte code, int size)
+    {
+      if (x < 0 || z < 0 || x + size > 128 || z + size > 128)
+      {
+        return false;
+      }
+      for (int i = 0; i < size; i++)
+      {
+        for (int j = 0; j < size; j++)
+        {
+          if (codes[(x + i) * 128 + z + j] != code || claimed[x + i, z + j])
+          {
+            return false;
+          }
+        }
+      }
+
+      _buildings.Add(new Building((byte)x, (byte)z, code));
+      for (byte i = 0; i < size; i++)
+      {
+        for (byte j = 0; j < size; j++)
+        {
+          claimed[x + i, z + j] = true;
+          SquareData square = _squares[x + i][z + j];
+          square.buildingType = code;
+          square.buildingOffsetX = i;
+          square.buildingOffsetZ = j;
+        }
+      }
+      return true;
     }
 
     private void interpretXTER(Segment xterSegment)
@@ -161,6 +195,7 @@ namespace com.mc2k.SimCityReader
         for (int j = 0; j < 128; j++)
         {
           tmp = content[offset];
+          _terrainCodes[offset] = tmp;
 
           if (tmp >= 48 && tmp <= 69)
           {
@@ -231,6 +266,8 @@ namespace com.mc2k.SimCityReader
       }
     }
 
+    // Squares just below the water level are water too, unless their terrain is dry land: the game can leave
+    // dry squares one level below the sea (docs/sc2-format/segments/xter.md#values)
     private void setWaterOnCoastalSquares()
     {
       for (int i = 0; i < 128; i++)
@@ -238,7 +275,7 @@ namespace com.mc2k.SimCityReader
         for (int j = 0; j < 128; j++)
         {
           SquareData sd = _squares[i][j];
-          if (sd.altitude == _waterLevel - 1)
+          if (sd.altitude == _waterLevel - 1 && _terrainCodes[i * 128 + j] >= FIRST_WATER_TERRAIN)
           {
             sd.hasWater = true;
           }
