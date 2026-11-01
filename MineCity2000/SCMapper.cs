@@ -191,8 +191,9 @@ namespace com.mc2k.MineCity2000
           {
             fixBridgeSlopes(terrainHeightsForRegion, thisSquare, xMinusSquare, xPlusSquare, zMinusSquare, zPlusSquare, squareXIndex, squareZIndex);
 
+            // Model files without a suffix run along x, the "r" (rotated) variants along z; the reader works out the direction from the city file
             String modelVariant = "";
-            if (shouldUseRotatedModel(thisSquare, zMinusSquare, zPlusSquare))
+            if (thisSquare.orientation == Orientation.AlongZ)
             {
               modelVariant = "r";
             }
@@ -425,32 +426,6 @@ namespace com.mc2k.MineCity2000
       }
 
       return _buildingModels[modelKey];
-    }
-
-    private static Boolean shouldUseRotatedModel(SquareData thisSquare, SquareData? zMinusSquare, SquareData? zPlusSquare)
-    {
-      Boolean useRotatedModel = false;
-
-      if (check(isRotatable, thisSquare))
-      {
-        bool bridgeNorth = false;
-        bool bridgeSouth = false;
-
-        if (zMinusSquare != null && check(isSameKindOfPart, thisSquare, zMinusSquare) && (check(isBridgePart, zMinusSquare) || check(isSloped, zMinusSquare)))
-        {
-          bridgeNorth = true;
-        }
-        if (zPlusSquare != null && check(isSameKindOfPart, thisSquare, zPlusSquare) && (check(isBridgePart, zPlusSquare) || check(isSloped, zPlusSquare)))
-        {
-          bridgeSouth = true;
-        }
-
-        if (bridgeNorth || bridgeSouth)
-        {
-          useRotatedModel = true;
-        }
-      }
-      return useRotatedModel;
     }
 
     private static bool check(Func<byte, bool> checkFunction, SquareData square)

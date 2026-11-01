@@ -3,15 +3,19 @@ using System.Text;
 namespace MineCity2000.Tests;
 
 // Builds a minimal in-memory SimCity 2000 file: "FORM" + length + "SCDH" + the segments the reader needs.
-// ALTM and CNAM are stored raw, XBLD/XTER/MISC are run-length encoded like the real format.
+// ALTM and CNAM are stored raw, XBLD/XTER/MISC/XBIT are run-length encoded like the real format.
+// XBIT is only written once xbit() has been called, so by default the city has no XBIT segment, like the real optional case.
 public class IffBuilder
 {
   public const int MISC_WATER_LEVEL_OFFSET = 3651; // CityData.interpretMISC reads the water level from here
+  public const int MISC_COMPASS_OFFSET = 8;        // ... and the compass (4-byte big-endian) from here
+  public const byte XBIT_ROTATE = 0x02;
 
   private readonly byte[] _altm = new byte[32768];  // 128 * 128 squares, 2 bytes each, altitude in the second byte
   private readonly byte[] _xbld = new byte[16384];  // 128 * 128 building codes
   private readonly byte[] _xter = new byte[16384];  // 128 * 128 terrain codes
   private readonly byte[] _misc = new byte[4096];
+  private byte[]? _xbit;                            // 128 * 128 flag bytes, null until xbit() is called
   private byte[]? _cnam;
   private int? _altmLength;
 
@@ -36,6 +40,22 @@ public class IffBuilder
   public IffBuilder waterLevel(byte level)
   {
     _misc[MISC_WATER_LEVEL_OFFSET] = level;
+    return this;
+  }
+
+  // The compass is the number of 90 degree turns of the view when the city was saved (0..3).
+  public IffBuilder compass(int compass)
+  {
+    byte[] bytes = bigEndianInt(compass);
+    Array.Copy(bytes, 0, _misc, MISC_COMPASS_OFFSET, bytes.Length);
+    return this;
+  }
+
+  // Sets the XBIT flag byte of a square; this also makes build() emit an XBIT segment.
+  public IffBuilder xbit(int x, int z, byte flags)
+  {
+    _xbit ??= new byte[16384];
+    _xbit[x * 128 + z] = flags;
     return this;
   }
 
@@ -69,6 +89,7 @@ public class IffBuilder
     body.AddRange(segment("XBLD", rle(_xbld)));
     body.AddRange(segment("XTER", rle(_xter)));
     body.AddRange(segment("MISC", rle(_misc)));
+    if (_xbit != null) body.AddRange(segment("XBIT", rle(_xbit)));
 
     var file = new List<byte>();
     file.AddRange(Encoding.ASCII.GetBytes("FORM"));

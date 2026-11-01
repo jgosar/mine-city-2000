@@ -98,7 +98,7 @@ Here's a video from this city in Minecraft Bedrock Edition: https://youtu.be/w_f
 ## Projects
 
 The repository contains these projects:
-- SimCityReader: Reads information about the city map from a *.sc2 city file
+- SimCityReader: Reads information about the city map from a *.sc2 city file (terrain, water, buildings, and which way bridges, runways and piers run, taken from the file's XBIT rotate flag and the saved compass)
 - AnvilFile: Contains utility classes for working with Minecraft's Anvil file format
 - MinecraftEditor: Contains classes for creating and editing a Minecraft world
 - MineCity2000: The conversion library: creates the Minecraft world with terrain and buildings
@@ -116,6 +116,7 @@ Stuff that does NOT work yet:
 - Subways
 - Highways (mostly)
 - Underwater pipes?
+- Highway on-ramps and the airport's crossing runway, control towers, tarmac and crane have no building models yet
 - ???
 
 ### Building the web app
