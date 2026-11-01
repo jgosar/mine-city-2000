@@ -80,6 +80,45 @@ Your antivirus might think that MineCity 2000 is a virus. It's not. If Windows S
 - In the `MineCity2000.Wasm` subdirectory run `npm install`
 - In the repo root run `dotnet build`
 
+## Developing in Visual Studio Code
+
+The repository has a `.vscode` folder with settings that let you build, run and debug the CLI from VS Code without typing any commands:
+- `.vscode/launch.json` defines the "Launch CLI" debug configuration. This is what VS Code runs when you press F5 (or click the green play button in the "Run and Debug" view).
+- `.vscode/tasks.json` defines the build tasks. "Launch CLI" runs the `build-cli` task before every start, so you always debug your latest code. The other tasks (`build` for the whole solution, `publish` and `watch`) can be started from "Terminal -> Run Task...".
+- `.vscode/settings.json` tells VS Code to use the C# extension for the projects.
+
+To get started:
+1. Install the .NET SDK 10 and, in VS Code, the C# extension (`ms-dotnettools.csharp`). It provides the debugger that "Launch CLI" uses.
+2. Open the repository root folder in VS Code ("File -> Open Folder..."). Open the root itself, not a subfolder, because the settings refer to paths relative to it (`${workspaceFolder}`).
+3. Set the city file you want to convert in `.vscode/launch.json` (see below).
+4. Open the "Run and Debug" view (Ctrl+Shift+D), choose "Launch CLI" and press F5.
+
+"Launch CLI" only builds the CLI and the libraries it uses, so it doesn't need the `wasm-tools` workload or Node.js that the web app needs. You can set breakpoints in any of the C# projects it uses (SimCityReader, MineCity2000, MinecraftEditor, AnvilFile); the program's output appears in VS Code's terminal panel.
+
+### The command-line arguments in launch.json
+
+These two lines in `.vscode/launch.json` say which program to start and what to pass to it:
+
+```jsonc
+"program": "dotnet",
+"args": ["${workspaceFolder}/MineCity2000.Cli/bin/Debug/net10.0/MineCity2000.dll", "C:\\Program Files\\Maxis\\SimCity 2000\\CITIES\\test.sc2", "-c"], //Change this on your dev environment
+```
+
+Pressing F5 is the same as running this in a terminal from the repository root, but with the debugger attached:
+
+    dotnet MineCity2000.Cli/bin/Debug/net10.0/MineCity2000.dll "C:\Program Files\Maxis\SimCity 2000\CITIES\test.sc2" -c
+
+The items in `args` are:
+- The compiled CLI that the `build-cli` task produces. The CLI's program file is named `MineCity2000.dll`. You don't need to change this.
+- The SimCity 2000 city file (*.sc2) to convert. **You will most likely need to change this**, because it points to a file on the original developer's computer. If you don't have SimCity 2000, use the test city that comes with the repository: `"${workspaceFolder}/MineCity2000.Tests/Fixtures/test.sc2"`. In JSON, backslashes in Windows paths have to be doubled (`C:\\Games\\city.sc2`), or you can use forward slashes instead (`C:/Games/city.sc2`).
+- Any of the options described in "Running the CLI" above. `-c` makes the program exit when it's done, instead of waiting for you to press a key. To add more options, add them as separate items, for example `"-g"` or `"-o", "C:\\Temp\\worlds"`.
+
+The output follows the same rules as when you run the CLI yourself: if the program finds your Minecraft `saves` folder the world goes there, otherwise it goes into `MineCity2000.Cli/bin/Debug/net10.0/generated`. Note that if a world with the same name already exists in that folder (for example a `test` world from an earlier run), it is deleted and replaced.
+
+While debugging, put options into `args` and not into `default_args.txt`: every build copies `MineCity2000.Cli/default_args.txt` next to the program again, so changes you make to the copy in the `bin` folder are lost.
+
+`.vscode/launch.json` is part of the repository, so after you change the city file path git will show it as modified. Leave that change out of your commits, so it doesn't replace other developers' paths.
+
 ## Opening generated worlds in Minecraft Bedrock Edition
 
 This project was started quite some time ago (2014), so it only generates Minecraft Java Edition worlds. To be exact, the generated worlds are based on Minecraft Java edition v1.3.2, so they should work on any Minecraft Java edition version that's newer than that.
@@ -106,7 +145,7 @@ The repository contains these projects:
 - MineCity2000.Wasm: The conversion library compiled to WebAssembly, with the Web Worker that runs it in the browser and the small Preact + TypeScript page behind the web app link above (sources in `web`, bundled into `wwwroot`)
 - MineCity2000.Tests: Unit and golden-master tests
 
-For building the app from the source code you need the .NET SDK 10.0 (see "Building the web app" below for what building the web app needs on top of that). The engine, the CLI and the tests build and run on Windows, macOS and Linux with `dotnet build` and `dotnet test`; `dotnet build mine-city-2000.sln` builds everything, including the web app, so it additionally needs the `wasm-tools` workload, Node.js and npm (see below). The projects are set up for development with Visual Studio Code: you can launch the CLI using the "Launch CLI" command under the "Run and Debug" menu (edit the city file path in `.vscode/launch.json` first). `dotnet publish MineCity2000.Cli -c Release -r <rid> --self-contained true` produces the same folder that is zipped for the releases (for example `-r osx-arm64`; the releases are built by the "Release" GitHub Actions workflow when a `v*` tag is pushed).
+For building the app from the source code you need the .NET SDK 10.0 (see "Building the web app" below for what building the web app needs on top of that). The engine, the CLI and the tests build and run on Windows, macOS and Linux with `dotnet build` and `dotnet test`; `dotnet build mine-city-2000.sln` builds everything, including the web app, so it additionally needs the `wasm-tools` workload, Node.js and npm (see below). The projects are set up for development with Visual Studio Code, see "Developing in Visual Studio Code" above. `dotnet publish MineCity2000.Cli -c Release -r <rid> --self-contained true` produces the same folder that is zipped for the releases (for example `-r osx-arm64`; the releases are built by the "Release" GitHub Actions workflow when a `v*` tag is pushed).
 
 This is a development version, so do not be surprised if something doesn't work. Please open an issue on GitHub if you encounter any problems.
 
