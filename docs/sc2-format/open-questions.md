@@ -112,7 +112,19 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | What are the museum's byte 1 and word 6 in some files? | Unknown | The Windows 95 game never writes them for museums | Check the files' origin (the other version) |
 | What do "Passengers/day" and "Annual Cost" count? | Inferred: trips since January; the funding level, not dollars | Counters `0x4c85a0`, `0x4c85a4`, `0x4c8600` (`0x457620`); funding fields of hospitals, schools, police and fire | Trace the increments; compare with the Budget window |
 | What does monster variant 3 leave behind? | Unknown | Variants 1 and 2 leave trees and water; 3 calls `0x440c50` with 200 | Read `0x440c50` |
-| What does `0x4cad44` switch? | Unknown | It keeps the monster at variant 0 and lets explosions start fires with disasters off | Find its writers |
 | Where does a cargo ship's first target (bytes 8, 9) come from? | Unknown | `0x452d00` does not set them | Read `0x456760` state 0 and `0x456c70` |
 | Why do 25 files hold more than 4 trains? | Inferred: the other game version allows more | `0x453600` refuses a fifth engine; 19 of the 25 files are from the other version | Compare with a DOS or Mac executable |
 | Are type 16 and sailboat byte 2 = 1 what players call "Maxis Man" and "Nessie"? | Inferred | No names in the game's strings; sprites 495/496 and 379 | Look at the sprites |
+
+## Scenarios
+
+| Question | Status | What we know | How to settle it |
+|---|---|---|---|
+| What happens with a SCEN time limit of 0? | Unknown | No corpus file has 0; the monthly check counts down and loses at 0 | Read step 22 of `0x413520` for values at or below 0, or try it in the game |
+| Which version wrote the 48-byte and which the 52-byte SCEN? | Unknown | 15 files have 48 bytes, 3 (BARCELON, LASVEGAS, PARIS) have 52; all 18 are from the other game version by CNAM and MISC | Compare with DOS or Mac scenario files |
+| Is the cash goal subtracting the number of bonds a bug? | Inferred | The code uses MISC word 6 (a count); TMPL calls the field "Cash Goal Funds-Bonds" | — |
+| Does the game state 7 after a lost scenario end the game? | Inferred | `0x4149b0(0)` sets `0x4c7334` to 7 | Trace state 7 |
+| What does the scenario list draw for a file without `PICT 0x80` or `TEXT 0x80`? | Unknown | `0x425e40` does not check the result of the lookup | Try an edited copy in the game, or trace `0x426180` |
+| Does the TEXT conversion still give Mac Roman with other OEM code pages (850, 852, …)? | Inferred: no | The fix-up table in `0x42a080` is fixed and assumes code page 437 | Call `OemToCharA` on all 256 bytes under other code pages |
+| Which date does `0x426260` see for a file without a creation time (CD, some FAT volumes)? | Unknown | The date picks whether colours 0 and 255 are swapped | Read `0x426260` fully; test from a CD image |
+| Are OpenCity2k's odd colours (127, 127, 17) and (159, 159, 159) from the nearest-colour remap? | Inferred | `0x476d60` maps each `PAL_MAC` colour to the nearest colour of the game palette | Compute the remap of `PAL_MAC` against `0x4c7010` |

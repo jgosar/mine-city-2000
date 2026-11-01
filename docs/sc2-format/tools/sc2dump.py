@@ -215,12 +215,16 @@ def map_grid(fn, g):
 
 
 def decode_contents(c):
-    """Decode every segment that has a decoder; returns {tag: {field: value}}."""
+    """Decode every segment that has a decoder; returns {tag: {field: value}}.
+    Scenario segments are keyed by tag and id ("TEXT 0x80"): a scenario has two TEXT."""
     out = {}
     for s in c.segments:
         fn = DECODERS.get(s.tag)
         if fn is not None:
-            out[s.name] = fn(s.data)
+            key = s.name
+            if s.tag in SCENARIO_SEGMENTS:
+                key = "%s 0x%02X" % (s.name, scenario_id(s.data))
+            out[key] = fn(s.data)
     return out
 
 
@@ -686,6 +690,136 @@ def xthg_turn_cw(data):
     return bytes(t)
 
 
+# --- SCEN and TMPL (docs/sc2-format/segments/scen.md) ---------------------------
+#
+# Both are stored raw. data = the whole body: a 4-byte little-endian id, then the
+# fields, big-endian like the rest of the file (the scenario loader 0x4345c0 swaps them).
+
+# The layout the Windows 95 game reads (52 bytes after the id; 0x4345c0, 0x413520 step 22)
+SCEN_FIELDS = (
+    ("disaster", ">h"), ("disaster_row", ">B"), ("disaster_col", ">B"),
+    ("time_limit_months", ">h"),
+    ("city_size_goal", ">i"), ("residential_goal", ">i"), ("commercial_goal", ">i"),
+    ("industrial_goal", ">i"), ("funds_goal", ">i"), ("land_value_goal", ">i"),
+    ("life_expectancy_goal", ">h"), ("education_goal", ">h"),
+    ("pollution_limit", ">i"), ("crime_limit", ">i"), ("traffic_limit", ">i"),
+    ("build_item_1", ">B"), ("build_item_2", ">B"),
+    ("build_item_1_tiles", ">h"), ("build_item_2_tiles", ">h"),
+)
+# The older 48-byte layout that TMPL describes: no life expectancy or education goal
+SCEN_FIELDS_TMPL = tuple(f for f in SCEN_FIELDS if f[0] not in ("life_expectancy_goal", "education_goal"))
+TMPL_TYPES = {"DBYT": 1, "DWRD": 2, "DLNG": 4}
+
+
+def _scen_fields(fields, body):
+    out, pos = {}, 0
+    for name, fmt in fields:
+        size = struct.calcsize(fmt)
+        out[name] = struct.unpack(fmt, body[pos:pos + size])[0] if pos + size <= len(body) else None
+        pos += size
+    return out, pos
+
+
+@decoder(b"SCEN")
+def decode_scen(data):
+    """Scenario goals. 52-byte bodies use the Windows 95 layout, 48-byte ones the TMPL layout."""
+    body = data[4:]
+    old = len(body) < 52
+    fields, used = _scen_fields(SCEN_FIELDS_TMPL if old else SCEN_FIELDS, body)
+    out = {"id": struct.unpack("<I", data[:4])[0], "layout": "tmpl (48 bytes)" if old else "windows95 (52 bytes)"}
+    out.update(fields)
+    out["disaster_name"] = _name(DISASTERS, out["disaster"])
+    for k in (1, 2):
+        code = out["build_item_%d" % k]
+        out["build_item_%d_name" % k] = XBLD_NAMES.get(code) if code else None
+    if old:
+        # The Windows 95 game reads every body with the 52-byte layout. The two layouts differ
+        # only from byte 30 on (after the land value goal); all-zero bytes read the same either way.
+        out["windows95_reads_differently"] = any(body[30:])
+    if len(body) > used:
+        out["extra_bytes"] = body[used:].hex()
+    return out
+
+
+@decoder(b"TMPL")
+def decode_tmpl(data):
+    """Field list of SCEN: Pascal-string label, then a 4-character type. Never read by the game."""
+    out, pos = [], 4
+    while pos < len(data):
+        n = data[pos]
+        label = data[pos + 1:pos + 1 + n].decode(TEXT_ENCODING)
+        kind = data[pos + 1 + n:pos + 5 + n].decode("ascii", "replace")
+        out.append({"label": label, "type": kind, "bytes": TMPL_TYPES.get(kind)})
+        pos += 5 + n
+    return {"id": struct.unpack("<I", data[:4])[0], "fields": out}
+
+
+def scen_turn_cw(data):
+    """SCEN after one clockwise view turn: the disaster spot moves with the map (row, col) -> (127 - col, row)."""
+    data = bytearray(data)
+    if struct.unpack(">h", data[4:6])[0]:
+        row, col = data[6], data[7]
+        data[6], data[7] = 127 - col & 0xFF, row
+    return bytes(data)
+
+
+# --- TEXT and PICT (docs/sc2-format/segments/text.md, pict.md) ---------------
+#
+# Scenario segments are stored raw: a 4-byte little-endian id, then the body.
+
+TEXT_LIMIT = 0x300       # bytes of a TEXT body the game reads (0x42ae10)
+PICT_LIMIT = 0x10CC      # bytes of a PICT body the game reads (0x42ae10)
+PICT_SIZE = 65           # the game copies 65 rows of 65 pixels ...
+PICT_STRIDE = 66         # ... 66 bytes apart, starting 4 bytes into the body (0x475790)
+TEXT_SCENARIO_ENCODING = "mac_roman"   # what the game's conversion amounts to (0x42a080)
+
+
+def scenario_id(data):
+    return int.from_bytes(data[:4], "little")
+
+
+@decoder(b"TEXT")
+def decode_text(data):
+    """Scenario text 0x80 (scenario list) or 0x81 (briefing); CR marks a paragraph."""
+    body = data[4:4 + TEXT_LIMIT].split(b"\0")[0]
+    return {
+        "id": scenario_id(data),
+        "text": body.decode(TEXT_SCENARIO_ENCODING),
+        "cut_by_game": len(data) - 4 > TEXT_LIMIT,
+    }
+
+
+@decoder(b"PICT")
+def decode_pict(data):
+    """The 65 x 65 scenario picture: indices into the PAL_MAC.BMP colours (see pict_palette)."""
+    body = data[4:4 + PICT_LIMIT]
+    px = body[4:]
+    at = lambda i: px[i] if i < len(px) else None   # None: past the stored bytes
+    return {
+        "id": scenario_id(data),
+        "stored_width": int.from_bytes(body[0:2], "little"),
+        "stored_height": int.from_bytes(body[2:4], "little"),
+        "row_ends": sorted({px[r * PICT_STRIDE + PICT_SIZE] for r in range(PICT_SIZE)
+                            if r * PICT_STRIDE + PICT_SIZE < len(px)}),
+        "pixels": [[at(r * PICT_STRIDE + c) for c in range(PICT_SIZE)] for r in range(PICT_SIZE)],
+    }
+
+
+def bmp_palette(raw):
+    """The 256 (r, g, b) colours of an 8-bit Windows BMP, e.g. the game's PAL_MAC.BMP."""
+    header = struct.unpack_from("<I", raw, 14)[0]
+    return [(raw[14 + header + 4 * i + 2], raw[14 + header + 4 * i + 1], raw[14 + header + 4 * i])
+            for i in range(256)]
+
+
+def pict_palette(pal_mac):
+    """PICT colours: PAL_MAC.BMP with entries 0 and 255 swapped, as the game draws them
+    (0x475e60; see pict.md#colours)."""
+    pal = list(pal_mac)
+    pal[0], pal[255] = pal[255], pal[0]
+    return pal
+
+
 # --- MISC (docs/sc2-format/segments/misc/README.md) ----------------------------
 #
 # 1200 big-endian 32-bit words. The game copies each into a variable of 32, 16 or
@@ -1057,7 +1191,7 @@ def _turn(data, size, item):
 
 def normalise(segments):
     """Turn {tag: decoded bytes} to compass 0 as the game would; returns a new dict.
-    XTHG records are turned with the maps."""
+    XTHG records and the SCEN disaster spot are turned with the maps."""
     seg = {tag: bytearray(data) for tag, data in segments.items()}
     misc = seg[b"MISC"]
     for _ in range(int.from_bytes(misc[8:12], "big") & 3):
@@ -1081,6 +1215,8 @@ def normalise(segments):
                     bit[i] |= 0x02
         if b"XTHG" in seg:
             seg[b"XTHG"] = bytearray(xthg_turn_cw(seg[b"XTHG"]))
+        if b"SCEN" in seg:
+            seg[b"SCEN"] = bytearray(scen_turn_cw(seg[b"SCEN"]))
     misc[8:12] = (0).to_bytes(4, "big")
     return {tag: bytes(data) for tag, data in seg.items()}
 
@@ -1140,7 +1276,9 @@ def main(argv):
         return 2
     c = read_file(args[0])
     if "--normalise" in argv:
-        turned = normalise({s.tag: s.data for s in c.segments})
+        # Only tags that occur once: a scenario's two TEXT segments are not turned anyway.
+        once = [t for t, n in collections.Counter(s.tag for s in c.segments).items() if n == 1]
+        turned = normalise({s.tag: s.data for s in c.segments if s.tag in once})
         for s in c.segments:
             s.data = turned.get(s.tag, s.data)
     if "--json" in argv:

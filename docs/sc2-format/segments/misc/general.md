@@ -175,7 +175,7 @@ What the weather does (**Confirmed (code)**):
 
 The dispatcher `0x45cf10` handles the cases 1–18; the codes that are confirmed by other code are 7 (tornado: started by tornado weather; moves an XTHG object) and 16 (hurricane: started by hurricane weather on a coast), and 8 (the monster: moves an XTHG object). 5 (air crash) and 17 (helicopter crash) are the numbers a crashing airplane and helicopter give their explosion, and 18 creates a crashing airplane (`0x45e7d0`). The flying rescuer (`0x452fa0`) groups 1, 5, 6, 9–12 as fires, 2 and 14 as floods, 3 and 13 as riots, 4 and 15 as toxic ([thing-ids-xthg.md](../../reference/thing-ids-xthg.md#16-flying-rescuer)).
 
-- **Word 28** is the disaster waiting to start. The dispatcher clears it when it starts the disaster, so a saved file has 0 (114/114).
+- **Word 28** is the disaster waiting to start. The dispatcher clears it when it starts the disaster, so a saved file has 0 (114/114). Starting a scenario sets it from SCEN, and the disaster spot with it (`0x4345c0`; [scen.md](../scen.md#how-the-game-uses-it)).
 - **Word 1041** keeps the code of the disaster that was started last; it picks the newspaper story when the disaster ends.
 - **Word 1042** is 1 while a disaster is under way and 0 otherwise (0 in 114/114).
 - **Word 1040** is the [XTHG](../xthg.md) record of the monster or tornado (its XTXT marker is `0xC9` + this value, [xtxt.md](../xtxt.md#moving-objects-0xc90xf0)). The dispatcher sets it to −1 when the disaster ends, and a new city starts with −1 (−1 in 114/114).

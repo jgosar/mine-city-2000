@@ -50,7 +50,7 @@ flowchart TD
 | **MISC:** [misc/README.md](segments/misc/README.md) (word index), [general.md](segments/misc/general.md), [population.md](segments/misc/population.md), [budget.md](segments/misc/budget.md), [ordinances.md](segments/misc/ordinances.md), [tile-counts.md](segments/misc/tile-counts.md), [neighbours.md](segments/misc/neighbours.md), [demand.md](segments/misc/demand.md), [technology.md](segments/misc/technology.md), [newspapers.md](segments/misc/newspapers.md) | All 1200 words of the city state | done |
 | **Microsims and moving objects:** [xmic.md](segments/xmic.md), [xthg.md](segments/xthg.md) | The 150 microsim records and the 40 moving objects | done |
 | **Code tables:** [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md), [thing-ids-xthg.md](reference/thing-ids-xthg.md) | What each microsim's figures mean; every moving-object type | done |
-| Other segment pages | Scenario segments (TEXT, SCEN, PICT, TMPL) | planned |
+| **Scenarios:** [text.md](segments/text.md), [scen.md](segments/scen.md), [pict.md](segments/pict.md) | The list description and briefing, the goals, disaster and time limit (and the unused TMPL), the picture | done |
 | `cross-segment.md`, `implementing-a-reader.md` | How segments relate; a step-by-step parser recipe | planned |
 | [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | growing |
 | [corrections.md](corrections.md) | Where we differ from the older public documents, and why | growing |

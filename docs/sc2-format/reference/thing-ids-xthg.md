@@ -57,7 +57,7 @@ Only in record 0. While the player drags the bulldozer or the level-terrain tool
 
 ## 5 monster
 
-- **Created** by disaster 8 (`0x45ee10`) at the disaster spot. MISC word 1040 holds its record ([general.md](../segments/misc/general.md#disasters)). Byte 11 is its **variant**: 0 (it sets fires) or, with a 50% chance unless `0x4cad44` is set, 1–3.
+- **Created** by disaster 8 (`0x45ee10`) at the disaster spot. MISC word 1040 holds its record ([general.md](../segments/misc/general.md#disasters)). Byte 11 is its **variant**: 0 (it sets fires) or, with a 50% chance unless a scenario is running (`0x4cad44`, [scen.md](../segments/scen.md#how-the-game-uses-it)), 1–3.
 - **States** (byte 2, `0x4548c0`): 0 walking toward the centre of the buildings while its height (byte 5) drops from 15 to 8; 1 rampaging in random directions; 2 rising to height 15; then either back to 0 or 3 leaving, removed with a 1-in-100 chance per update.
 - **Rampage**: on each tile it steps on, variant 0 starts a fire (`0x460e10`) if the XBLD code is above 5. Variants 1–3 destroy the tile (`0x458d40`) and leave: trees (XBLD 9–12) for variant 1, water for variant 2 (`0x446650`), and for variant 3 a call of `0x440c50` with 200 (**Unknown** effect).
 - A military unit (type 14) next to it makes it leave. While it exists, all airplanes and helicopters crash.

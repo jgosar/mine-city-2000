@@ -149,7 +149,7 @@ All 20 city segments other than CNAM are present in 114/114 files (**Verified (d
 | `PICT` | `0x80` | at most **4300** bytes (0x10CC) | **Confirmed (code)**; **Verified (data)** 18/18 |
 | `TMPL` | — | never read | **Confirmed (code)**: no reference in `SIMCITY.EXE` |
 
-Because of this lookup, scenario segments can be anywhere in the file, and the city segments in a `.scn` are read exactly as in a `.sc2`. The contents of each scenario segment are described on the scenario page (planned).
+Because of this lookup, scenario segments can be anywhere in the file, and the city segments in a `.scn` are read exactly as in a `.sc2`. The contents are described in [text.md](segments/text.md), [scen.md](segments/scen.md) and [pict.md](segments/pict.md).
 
 ## After the walk
 
