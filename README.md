@@ -77,8 +77,8 @@ Your antivirus might think that MineCity 2000 is a virus. It's not. If Windows S
 
 - Install the Microsoft .NET SDK 10
 - In the repo root run `dotnet workload restore`
-- In the `MineCity2000.Wasm` subdirectory run `npm install`
-- In the repo root run `dotnet build`
+- Install Node.js 22.18 or newer (24 recommended). Check with `node -v` and `npm -v`: npm should be version 10 or newer, because older versions rewrite `package-lock.json` in an outdated format
+- In the repo root run `dotnet build`. The first build runs `npm ci` in `MineCity2000.Wasm` to download the web page's dependencies, so you don't need to run `npm install` yourself (`npm install` can change `package-lock.json`; `npm ci` never does)
 
 ## Developing in Visual Studio Code
 
