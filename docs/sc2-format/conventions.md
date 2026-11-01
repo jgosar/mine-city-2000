@@ -48,10 +48,10 @@ Some segments use coarser grids (sizes **Confirmed (code)** by the loader):
 
 | Grid | Segments | Bytes | One cell covers |
 |---|---|---|---|
-| 64 × 64 | XTRF, XPLT, XVAL, XCRM | 4096 | 2 × 2 tiles: tile `(row, col)` is in cell `(row / 2, col / 2)` (**Confirmed (code)**: the tile renderer `0x43c730` reads XTRF that way) |
-| 32 × 32 | XPLC, XFIR, XPOP, XROG | 1024 | 4 × 4 tiles (**Inferred**) |
+| 64 × 64 | XTRF, XPLT, XVAL, XCRM | 4096 | 2 × 2 tiles: tile `(row, col)` is in cell `(row / 2, col / 2)` (**Confirmed (code)**: the tile renderer `0x43c730` reads XTRF that way, and so do the data overlay `0x43bb00` and the map views) |
+| 32 × 32 | XPLC, XFIR, XPOP, XROG | 1024 | 4 × 4 tiles: tile `(row, col)` is in cell `(row / 4, col / 4)` (**Confirmed (code)**: the data overlay `0x43bb00` and the map views, for example `0x488c60` for XPOP) |
 
-The overlays are stored row by row like the tile maps, and rotate with them ([§ Orientation](#orientation)). The 32 × 32 mapping will be confirmed on the minimap page (planned).
+The overlays are stored row by row like the tile maps, and rotate with them ([§ Orientation](#orientation)). What the values mean is on [the overlay page](segments/minimaps.md).
 
 ## The compass: the map is saved as currently viewed
 
@@ -164,8 +164,8 @@ The opposite turn (`0x466660`) uses the inverse tables at `0x4e9110` (XBLD), `0x
 
 | Segment | Storage | Evidence |
 |---|---|---|
-| CNAM | 32 bytes; the name starts at byte 1 and ends at the first zero byte | **Confirmed (code)**: the loader takes the C string at byte 1 |
-| XLAB | 256 records of 25 bytes; byte 0 = length (the game caps it at 23), then the characters | **Confirmed (code)**: `0x430c00` |
+| CNAM | 32 bytes; the name starts at byte 1 and ends at the first zero byte. Byte 0 is `0x1F` or the name length and is ignored | **Confirmed (code)**: the loader takes the C string at byte 1 ([cnam.md](segments/cnam.md#layout)) |
+| XLAB | 256 records of 25 bytes; byte 0 = length (the game caps it at 23), then the characters | **Confirmed (code)**: `0x430c00` ([xlab.md](segments/xlab.md#layout)) |
 | TEXT | after the 4-byte id: text up to the end of the segment; the game reads at most 768 bytes | **Confirmed (code)**: `0x42ae10` |
 
-The character set is the Windows ANSI code page of the machine that saved the file (code page 1252 on Western systems) **Inferred**: the game uses the ANSI Windows API (for example `CharUpperA`) and does no conversion. Line breaks in TEXT are a single `\r`. **Verified (data)**: every TEXT segment in the corpus that breaks lines uses a lone `\r`, and none contains `\n`.
+The character set is the Windows ANSI code page of the machine that saved the file: the game uses the ANSI Windows API (for example `CharUpperA`) and converts nothing on load or save. In the corpus that is **code page 1252** (**Verified (data)**: the labels of `FLARANGE.SC2` decode correctly as 1252 and wrongly as the DOS code page 437, and the CNAM of a city named Žabnca has `0x8E`, which is Ž only in 1252). Decode bytes `0x80`–`0x9F` with the 1252 table, not as Latin-1. That it is always the saving machine's code page is **Inferred** ([open-questions.md](open-questions.md#container-and-compression)). Line breaks in TEXT are a single `\r`. **Verified (data)**: every TEXT segment in the corpus that breaks lines uses a lone `\r`, and none contains `\n`.

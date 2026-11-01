@@ -98,11 +98,15 @@ public class IffBuilder
     return this;
   }
 
-  // CNAM layout: a length byte followed by the name; the reader stops at the first zero byte.
+  // CNAM as the Windows 95 game writes it: 32 bytes, 0x1F, the name, a zero byte and leftover memory after it
+  // (docs/sc2-format/segments/cnam.md). Use rawCnam() for names that are not plain ASCII.
   public IffBuilder cityName(string name)
   {
-    byte[] nameBytes = Encoding.UTF8.GetBytes(name);
-    _cnam = new byte[] { (byte)nameBytes.Length }.Concat(nameBytes).ToArray();
+    _cnam = Enumerable.Repeat((byte)0xAA, 32).ToArray();
+    _cnam[0] = 0x1F;
+    byte[] nameBytes = Encoding.ASCII.GetBytes(name);
+    Array.Copy(nameBytes, 0, _cnam, 1, nameBytes.Length);
+    _cnam[1 + nameBytes.Length] = 0;
     return this;
   }
 

@@ -46,27 +46,27 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 
 | Tag | Stored | Decoded size | Shape | Byte order fix-up | Purpose | Page |
 |---|---|---|---|---|---|---|
-| `CNAM` | raw | 32 bytes in every file that has it | string | none | City name | planned |
+| `CNAM` | raw | 32 bytes in every file that has it | string | none | City name | [cnam.md](segments/cnam.md) |
 | `MISC` | RLE | 4800 | 1200 × int32 | each 4-byte word big-endian | General city state: date, funds, budget, tax rates, statistics, settings | planned |
 | `ALTM` | raw | 32768 | 128 × 128 × uint16 | each 2-byte word big-endian | Altitude, water surface height and tunnel depth of each tile | [altm.md](segments/altm.md) |
 | `XTER` | RLE | 16384 | 128 × 128 × byte | none | Terrain shape (slopes), sea floor, shore and surface water | [xter.md](segments/xter.md) |
 | `XBLD` | RLE | 16384 | 128 × 128 × byte | none | What is built on each tile | [xbld.md](segments/xbld.md) |
 | `XZON` | RLE | 16384 | 128 × 128 × byte | none | Zone type, and building-corner bits | [xzon.md](segments/xzon.md) |
 | `XUND` | RLE | 16384 | 128 × 128 × byte | none | Underground: pipes, subways, subway stations | [xund.md](segments/xund.md) |
-| `XTXT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile index of a sign label or microsim | planned |
-| `XLAB` | RLE | 6400 | 256 × 25-byte string | none (see note) | Label texts (signs, city name, …) | planned |
+| `XTXT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile index: sign or microsim label, moving object, neighbour connection | [xtxt.md](segments/xtxt.md) |
+| `XLAB` | RLE | 6400 | 256 × 25-byte string | none (see note) | Label texts: mayor, signs, microsim names, team names | [xlab.md](segments/xlab.md) |
 | `XMIC` | RLE | 1200 | 150 × 8-byte record | per record: bytes 0–1 as is, then three big-endian uint16 | Microsimulation records (stadiums, …) | planned |
 | `XTHG` | RLE | 480 | records | none | Moving things: planes, ships, monsters, … | planned |
 | `XBIT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile flags: power, water, salt, sprite mirror | [xbit.md](segments/xbit.md) |
-| `XTRF` | RLE | 4096 | 64 × 64 × byte | none | Traffic density | planned |
-| `XPLT` | RLE | 4096 | 64 × 64 × byte | none | Pollution | planned |
-| `XVAL` | RLE | 4096 | 64 × 64 × byte | none | Land value | planned |
-| `XCRM` | RLE | 4096 | 64 × 64 × byte | none | Crime | planned |
-| `XPLC` | RLE | 1024 | 32 × 32 × byte | none | Police coverage | planned |
-| `XFIR` | RLE | 1024 | 32 × 32 × byte | none | Fire coverage | planned |
-| `XPOP` | RLE | 1024 | 32 × 32 × byte | none | Population density | planned |
-| `XROG` | RLE | 1024 | 32 × 32 × byte | none | Rate of growth | planned |
-| `XGRP` | RLE | 3328 | 16 × 52 × int32 | each 4-byte word big-endian | Graph history | planned |
+| `XTRF` | RLE | 4096 | 64 × 64 × byte | none | Traffic | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
+| `XPLT` | RLE | 4096 | 64 × 64 × byte | none | Pollution | [minimaps.md](segments/minimaps.md#xplt-pollution) |
+| `XVAL` | RLE | 4096 | 64 × 64 × byte | none | Land value | [minimaps.md](segments/minimaps.md#xval-land-value) |
+| `XCRM` | RLE | 4096 | 64 × 64 × byte | none | Crime | [minimaps.md](segments/minimaps.md#xcrm-crime) |
+| `XPLC` | RLE | 1024 | 32 × 32 × byte | none | Police coverage | [minimaps.md](segments/minimaps.md#xplc-police-coverage) |
+| `XFIR` | RLE | 1024 | 32 × 32 × byte | none | Fire coverage | [minimaps.md](segments/minimaps.md#xfir-fire-coverage) |
+| `XPOP` | RLE | 1024 | 32 × 32 × byte | none | Building density (not people) | [minimaps.md](segments/minimaps.md#xpop-building-density) |
+| `XROG` | RLE | 1024 | 32 × 32 × byte | none | Rate of growth (127 and 128 = no change) | [minimaps.md](segments/minimaps.md#xrog-rate-of-growth) |
+| `XGRP` | RLE | 3328 | 16 × 52 × int32 | each 4-byte word big-endian | Graph window history: 16 statistics × 52 samples (12 monthly, 20 half-yearly, 20 five-yearly), newest first | [xgrp.md](segments/xgrp.md) |
 | `TEXT` | raw | 4-byte id + text | string | id is **little-endian** | Scenario briefing texts (two per file) | planned |
 | `SCEN` | raw | 4-byte id + record | record | id is **little-endian** | Scenario goals, disaster, time limit | planned |
 | `PICT` | raw | 4-byte id + image | image | id is **little-endian** | Scenario picture | planned |
@@ -74,7 +74,7 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 
 Notes:
 
-- **Shapes** are fixed by the decoded sizes and by how the loader byte-swaps them (**Confirmed (code)**, loader `0x4302e0`). XGRP is 16 series of 52 values: the post-load routine `0x431fd0` walks it that way. The 25-byte XLAB records are **Confirmed (code)** by the label routine `0x430c00`. The record layout of XTHG is not settled yet.
+- **Shapes** are fixed by the decoded sizes and by how the loader byte-swaps them (**Confirmed (code)**, loader `0x4302e0`). XGRP is 16 series of 52 values: the post-load routine `0x431fd0` walks it that way ([xgrp.md](segments/xgrp.md#layout)). The 25-byte XLAB records are **Confirmed (code)** by the label routine `0x430c00` ([xlab.md](segments/xlab.md#layout)). The record layout of XTHG is not settled yet.
 - **XLAB** is not byte-swapped. Each 25-byte record starts with a length byte, which the game converts to a C string after loading ([container.md § After the walk](container.md#after-the-walk)).
 - **TMPL** appears in 5 of the 18 scenario files and is not referenced anywhere in `SIMCITY.EXE` (**Confirmed (code)**: no code or data refers to the tag).
 
@@ -98,7 +98,8 @@ flowchart TB
     end
     XTXT -- "label index" --> XLAB
     XTXT -- "microsim index" --> XMIC
+    XTXT -- "thing index" --> XTHG
     tiles -. "each cell covers 2×2 / 4×4 tiles" .- mini
 ```
 
-The relations are summarised from the older documents. Each one is confirmed on the page of the segment involved, and they are all brought together in `cross-segment.md` (planned).
+The XTXT relations are confirmed on [xtxt.md](segments/xtxt.md#values) and the overlay grids on [minimaps.md](segments/minimaps.md#cell-mapping). All relations will be brought together in `cross-segment.md` (planned).

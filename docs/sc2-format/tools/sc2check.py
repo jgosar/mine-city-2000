@@ -500,6 +500,211 @@ def orientation_compass(f):
     yield "compass %d" % _compass(f)
 
 
+# --- XTXT, XLAB and CNAM ------------------------------------------------------------
+
+BUILTIN_MICROSIMS = {0x34: {0xEC}, 0x35: {0xED}, 0x36: {0xE9}, 0x37: {0xC8}, 0x38: {0xC6, 0xC7},
+                     0x39: {0xD5}, 0x3A: {0xD4}, 0x3B: {0xF5}, 0x3C: {0xF8}}
+
+
+@check
+def xtxt_values(f):
+    t = set(_seg(f, b"XTXT"))
+    for lo, hi, name in ((0x01, 0x32, "signs 01-32"), (0x33, 0x33, "33"), (0x34, 0x3C, "built-in microsims 34-3C"),
+                         (0x3D, 0xC8, "microsims 3D-C8"), (0xC9, 0xF0, "moving things C9-F0"),
+                         (0xF1, 0xF9, "F1-F9"), (0xFA, 0xFA, "neighbour connections FA"), (0xFB, 0xFF, "FB-FF")):
+        if any(lo <= v <= hi for v in t):
+            yield "has " + name
+
+
+@check
+def xtxt_builtin_microsims(f):
+    t, b = _seg(f, b"XTXT"), _seg(f, b"XBLD")
+    tiles = [(t[i], b[i]) for i in range(16384) if t[i] in BUILTIN_MICROSIMS]
+    if tiles:
+        yield "built-in microsim values only on their building" if all(code in BUILTIN_MICROSIMS[v] for v, code in tiles) \
+            else "built-in microsim value on another code"
+
+
+@check
+def xtxt_microsim_records(f):
+    """A microsim value v (0x3D-0xC8) points to XMIC record v - 0x33, whose byte 0 is the building code."""
+    t, b, mic = _seg(f, b"XTXT"), _seg(f, b"XBLD"), _seg(f, b"XMIC")
+    tiles = [i for i in range(16384) if 0x3D <= t[i] <= 0xC8]
+    if not tiles:
+        return
+    match = sum(1 for i in tiles if mic[(t[i] - 0x33) * 8] == b[i])
+    stale = sum(1 for i in tiles if b[i] == 0)
+    yield "every microsim tile matches its XMIC record" if match == len(tiles) else \
+        "microsim tiles left on empty land" if match + stale == len(tiles) else "microsim tile on another building"
+
+
+@check
+def xtxt_things(f):
+    """A value v in 0xC9-0xF0 sits on the tile stored in XTHG record v - 0xC9 (bytes 3, 4 = row, col)."""
+    t, th = _seg(f, b"XTXT"), _seg(f, b"XTHG")
+    tiles = [i for i in range(16384) if 0xC9 <= t[i] <= 0xF0]
+    if not tiles:
+        return
+    ok = sum(1 for i in tiles if divmod(i, 128) == (th[(t[i] - 0xC9) * 12 + 3], th[(t[i] - 0xC9) * 12 + 4]))
+    yield "every thing marker at its XTHG record's tile" if ok == len(tiles) else "some thing markers elsewhere"
+
+
+@check
+def xtxt_connections(f):
+    t, b = _seg(f, b"XTXT"), _seg(f, b"XBLD")
+    tiles = [i for i in range(16384) if t[i] == 0xFA]
+    if not tiles:
+        return
+    near_edge = all(min(r, c, 127 - r, 127 - c) <= 1 for r, c in (divmod(i, 128) for i in tiles))
+    transport = all(0x1D <= b[i] <= 0x6B for i in tiles)
+    yield "0xFA only within one tile of the map edge" if near_edge else "0xFA away from the edge"
+    yield "0xFA only on roads, rails and highways" if transport else "0xFA on another code"
+
+
+@check
+def xlab_slots(f):
+    lab, t = _seg(f, b"XLAB"), _seg(f, b"XTXT")
+    used = {s for s in range(256) if lab[s * 25]}
+    yield "slot 0 (mayor) used" if 0 in used else "slot 0 empty"
+    yield "slot 51 empty" if 51 not in used else "slot 51 used"
+    yield "slots 52-60 all used" if all(s in used for s in range(52, 61)) else "some of slots 52-60 empty"
+    yield "slots 201-249 empty" if not used & set(range(201, 250)) else "some of slots 201-249 used"
+    yield "slots 251-255 all used" if all(s in used for s in range(251, 256)) else "some of slots 251-255 empty"
+    signs = {v for v in t if 1 <= v <= 0x32}
+    if signs:
+        yield "every sign has its label" if all(lab[v * 25] for v in signs) else "a sign without label"
+    if any(lab[s * 25] > 23 for s in range(256)):
+        yield "a length byte above 23"
+
+
+@check
+def cnam_layout(f):
+    cn = _seg(f, b"CNAM")
+    if cn is None:
+        yield "no CNAM"
+        return
+    tags = [s.tag for s in f.c.segments if s.tag in sc2.CITY_SEGMENTS]
+    pos = "first" if tags[0] == b"CNAM" else "last" if tags[-1] == b"CNAM" else "middle"
+    name = cn[1:].split(b"\0")[0]
+    byte0 = "0x1F" if cn[0] == 0x1F else "the name length" if cn[0] == len(name) else "other"
+    yield "CNAM %s, byte 0 = %s" % (pos, byte0)
+    yield "bytes after the name all zero" if not any(cn[2 + len(name):]) else "bytes after the name not zero"
+
+
+# --- overlays ----------------------------------------------------------------------
+
+@check
+def minimap_misc_totals(f):
+    """MISC words 10, 11 and 13 hold the sums of XVAL, XCRM and XPLT; word 12 the traffic total."""
+    misc = _seg(f, b"MISC")
+    for word, tag in ((10, b"XVAL"), (11, b"XCRM"), (13, b"XPLT")):
+        yield "MISC word %d == sum of %s" % (word, tag.decode()) if sc2.u32be(misc, 4 * word) == sum(_seg(f, tag)) \
+            else "MISC word %d != sum of %s" % (word, tag.decode())
+    traffic, total = sc2.u32be(misc, 48), sum(_seg(f, b"XTRF"))
+    yield "MISC word 12 == sum of XTRF" if traffic == total else \
+        "MISC word 12 < sum of XTRF" if traffic < total else "MISC word 12 > sum of XTRF"
+
+
+@check
+def minimap_xpop(f):
+    xpop = _seg(f, b"XPOP")
+    yield "XPOP values are multiples of 4 or 255" if all(v % 4 == 0 or v == 255 for v in xpop) \
+        else "XPOP value not a multiple of 4"
+    same = sum(a == b for a, b in zip(sc2.xpop_from_xbld(_seg(f, b"XBLD")), xpop))
+    yield "XPOP == recomputed from XBLD in %s cells" % (
+        "all" if same == 1024 else ">= 90% of" if same >= 922 else "< 90% of")
+
+
+@check
+def minimap_xrog(f):
+    rog = set(_seg(f, b"XROG"))
+    yield "XROG only 127/128 (no change anywhere)" if rog <= {127, 128} else "XROG has growth or decline"
+
+
+@check
+def minimap_xval_mask(f):
+    """Where the XBIT 0x08 mask is present, land value is 0 outside it."""
+    xval, xbit = _seg(f, b"XVAL"), _seg(f, b"XBIT")
+    if not any(xbit[r * 128 + c] & 8 for r in range(64) for c in range(64)):
+        yield "XBIT 0x08 mask absent"
+        return
+    yield "XVAL nonzero only on mask cells" if all(
+        not xval[r * 64 + c] or xbit[r * 128 + c] & 8 for r in range(64) for c in range(64)) \
+        else "XVAL nonzero outside the mask"
+
+
+@check
+def minimap_all_zero(f):
+    """Cities that were never simulated: no traffic, pollution, value or crime yet."""
+    if not any(sum(_seg(f, t)) for t in (b"XTRF", b"XPLT", b"XVAL", b"XCRM")):
+        yield "64 x 64 overlays all zero"
+
+
+# --- XGRP ---------------------------------------------------------------------------
+
+def _xgrp(f):
+    values = struct.unpack(">832i", _seg(f, b"XGRP"))
+    return [values[i * 52:(i + 1) * 52] for i in range(16)]
+
+
+def _last_updates(f):
+    """Month counts (days // 25) of the last monthly, half-yearly and five-yearly graph update."""
+    days = sc2.u32be(_seg(f, b"MISC"), 4 * 4)
+    month = days // 25 if days % 25 >= 21 else days // 25 - 1      # graphs update on day 21 of 25
+    half = month
+    while half % 12 not in (0, 6):
+        half -= 1
+    five = half
+    while not (five % 12 == 0 and (five // 12) % 5 == 0):
+        five -= 1
+    return month, half, five
+
+
+@check
+def xgrp_history(f):
+    yield "no graph history (all zero)" if not any(_seg(f, b"XGRP")) else "has graph history"
+
+
+@check
+def xgrp_blocks(f):
+    """Slot 12 is a copy of slot 0 made at the last January/July update, so it now equals the
+    monthly slot that has aged by the months since; likewise slot 32 for the five-year block."""
+    if not any(_seg(f, b"XGRP")):
+        return
+    ser = _xgrp(f)
+    month, half, five = _last_updates(f)
+    yield "slot 12 = monthly slot of the last half-year update" + (
+        "" if all(s[12] == s[month - half] for s in ser) else ": no")
+    k = (half - five) // 6
+    if k <= 19:
+        yield "slot 32 = half-year slot of the last five-year update" + (
+            "" if all(s[32] == s[12 + k] for s in ser) else ": no")
+
+
+@check
+def xgrp_misc_links(f):
+    if not any(_seg(f, b"XGRP")):
+        return
+    ser = _xgrp(f)
+    misc = struct.unpack(">1200i", _seg(f, b"MISC"))
+    for series, word, name in ((10, 18, "Health"), (11, 19, "Education"), (12, 1001, "Unemployment"),
+                               (13, 21, "GNP"), (14, 20, "Nat'n Pop"), (15, 22, "Fed Rate")):
+        yield "%s newest == MISC word %d: %s" % (name, word, ser[series][0] == misc[word])
+    counts = misc[124:380]
+    arcologies = (counts[0xFB] + counts[0xFC] + counts[0xFD] + counts[0xFE]) // 16
+    bonus = (arcologies * 5 - 700) * 4000 if arcologies > 140 else 0
+    yield "City Size newest == MISC 1032 + 10 x MISC 380: %s" % (ser[0][0] == misc[1032] + 10 * misc[380] + bonus)
+
+
+@check
+def xgrp_ranges(f):
+    ser = _xgrp(f)
+    neg = [i for i in range(16) if min(ser[i]) < 0]
+    yield "negative values: " + (", ".join(sc2.XGRP_SERIES[i] for i in neg) or "none")
+    yield "Water %, Unemployment within 0-100: " + str(all(0 <= v <= 100 for i in (9, 12) for v in ser[i]))
+    yield "Power % at most 100: " + str(max(ser[8]) <= 100)
+
+
 # --- driver ----------------------------------------------------------------
 
 class Parsed:

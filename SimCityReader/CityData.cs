@@ -77,7 +77,27 @@ namespace com.mc2k.SimCityReader
         offset++;
       }
 
-      _cityName = System.Text.Encoding.Default.GetString(stringBytes.ToArray());
+      _cityName = decodeWindows1252(stringBytes);
+    }
+
+    // Characters of Windows code page 1252 bytes 0x80..0x9F; the other bytes are the same as in Unicode.
+    // The game stores text in the ANSI code page of the machine that saved it, 1252 on Western systems
+    // (docs/sc2-format/conventions.md#strings).
+    private static readonly char[] WINDOWS_1252_80_TO_9F = {
+      '€', '\u0081', '‚', 'ƒ', '„', '…', '†', '‡',
+      'ˆ', '‰', 'Š', '‹', 'Œ', '\u008D', 'Ž', '\u008F',
+      '\u0090', '‘', '’', '“', '”', '•', '–', '—',
+      '˜', '™', 'š', '›', 'œ', '\u009D', 'ž', 'Ÿ'
+    };
+
+    private static String decodeWindows1252(List<byte> bytes)
+    {
+      StringBuilder sb = new StringBuilder();
+      foreach (byte b in bytes)
+      {
+        sb.Append(b >= 0x80 && b <= 0x9F ? WINDOWS_1252_80_TO_9F[b - 0x80] : (char)b);
+      }
+      return sb.ToString();
     }
 
     private void interpretALTM(Segment altmSegment)
