@@ -34,7 +34,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x4348e0` | `ResetGameState` | Clears the date, pending disaster, military base and some options; founding year 1900; building centre (64, 64) | [general.md](segments/misc/general.md#header-and-date) |
 | `0x408290` | `LoadOptions`? | Reads the speed, sound, music, auto-goto, auto-budget, disaster and autosave options from the `[OPTIONS]` settings | [general.md](segments/misc/general.md#game-options) |
 | `0x484cd0` | `ImportClassicSettings`? | SimCity Classic import: sea level, coast and river flags, national figures, technology years | [technology.md](segments/misc/technology.md#how-the-game-uses-it) |
-| `0x44cb60` | `NewCity` | Clears XTXT, labels 1–255 and XTHG; sets label 0 to the registered mayor's name | [xlab.md](segments/xlab.md#slot-0-the-mayor) |
+| `0x44cb60` | `NewCity` | Clears XTXT, labels 1–255 and XTHG; sets label 0 to the registered mayor's name; writes the system codes into XMIC records 0–9, zeroes records 1–9 and names them in XLAB slots 52–60 | [xlab.md](segments/xlab.md#slot-0-the-mayor), [xmic.md](segments/xmic.md#records) |
 
 ## Byte-order helpers
 
@@ -61,7 +61,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x465490` | `RotateViewClockwise` | Moves every map as `new[row][col] = old[col][127 − row]`; remaps XBLD, XTER and XUND codes through the clockwise tables; flips XBIT `0x02` on bridges and on-ramps; compass − 1. XZON, ALTM and XTXT bytes move unchanged | [conventions.md](conventions.md#orientation) |
 | `0x466660` | `RotateViewCounterClockwise` | The exact inverse of `0x465490`; compass + 1 | [conventions.md](conventions.md#orientation) |
 | `0x465f00`, `0x467100` | `RotateOverlays` (cw, ccw) | Turn the 64 × 64 and 32 × 32 overlays; the values are not changed | [minimaps.md](segments/minimaps.md#rotation) |
-| `0x466410`, `0x467610` | `RotateThings` (cw, ccw) | Turn the XTHG records and some in-memory coordinate tables | [conventions.md](conventions.md#orientation) |
+| `0x466410`, `0x467610` | `RotateThings` (cw, ccw) | Turn XTHG records 1–39 (tile, direction, target or next tile, airplane runway heading) and the unsaved unit-position tables | [xthg.md](segments/xthg.md#rotation) |
 | `0x444e20` | `TileToScreen` | Screen position of a tile: x = (row − col)·w, y = (row + col)·w/2 − altitude·h | [conventions.md](conventions.md#orientation) |
 | `0x444bf0` | `ScreenToTile` | Inverse of `0x444e20` (keeps the view centred when it turns) | — |
 | `0x410950` | `GenerateTerrain` | Makes a new map; sets the compass to 0 | [conventions.md](conventions.md#orientation) |
@@ -77,7 +77,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x4886c0`, `0x4891b0`, `0x489300`, `0x488f10`, `0x489060`, `0x489450`, `0x488c60`, `0x488db0` | `DrawTrafficMap` … `DrawGrowthMap` | Map-window bitmaps for XTRF, XPLT, XVAL, XCRM, XPLC, XFIR, XPOP, XROG: 16 shades of `value >> 4`; XROG in three bands | [minimaps.md](segments/minimaps.md#cell-mapping) |
 | `0x4888f0`, `0x488ab0` | `DrawPowerMap`, `DrawWaterMap` | Draw the power and water map bitmaps | [xbit.md](segments/xbit.md#how-the-game-uses-it) |
 | `0x44d9a0` | `DrawTileText` | Draws a sign or connection text (when labels are shown), or the moving object of XTXT `0xC9`–`0xF0` via `0x450bb0` | [xtxt.md](segments/xtxt.md#how-the-game-uses-it) |
-| `0x450bb0` | `DrawThing` | Draws XTHG record *n* | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0) |
+| `0x450bb0` | `DrawThing` | Draws XTHG record *n*; clears a stale marker whose record is elsewhere (not for train types 10, 11) | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0), [xthg.md](segments/xthg.md#the-xtxt-marker) |
 | `0x46f4a2` | `DrawGraphs` | Graph window: draws slots 11 → 0, 31 → 12 or 51 → 32 of each series, scaled by `0x4cc6f0` | [xgrp.md](segments/xgrp.md#how-the-graph-window-reads-it) |
 | `0x47a240` | `ExpandMessage` | Expands message and newspaper story templates (with a temporary OEM conversion); keeps a story's phrase choices in its slot | [xlab.md](segments/xlab.md#how-the-game-uses-it), [newspapers.md](segments/misc/newspapers.md#how-the-queue-works) |
 
@@ -101,7 +101,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x462ed0` | `PlaceHighwayPiece` | Levels a 2 × 2 highway footprint, writing XTER `0x0D` on filled-up tiles | [xter.md](segments/xter.md#slope-and-altitude) |
 | `0x463f60` | `HighwayFootprintTop` | Highest point of a 2 × 2 footprint, counting a non-flat tile as altitude + 1 | [xter.md](segments/xter.md#slope-shapes) |
 | `0x44bea0` | `BuildTunnel` | Writes the ALTM tunnel depth (bits 10–14) along a new tunnel | [altm.md](segments/altm.md#tunnel-depth-bits-1014) |
-| `0x458d40` | `DestroyTile`? | Among other things collapses a tunnel and clears ALTM bits 10–15 | [altm.md](segments/altm.md#tunnel-depth-bits-1014) |
+| `0x458d40` | `DestroyTile`? | Among other things collapses a tunnel and clears ALTM bits 10–15; destroys worn-out power plants and launched arcologies; clears a destroyed stadium's sport bit in MISC word 1034 | [altm.md](segments/altm.md#tunnel-depth-bits-1014), [xmic.md](segments/xmic.md#misc-words-set-from-xmic) |
 | `0x443270` | `Bulldoze` | Removes surface water; in the underground view demolishes tunnels (depth 1) | [xter.md](segments/xter.md#water) |
 | `0x448f50` | `CheckPlacement`? | In the underground view refuses tiles with tunnel depth 1 or 2 | [altm.md](segments/altm.md#tunnel-depth-bits-1014) |
 
@@ -138,17 +138,51 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 |---|---|---|---|
 | `0x44d7c0` | `SignTool` | Places, edits or removes a sign (XTXT 1–50); refuses tiles with XTXT `0x33` and up | [xtxt.md](segments/xtxt.md#signs-0x010x32) |
 | `0x44d970` | `FindFreeSign` | First sign number 1–50 not in use | [xtxt.md](segments/xtxt.md#signs-0x010x32) |
-| `0x44ced0` | `DeleteText` | Removes a sign and its label; clears XTHG byte 10; leaves `0x34`–`0x3C` alone | [xtxt.md](segments/xtxt.md#how-the-game-uses-it) |
-| `0x44cf60` | `AllocMicrosim` | Picks an XMIC record for a building code (table `0x4e7c9a`), writes its byte 0 and default name, returns the XTXT value | [xtxt.md](segments/xtxt.md#microsims-0x3d0xc8) |
-| `0x44e390` | `UpdateMicrosims` | Microsim routine; among other things sums the word at offset 4 of the XMIC records of types `0xEC`, `0xED`, `0xF3`–`0xF5`, `0xF8`, `0xFA`–`0xFE` into MISC word 1032, and sets the arrests and police bonus (MISC words 1038, 1039) | [xgrp.md](segments/xgrp.md#graph-series), [general.md](segments/misc/general.md#counters) |
+| `0x44ced0` | `DeleteText` | Removes a sign and its label, or frees the XMIC record (byte 0 = 0) and XLAB slot of values `0x3D`–`0xC8`; clears XTHG byte 10; leaves `0x34`–`0x3C` alone | [xtxt.md](segments/xtxt.md#how-the-game-uses-it), [xmic.md](segments/xmic.md#records-10149-buildings) |
+| `0x44cf60` | `AllocMicrosim` | Picks an XMIC record for a building code (table `0x4e7c9a`): refuses codes below `0xC6`; kinds from `0x11` reuse the fixed record kind − `0x10`; when the table is full an arcology takes the first record below `0xFB`. Writes byte 0 and the default name, calls `0x44ddc0`, returns the XTXT value | [xtxt.md](segments/xtxt.md#microsims-0x3d0xc8), [xmic.md](segments/xmic.md#records-10149-buildings) |
+| `0x44ddc0` | `InitMicrosim` | Starting figures of a placed microsim; adds to the counts of the city-wide systems | [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md) |
+| `0x44f7d0` | `CapByPopulation` | min(*x*, (MISC 1035 + MISC 1032 + arcology bonus) ÷ *d*) | [xmic.md](segments/xmic.md#when-the-figures-change) |
+| `0x44f890` | `FindMicrosimTile` | Finds a tile of the building of an XMIC record (for wear-out) | [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md#power-plants-0xc90xcf) |
+| `0x44d1b0`, `0x44d1d5` | `OpenMicrosimWindow` | Click on a microsim tile: opens the microsim window (or queries the tile with `0x4719a0` when the record is free); `0x44d1d5` opens it for renaming | [xmic.md](segments/xmic.md#the-microsim-window) |
+| `0x427080`, `0x4272e0`, `0x427720` | `MicrosimDialog` | The microsim window: constructor, set-up (sprite, name from XLAB), painting of the five statistics lines and the building's sound | [xmic.md](segments/xmic.md#the-microsim-window) |
+| `0x44d360` | `DrawMicrosimLine` | Expands one template line (`#0`–`#3`, `#G`, `#S`, `#T`, `#W`) for an XMIC record | [xmic.md](segments/xmic.md#the-microsim-window) |
+| `0x4501af` | `LoadMicrosimStrings` | At start-up: default names (strings 831–888) and window templates (`0x4e7da0`), with language patches | [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md) |
+| `0x414b40` | `MayorHouseClick`? | Runs for XTXT `0x6F` before the window: the opinion poll `0x472510` and the mayor's-house update of every record | [xmic.md](segments/xmic.md#when-the-figures-change) |
+| `0x47c970` | `TeamDialog` | Asks for a new stadium's team (opened from `0x440170`) | [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md#stadium-0xd7) |
+| `0x47fc70`, `0x47faf0`, `0x47faa0` | `Random6`, `RandomMod`, `LcgMod` | The shift register of `0x47fcb0` as 0–63 and mod *n*; a linear congruential generator (× `0x41C64E6D` + `0x3039`) mod *n* | [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md) |
+| `0x44e390` | `UpdateMicrosims` | Yearly (from `0x4734a0` in January): recomputes XMIC records 1–149, wears out power plants, launches Launch arcologies; sets MISC word 1032 (arcology residents), 1038 (police arrests) and 1039 (prisons have room) | [xmic.md](segments/xmic.md#when-the-figures-change), [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md) |
 | `0x449bb0`, `0x449f50`, `0x4621f0` | `RoadTool`, `RailTool`, `HighwayTool` | At the map edge, offer a neighbour connection (strings 109, 110, 246) and write XTXT `0xFA` | [xtxt.md](segments/xtxt.md#neighbour-connections-0xfa) |
-| `0x450690`, `0x452d00`, `0x452fa0`, `0x453280`, `0x453460`, `0x453600`, `0x455500`, `0x45f090`, `0x442a30` | moving-object routines | Move XTHG objects and write XTXT `0xC9` + *n* on the tile of object *n* | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0) |
+| `0x450690`, `0x452d00`, `0x452fa0`, `0x453280`, `0x453460`, `0x453600`, `0x455500`, `0x45f090`, `0x442a30` | moving-object routines | Move XTHG objects and write XTXT `0xC9` + *n* on the tile of object *n* ([§ Moving objects](#moving-objects)) | [xtxt.md](segments/xtxt.md#moving-objects-0xc90xf0), [xthg.md](segments/xthg.md#the-xtxt-marker) |
+
+## Moving objects
+
+| Address | Our name | What it does | Cited in |
+|---|---|---|---|
+| `0x450890` | `AnimateThings` | Resets the per-type counters, then updates records 1–39 by type (1 `0x453980`, 2 `0x4540c0`, 3 `0x456760`, 5 `0x4548c0`, 6 `0x4546f0`, 9 `0x4562e0`, 10/12 `0x455500`, 15 `0x454ea0`, 16 `0x455020`); types 4, 7, 8, 11, 13, 14 are not updated | [xthg.md](segments/xthg.md#how-the-game-uses-it) |
+| `0x450850` | `FindFreeThing` | First record 1–39 with type 0; 0 when none | [xthg.md](segments/xthg.md#allocation) |
+| `0x450690` | `PlaceUnit` | Creates a dispatched unit (7, 8, 14) on a tile; in city mode 2 takes record 39 when none is free | [xthg.md](segments/xthg.md#allocation) |
+| `0x4507d0` | `RemoveThing` | Frees a record and writes 0 on its tile | [xthg.md](segments/xthg.md#the-xtxt-marker) |
+| `0x4516f0` | `MoveThing` | Moves a record one step at its type's speed; puts the old tile's XTXT value back from byte 10, keeps the new tile's in byte 10, writes the marker; skips tiles with another marker | [xthg.md](segments/xthg.md#the-xtxt-marker) |
+| `0x452830`, `0x452ba0`, `0x452d00` | `SpawnAirplane`, `SpawnHelicopter`, `SpawnShip` | Airplane from a map edge or a runway; helicopter on a runway; cargo ship two tiles inside a map edge on deep water | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
+| `0x453380`, `0x453460` | `SpawnSailboat` | Sailboat on water next to a marina | [thing-ids-xthg.md](reference/thing-ids-xthg.md#9-sailboat) |
+| `0x453590`, `0x453600` | `SpawnTrain` | Engine and two cars on rail next to a rail station; refuses a fifth engine | [thing-ids-xthg.md](reference/thing-ids-xthg.md#1013-trains) |
+| `0x452fa0` | `SpawnRescuer` | Flying rescuer (type 16); its target marker (byte 11) from the disaster number | [thing-ids-xthg.md](reference/thing-ids-xthg.md#16-flying-rescuer) |
+| `0x453280` | `MakeExplosion` | Explosion (type 6) at a tile, with height, disaster number and fire flag | [thing-ids-xthg.md](reference/thing-ids-xthg.md#6-explosion) |
+| `0x453980`, `0x4540c0`, `0x456760`, `0x4562e0` | `UpdateAirplane`, `UpdateHelicopter`, `UpdateShip`, `UpdateSailboat` | Move the vehicles; the helicopter also gives the traffic report over XTRF above 169 | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
+| `0x454520`, `0x454650` | `AvoidArcology`, `AircraftCollision` | Turn an aircraft away from an arcology ahead; make a helicopter near an airplane crash | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
+| `0x4546f0`, `0x4548c0`, `0x454ea0`, `0x455020` | `UpdateExplosion`, `UpdateMonster`, `UpdateTornado`, `UpdateRescuer` | Disaster objects; the explosion can start fires (MISC word 28) | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
+| `0x455500`, `0x455dc0`, `0x455ef0`, `0x455fc0` | `UpdateTrain`, `TrainOffTrack`, `FollowEngine`, `ReverseTrain` | Move an engine and its cars; switch 10 ↔ 12 on subway connections | [thing-ids-xthg.md](reference/thing-ids-xthg.md#1013-trains) |
+| `0x451f10` | `DrawMonster` | Draws the monster from body parts (sprites 478–489) | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
+| `0x45e7d0`, `0x45ee10`, `0x45f090` | disasters 18, 8, 7 | Create the crashing airplane, the monster and the tornado; the last two set MISC word 1040 | [general.md](segments/misc/general.md#disasters) |
+| `0x44f910` | `StartDispatch` | Sets the unit limits; removes existing units through their markers | [thing-ids-xthg.md](reference/thing-ids-xthg.md#7-8-14-emergency-units) |
+| `0x44fb50`, `0x44fd60`, `0x44ff70` | `DispatchPolice`, `DispatchFire`, `DispatchMilitary` | Place a unit with the dispatch tool | [thing-ids-xthg.md](reference/thing-ids-xthg.md#7-8-14-emergency-units) |
+| `0x442a30`, `0x442db0` | level terrain, bulldozer drag | Use record 0 as a type-4 cursor marked with XTXT `0xC9` | [xthg.md](segments/xthg.md#record-0) |
 
 ## Disasters
 
 | Address | Our name | What it does | Cited in |
 |---|---|---|---|
-| `0x45cf10` | `DispatchDisaster` | Starts the pending disaster (`0x4ca420`, MISC word 28, cases 1–18); keeps it in MISC word 1041, sets word 1042 while it runs and the city mode (word 1) to 2; sets word 1040 to −1 when it ends | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff), [general.md](segments/misc/general.md#disasters) |
+| `0x45cf10` | `DispatchDisaster` | Starts the pending disaster (`0x4ca420`, MISC word 28, cases 1–18); keeps it in MISC word 1041, sets word 1042 while it runs and the city mode (word 1) to 2; sets word 1040 to −1 when it ends. A disaster stays under way while a monster, tornado, explosion or crashing airplane exists; may send the flying rescuer (`0x452fa0`) | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff), [general.md](segments/misc/general.md#disasters) |
 | `0x471bc0` | `ChooseDisaster` | Picks the next disaster into MISC word 28 (hurricane weather on a coast → 16, tornado weather → 7, …); case 4 (the toxic spill, **Inferred**) starts at the most polluted 64 × 64 cell above 149 | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [general.md](segments/misc/general.md#disasters) |
 | `0x45f760` | `UpdateDisasters` | Processes the XTXT markers `0xFB`–`0xFF` each tick; fire spreads with XFIR + 8 as a random threshold; zeroes XTRF under destroyed tiles | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff), [minimaps.md](segments/minimaps.md#xfir-fire-coverage) |
 | `0x460e10` | `StartFire` | Writes XTXT `0xFF`; zeroes XTRF under removed road or rail | [xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff) |
@@ -175,7 +209,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x46ba90` | `SpreadCoverage` | Adds a police or fire station's strength to a diamond of 32 × 32 cells around it (full, then × 4/5, then less, out to distance 3) | [minimaps.md](segments/minimaps.md#xplc-police-coverage) |
 | `0x46ba20` | `AddCoverageCell` | Adds to one 32 × 32 cell, clamped to 0–255 and to the grid | [minimaps.md](segments/minimaps.md#xplc-police-coverage) |
 | `0x4358b0` | `ZoneGrowthStep` | Simulation steps 3–18: step 3 + 4*r* + *c* visits the tiles with row ≡ *r* and col ≡ *c* (mod 4). Grows the zones (needs XVAL above 31, 95 or 191), sends trips, adds each zone building's population units to MISC words 381–386 (abandoned ones to 387), grows the military base (MISC word 915), and lets underfunded transport decay | [minimaps.md](segments/minimaps.md#how-the-game-uses-it), [population.md](segments/misc/population.md#zone-population) |
-| `0x457620` | `AddTripTraffic`? | Adds a trip's weight to XTRF along its route, capped at 255 | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
+| `0x457620` | `AddTripTraffic`? | Adds a trip's weight to XTRF along its route, capped at 255; counts bus, rail and subway trips (`0x4c85a0`, `0x4c85a4`, `0x4c8600`) | [minimaps.md](segments/minimaps.md#xtrf-traffic), [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md#bus-rail-and-subway-0xec-0xed-0xe9) |
 | `0x4586f0` | `DecayTraffic` | Step 19: XTRF −= XTRF >> 2 everywhere; stores the sum in MISC word 12 | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
 | `0x4540c0` | `TrafficReport`? | Triggers the traffic helicopter report on a cell above 169, at most every 5 s | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
 | `0x468d30` | `MonthlyPopulation` | Step 21: the national economy (MISC words 20–23) and the neighbours' figures; the age groups (deaths, ageing with schools and colleges, births with hospitals, migration) and MISC words 17–19; the industries (demand, sizes), the industry bonus and the heavy-industry level (words 1036, 1037) | [population.md](segments/misc/population.md#how-the-age-groups-change), [minimaps.md](segments/minimaps.md#xplt-pollution) |
@@ -243,8 +277,8 @@ The map variables hold 128 row pointers into one 16 KB buffer (ALTM: 32 KB). The
 | `0x4ca600` | XTXT | 128 × 128 |
 | `0x4cab10` | XBIT | 128 × 128 |
 | `0x4ca198` | XLAB | 256 × 25 |
-| `0x4cb3ec` | XMIC | 150 × 8 |
-| `0x4ca434` | XTHG | 480 |
+| `0x4cb3ec` | XMIC ([xmic.md](segments/xmic.md)) | 150 × 8 |
+| `0x4ca434` | XTHG ([xthg.md](segments/xthg.md)) | 40 × 12 |
 | `0x4ca940` | XTRF | 64 × 64 |
 | `0x4ca828` | XPLT | 64 × 64 |
 | `0x4cb0a8` | XVAL | 64 × 64 |
@@ -290,6 +324,7 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4cad58` | The four neighbour names, 32 bytes each, built by the loader from the name ids | 438, 442, 446, 450 |
 | `0x4cc8f8` (16) | R, C, I demand, then 5 unused | 454–461 |
 | `0x4cb430` (16) | 17 technology years | 462–478 |
+| `0x4c85a0`, `0x4c85a4`, `0x4c8600` | Bus, rail and subway trips since the last yearly microsim update | — |
 | `0x4cc4cc` | Budget table: 16 entries × `0x70` bytes; + `0x60` count, + `0x64` rate, + `0x68` year to date, + `0x6C` estimate (not saved), + 4*k* and + `0x30` + 4*k* month *k* count and rate | 479–910 |
 | `0x4cad2c` | Year-end flag | 911 |
 | `0x4ca818` (16) | Sea level | 912 |
@@ -305,12 +340,12 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4cb3d0`, `0x4cc4bc`, `0x4ca808` (16) | Newspaper subscription, extras, choice | 1025–1027 |
 | `0x4c7cb0`, `0x4c7cb4`, `0x4c7cb8` | View centre (two halves), zoom; used once after loading | 1028, 1029 |
 | `0x4cb458`, `0x4cb45c` (16) | Centre of the buildings (row, col); recomputed in step 2 | 1030, 1031 |
-| `0x4c94c4` | People in large microsim buildings (**Inferred**) | 1032 |
+| `0x4c94c4` | Arcology residents (sum of XMIC word 4 of the arcologies) | 1032 |
 | `0x4caddc` (16) | Never used | 1033 |
 | `0x4cc4e0` (16) | Sports teams (bit mask) | 1034 |
 | `0x4caa74` | Population: 10 × word 380 | 1035 |
 | `0x4ca1e8` (16), `0x4c9428` (16) | Industry bonus; heavy-industry level (−1, or (heavy share − 20) ÷ 30) | 1036, 1037 |
-| `0x4ca430` (16), `0x4ca1dc` (16) | Arrests; police bonus | 1038, 1039 |
+| `0x4ca430` (16), `0x4ca1dc` (16) | Police arrests; prisons have room | 1038, 1039 |
 | `0x4ca81c` (16), `0x4ca93c` (16), `0x4c9ee8` | XTHG record of the disaster's monster or tornado (−1 none); disaster most recently started; disaster under way | 1040–1042 |
 | `0x4cb3dc` (16) | 1 if the water treatment plants (XBLD `0xF4` tiles / 4 × 2000) cover the water delivered; recomputed by `0x464550` | 1043 |
 
@@ -329,6 +364,9 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4cc4b8` | During the water flood: water delivered; afterwards the percentage of pump capacity (`0x4c93ac`); the Water % graph is 100 minus this | computed by `0x464550` |
 | `0x4cc4d8` | Road neighbour connections | recounted by `0x434b70` from XTXT `0xFA` |
 | `0x4ca3f0` | Rail and highway neighbour connections | not traced yet |
+| `0x4e99c0` … `0x4e99dc` | Moving objects of each kind (airplanes, helicopters, cargo ships, rescuers, sailboats, monsters, train engines, tornadoes), recounted in each animation pass; the spawn limits read them | `0x450890` |
+| `0x4caa58`, `0x4caa5c` | Disaster spot (row, col) | set by the dispatcher |
+| `0x4c7da0`/`0x4c7dc0`, `0x4c85b0`/`0x4c85d0`, `0x4c85f8`/`0x4c8608` | Positions of the police, fire and military units (not saved; turned by `0x466410`) | `0x44f910` |
 | `0x4c93a8` | Flood timer | reset by `0x434b70` |
 | `0x4c93b4` | Developed tiles (XBLD above `0x1C`, or zoned) | recomputed by `0x434b70` and `0x46a840` |
 | `0x4cc6f0` | 16 graph maxima (y scale), not saved | computed by `0x431fd0` |
@@ -360,8 +398,6 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4e7c60` | Subway/pipe slope piece by XTER low bits (int16 per value) |
 | `0x4e7c70`, `0x4e7cb8` | Per-XTER-value flags: may an underground line connect along the cols / rows |
 | `0x4e7b68` | Per-XTER-low-bits flag (int32): the tile is a simple slope, so the piece is a slope piece |
-| `0x4e7c9a` | Microsim kind per building code: 0 none, 1–`0x10` a new record from 10 on, `0x11` and up a fixed record (entry − `0x10`) |
-| `0x4c6a8a` | Default microsim names, 25 bytes per building code |
 | `0x4e95b8` | Pollution emitted per XBLD code (bytes; codes `0x70` and up used) |
 | `0x4e9648` | Density weight per XBLD code for XPOP (overlaps the end of `0x4e95b8`) |
 | `0x4e7498` | Building class per XBLD code (1 construction, 2 abandoned) |
@@ -385,4 +421,14 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4ea4b0`, `0x4ea4c8`, `0x4ea4e0` | String ids of the newspaper names (360–365), opinion columns (354–359), weather columns (347–352) |
 | `0x4ea158` | String ids of the newspaper price wordings, 3 styles × 5 eras (377–391) |
 | String ids 548–583 | Neighbour town names (name id 1–36; category 1000 of `0x42b520`) |
+| `0x4e7c9a` | Microsim kind per building code: 0 none, 1–16 a record of its own, 17–25 the fixed record kind − 16 (entries below `0xC6` belong to neighbouring tables) |
+| `0x4e7da0` | Microsim window templates: 26 kinds × 5 string ids − 900 (−1 = no line) |
+| `0x4c6a8a`, `0x4c7de0` | Default microsim names, 25 bytes per building code; `0x4c7de0` is where code `0xC6` starts (strings 831–888) |
+| `0x4dc1d0`, `0x4e7e24` | Building prices, and the index into them per code (a worn-out plant's rebuild cost) |
+| `0x4e8080`, `0x4e80a8` | Sprite base and minimum zoom per thing type |
+| `0x4e80e0`, `0x4e80f0` | 8-way row and col steps of moving objects |
+| `0x4e82e0`, `0x4e82f0`, `0x4e8360`, `0x4e8370` | 4-way row and col steps for trains and for sailboats |
+| `0x4e8100`, `0x4e81f8` | Default height (byte 5) and speed per thing type |
+| String ids 786–790 | Sports: Football, Baseball, Soccer, Cricket, Rugby |
+| String ids 900–982 | Microsim window templates |
 | String ids 594–753 | Building and tile names (STRINGTABLE resource, UTF-16) |

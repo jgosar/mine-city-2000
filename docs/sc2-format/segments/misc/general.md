@@ -68,15 +68,15 @@ The saver writes every value sign-extended from the variable's width, and the lo
 | 1029 | `0x1014` | `0x4c7cb8` | 16 | zoom | Zoom level of the city window, 0–2 | **Confirmed (code)**; values **Inferred** |
 | 1030 | `0x1018` | `0x4cb458` | 16 | building centre row | Mean row of building tiles, rounded down to even | **Confirmed (code)** |
 | 1031 | `0x101C` | `0x4cb45c` | 16 | building centre col | Mean col of building tiles, rounded down to even | **Confirmed (code)** |
-| 1032 | `0x1020` | `0x4c94c4` | 32 | microsim population | People living in arcologies and other large microsim buildings | **Inferred**, [xgrp.md](../xgrp.md#graph-series) |
+| 1032 | `0x1020` | `0x4c94c4` | 32 | arcology residents | Sum of the residents (XMIC word 4) of all arcologies | **Confirmed (code)**, [xmic.md](../xmic.md#misc-words-set-from-xmic) |
 | 1033 | `0x1024` | `0x4caddc` | 16 | — | Loaded and saved, never used | **Unused** |
 | 1034 | `0x1028` | `0x4cc4e0` | 16 | sports teams | Bit mask of the five teams | **Confirmed (code)** |
 | 1035 | `0x102C` | `0x4caa74` | 32 | zone population | City population outside microsim buildings, = 10 × word 380 | **Confirmed (code)** |
 | 1036 | `0x1030` | `0x4ca1e8` | 16 | industry bonus | From the largest industry's share | **Confirmed (code)** |
 | 1037 | `0x1034` | `0x4c9428` | 16 | heavy-industry level | −1, 0, 1, … from the share of heavy industry | **Confirmed (code)** |
-| 1038 | `0x1038` | `0x4ca430` | 16 | arrests | Total arrests of all police stations | **Inferred** |
-| 1039 | `0x103C` | `0x4ca1dc` | 16 | police bonus | 1 if the police stations are not overloaded | **Confirmed (code)**; meaning **Inferred** |
-| 1040 | `0x1040` | `0x4ca81c` | 16 | disaster thing | XTHG record of the monster or tornado; −1 none | **Confirmed (code)**; −1 in 114/114 |
+| 1038 | `0x1038` | `0x4ca430` | 16 | arrests | Sum of the police stations' arrests (XMIC word 6), at most 65 535 | **Confirmed (code)** |
+| 1039 | `0x103C` | `0x4ca1dc` | 16 | prisons have room | 1 if there are prisons and they are on average at most 79 % full | **Confirmed (code)** |
+| 1040 | `0x1040` | `0x4ca81c` | 16 | disaster thing | [XTHG](../xthg.md) record of the monster or tornado; −1 none | **Confirmed (code)**; −1 in 114/114 |
 | 1041 | `0x1044` | `0x4ca93c` | 16 | current disaster | The disaster most recently started | **Confirmed (code)** |
 | 1042 | `0x1048` | `0x4c9ee8` | 32 | disaster active | 1 while a disaster is under way | **Confirmed (code)**; 0 in 114/114 |
 | 1043 | `0x104C` | `0x4cb3dc` | 16 | water treatment | 1 if the treatment plants cover the water delivered | **Confirmed (code)** |
@@ -114,7 +114,7 @@ Words 10–13 are the overlay totals ([minimaps.md](../minimaps.md#values)). Wor
 
 **Workforce, health and education (words 17–19)** are recomputed every month by `0x468d30` from the per-age-group arrays in words 31–90 ([README.md](README.md)): word 18 is the life expectancy and word 19 the education quotient, each averaged over the working age groups weighted by their size; word 17 is the size of those groups as a percentage of word 1035.
 
-**Zone population (word 1035)** is set every month by `0x468150` to 10 × word 380 (the population sum). It is the population the reward milestones are measured against. The City Size graph adds word 1032 (people in large microsim buildings) to it. **Verified (data)**: word 1035 = 10 × word 380 in 92/114 files; the others were saved after word 380 had changed since the last monthly update.
+**Zone population (word 1035)** is set every month by `0x468150` to 10 × word 380 (the population sum). It is the population the reward milestones are measured against. The City Size graph adds word 1032 (people living in arcologies) to it. **Verified (data)**: word 1035 = 10 × word 380 in 92/114 files; the others were saved after word 380 had changed since the last monthly update.
 
 **Residents last month (word 29).** Every month `0x468150` compares the residential population with this word to compute growth, then stores the new value. The saver writes it from the previous month's Residents graph value (XGRP series 1, slot 1). **Verified (data)**: equal in 50/50 Windows 95 files and 40/64 others.
 
@@ -173,12 +173,12 @@ What the weather does (**Confirmed (code)**):
 | 8 | monster | 17 | helicopter crash |
 | 9 | meltdown | 18 | plane crash |
 
-The dispatcher `0x45cf10` handles the cases 1–18; the codes that are confirmed by other code are 7 (tornado: started by tornado weather; moves an XTHG object) and 16 (hurricane: started by hurricane weather on a coast), and 8 (the monster: moves an XTHG object).
+The dispatcher `0x45cf10` handles the cases 1–18; the codes that are confirmed by other code are 7 (tornado: started by tornado weather; moves an XTHG object) and 16 (hurricane: started by hurricane weather on a coast), and 8 (the monster: moves an XTHG object). 5 (air crash) and 17 (helicopter crash) are the numbers a crashing airplane and helicopter give their explosion, and 18 creates a crashing airplane (`0x45e7d0`). The flying rescuer (`0x452fa0`) groups 1, 5, 6, 9–12 as fires, 2 and 14 as floods, 3 and 13 as riots, 4 and 15 as toxic ([thing-ids-xthg.md](../../reference/thing-ids-xthg.md#16-flying-rescuer)).
 
 - **Word 28** is the disaster waiting to start. The dispatcher clears it when it starts the disaster, so a saved file has 0 (114/114).
 - **Word 1041** keeps the code of the disaster that was started last; it picks the newspaper story when the disaster ends.
 - **Word 1042** is 1 while a disaster is under way and 0 otherwise (0 in 114/114).
-- **Word 1040** is the XTHG record of the monster or tornado (its XTXT marker is `0xC9` + this value, [xtxt.md](../xtxt.md#moving-objects-0xc90xf0)). The dispatcher sets it to −1 when the disaster ends, and a new city starts with −1 (−1 in 114/114).
+- **Word 1040** is the [XTHG](../xthg.md) record of the monster or tornado (its XTXT marker is `0xC9` + this value, [xtxt.md](../xtxt.md#moving-objects-0xc90xf0)). The dispatcher sets it to −1 when the disaster ends, and a new city starts with −1 (−1 in 114/114).
 - **Word 1024** is the player's "no disasters" option.
 
 ## Rewards
@@ -242,8 +242,8 @@ The player's options are saved with the city and restored on load (**Confirmed (
 | 1034 sports teams | Bit *k* set: team *k* exists; with a stadium the newspaper picks a random team and reports on it if its bit is set (`0x468150`). The team names are XLAB slots 251–255 ([xlab.md](../xlab.md#slots-251255-sports-teams)) | **Confirmed (code)**; values 0–31 and −1 |
 | 1036 industry bonus | Monthly (`0x468d30`): the largest of the 11 industries' shares (% of industrial population, words 91–123); below 20 → 0, else (share − 20) ÷ 5. `0x468150` adds word 1036 ÷ 100 to the difficulty factor of its demand formula | **Confirmed (code)**; 0–5 |
 | 1037 heavy-industry level | Monthly (`0x468d30`): the share of industries 0, 1, 2 and 5; below 20 % → −1, else (share − 20) ÷ 30. Step 2 adds pollution with it ([minimaps.md](../minimaps.md#xplt-pollution)) | **Confirmed (code)**; −1, 0, 1 |
-| 1038 arrests | Set by the microsim routine `0x44e390` from its police-station pass; feeds the next pass's arrest figures | **Inferred** |
-| 1039 police bonus | Set by `0x44e390`: 1 if the police stations' average load is at most 79, else 0. Step 2 gives a police station the strength (5 + word 1039) × police funding ÷ 2 | **Confirmed (code)**; meaning **Inferred** |
+| 1038 arrests | Set once a year by `0x44e390`: the sum of the police stations' arrests. Next year it feeds the prisons' inmates ([microsim-kinds-xmic.md](../../reference/microsim-kinds-xmic.md#prison-0xd8)) | **Confirmed (code)**; **Verified (data)** 111/114 |
+| 1039 prisons have room | Set once a year by `0x44e390`: 1 if there is a prison and the prisons are on average at most 79 % full, else 0. Next year arrests are crimes ÷ (5 − word 1039); step 2 gives a police station the strength (5 + word 1039) × police funding ÷ 2 | **Confirmed (code)**; **Verified (data)** 112/114 |
 | 1043 water treatment | Recomputed by the water routine `0x464550` (see [game-internals.md](../../game-internals.md#misc-variables)) and used in step 2 | **Confirmed (code)** |
 
 ## Words 1044–1199

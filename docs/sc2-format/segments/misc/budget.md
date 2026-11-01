@@ -132,7 +132,7 @@ A new city starts with tax rates 7, ordinances rate 1, bond rate 0 and every fun
 | Health funding | `0x468d30` | Hospital capacity in the health calculation: hospitals × funding × 25 / 100 |
 | School and college funding | `0x468d30` | Capacity in the education calculation: schools × funding × 15 / 100, colleges × funding × 50 / 100 |
 | Transport funding | zone growth, steps 3–18 (`0x4358b0`) | Below 100 %, each visit to a transport tile turns it into rubble (roads, rail, highways) or destroys it (bridges, tunnels, subway) with a chance of roughly (100 − funding) % |
-| Services funding | the microsims (`0x44e390`, `0x44ddc0`) | Scores of the police, fire, hospital and school microsims |
+| Services funding | the microsims (`0x44e390`, `0x44ddc0`) | Figures of the police, fire, hospital, school and college microsims; school funding also drives the libraries, college funding the museums ([microsim-kinds-xmic.md](../../reference/microsim-kinds-xmic.md)) |
 
 The advisors read the same values (`0x41a490`), for example the financial advisor compares the bond payments with the tax income.
 

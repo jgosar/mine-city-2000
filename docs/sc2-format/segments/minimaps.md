@@ -123,7 +123,7 @@ XPOP, XVAL and XPLC are the values just computed in the same step. Bit `0x4` of 
 Step 2 clears XPLC and rebuilds it (**Confirmed (code)**, `0x46a840`):
 
 - Each police station (XBLD `0xD2`) adds its strength once, at its corner tile with XZON bit `0x80`, spread over a diamond around its 32 × 32 cell: full strength in the cell, then 4/5, then decreasing to the cells up to 3 away (`0x46ba90`, values capped at 255).
-- Strength = (`0x4ca1dc` + 5) × the police funding level / 2, halved if the station is not powered (XBIT `0x40`). The funding level is the police funding of the budget (MISC word 615, [budget.md](misc/budget.md#entries)); `0x4ca1dc` is the police bonus, MISC word 1039 ([general.md](misc/general.md#counters)).
+- Strength = (`0x4ca1dc` + 5) × the police funding level / 2, halved if the station is not powered (XBIT `0x40`). The funding level is the police funding of the budget (MISC word 615, [budget.md](misc/budget.md#entries)); `0x4ca1dc` is MISC word 1039, 1 when the prisons have room ([xmic.md](xmic.md#misc-words-set-from-xmic)).
 - When bit `0x800` of `0x4caa40` is set (the Neighborhood Watch ordinance, [ordinances.md](misc/ordinances.md#bits)), every tile with an XBLD code up to `0xC5` adds 2 to its cell.
 
 ### XFIR: fire coverage

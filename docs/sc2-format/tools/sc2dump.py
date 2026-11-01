@@ -534,6 +534,158 @@ def decode_xgrp(data):
     return {name: list(values[i * 52:(i + 1) * 52]) for i, name in enumerate(XGRP_SERIES)}
 
 
+# --- XMIC (docs/sc2-format/segments/xmic.md, reference/microsim-kinds-xmic.md) ------
+#
+# 150 records of 8 bytes: building code, byte 1, then three big-endian 16-bit
+# words. Record r belongs to XTXT value r + 0x33 and XLAB slot r + 0x33.
+
+XMIC_RECORDS = 150
+XMIC_FIRST_OWN = 10          # records 10-149 belong to one building each
+
+# The city-wide systems and their fixed records (SIMCITY.EXE 0x4e7c9a, entries 0x11-0x19)
+MICROSIM_FIXED = {0xEC: 1, 0xED: 2, 0xE9: 3, 0xC8: 4, 0xC6: 5, 0xC7: 5,
+                  0xD5: 6, 0xD4: 7, 0xF5: 8, 0xF8: 9}
+# Codes that get a record of their own (0x4e7c9a entries 1-0x10)
+MICROSIM_OWN = frozenset(list(range(0xC9, 0xD4)) + list(range(0xD6, 0xDC))
+                         + [0xF3, 0xF4] + list(range(0xFA, 0x100)))
+
+# What byte 1 and the words at offsets 2, 4, 6 mean, per building code, from the
+# microsim window's templates (0x4e7da0 + strings 900+, US version) and the yearly
+# update 0x44e390. None = not used.
+_PLANT = ("age_years", "max_output_mw", "percent_of_capacity", None)
+_ARCO = ("conditions_grade", "design_capacity_thousands", "residents", "year_built")
+MICROSIM_FIELDS = {
+    **{c: _PLANT for c in range(0xC9, 0xD0)},
+    0xD0: (None, "employees", "year_built", None),
+    0xD1: ("grade", "patients", "doctors", "annual_cost"),
+    0xD2: ("annual_cost", "officers", "crimes_reported", "arrests"),
+    0xD3: ("annual_cost", "firefighters", "fire_engines", "response_minutes"),
+    0xD6: ("grade", "students", "teachers", "annual_cost"),
+    0xD7: ("wins", "attendance", "sport", "team_label_slot"),
+    0xD8: ("escapes", "inmates", "guards", "percent_of_capacity"),
+    0xD9: ("grade", "students", "teachers", "annual_cost"),
+    0xDA: ("other_dromedaries", "peruvian_llamas", "andean_llamas", "alpacas"),
+    0xDB: (None, "year_built", "pigeons_perched", None),
+    0xF3: ("doorstops", "year_built", "approval_rating", "employees"),
+    0xF4: ("percent_of_capacity", "untreated_filth_thousand_cubic_feet",
+           "treated_filth_thousand_cubic_feet", None),
+    0xFA: ("percent_of_capacity", "salt_tons_removed", "employees", None),
+    **{c: _ARCO for c in range(0xFB, 0xFF)},
+    0xFF: ("weddings", "visitors", "llama_sightings", "complaints"),
+    0xEC: (None, "bus_stations", "buses", "passengers"),
+    0xED: (None, "rail_stations", None, "passengers"),
+    0xE9: (None, "subway_stations", None, "passengers"),
+    0xC8: (None, "wind_generators", "max_system_output_mw", None),
+    0xC6: (None, "hydro_generators", "max_system_output_mw", None),
+    0xC7: (None, "hydro_generators", "max_system_output_mw", None),
+    0xD5: (None, "attendance_last_year", "acres", "employees"),
+    0xD4: (None, "attendance_last_year", "exhibits", None),
+    0xF5: ("grade", "attendance", "books", None),
+    0xF8: (None, "boats", None, None),
+}
+GRADES = ("F", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+")
+SPORTS = ("football", "baseball", "soccer", "cricket", "rugby")
+
+
+@decoder(b"XMIC")
+def decode_xmic(data):
+    """The records in use (byte 0 not 0) and record 0, with named fields."""
+    out = []
+    for r in range(XMIC_RECORDS):
+        code, b1, w2, w4, w6 = struct.unpack_from(">BBHHH", data, 8 * r)
+        if code == 0 and r:
+            continue
+        rec = {"record": r, "xtxt": r + 0x33, "code": "0x%02X" % code,
+               "raw": [b1, w2, w4, w6]}
+        if r == 0:
+            rec["note"] = "unused record"
+        else:
+            names = MICROSIM_FIELDS.get(code)
+            if names:
+                rec["fields"] = {n: v for n, v in zip(names, (b1, w2, w4, w6)) if n}
+                for n in ("grade", "conditions_grade"):
+                    if n in rec["fields"] and rec["fields"][n] < len(GRADES):
+                        rec["fields"][n + "_letter"] = GRADES[rec["fields"][n]]
+                if code == 0xD7:
+                    rec["fields"]["losses"] = 40 - b1 if b1 else 0
+                    if w4 < len(SPORTS):
+                        rec["fields"]["sport_name"] = SPORTS[w4]
+            else:
+                rec["note"] = "not a microsim code"
+        out.append(rec)
+    return {"records": out}
+
+
+# --- XTHG (docs/sc2-format/segments/xthg.md, reference/thing-ids-xthg.md) ----
+
+XTHG_RECORDS = 40
+XTHG_RECORD_SIZE = 12
+
+# Thing type (byte 0) -> name (docs/sc2-format/reference/thing-ids-xthg.md)
+THING_TYPES = {
+    0: None, 1: "airplane", 2: "helicopter", 3: "cargo ship", 4: "bulldozer (tool)",
+    5: "monster", 6: "explosion", 7: "police unit", 8: "fire unit", 9: "sailboat",
+    10: "train engine", 11: "train car", 12: "subway train engine", 13: "subway train car",
+    14: "military unit", 15: "tornado", 16: "flying rescuer",
+}
+TRAIN_TYPES = (10, 11, 12, 13)
+
+
+def decode_thing(i, r):
+    """One 12-byte XTHG record as named fields; None for a free record (type 0)."""
+    t = r[0]
+    if t == 0:
+        return None
+    out = {"record": i, "xtxt_value": 0xC9 + i, "type": t, "kind": THING_TYPES.get(t, "unknown"),
+           "row": r[3], "col": r[4], "xtxt_under": r[10]}
+    if t in TRAIN_TYPES:
+        out.update({"direction": r[1], "next_car": r[2], "height": r[5],
+                    "next_row": r[6], "next_col": r[7], "sprite_direction": r[8] & 7,
+                    "unused": [r[9], r[11]]})
+    else:
+        out.update({"direction": r[1], "state": r[2], "height": r[5],
+                    "sub_row": r[6], "sub_col": r[7], "target_row": r[8], "target_col": r[9],
+                    "extra": r[11]})
+    return out
+
+
+@decoder(b"XTHG")
+def decode_xthg(data):
+    """40 records of 12 bytes; record n is the object of XTXT value 0xC9 + n."""
+    recs = [decode_thing(i, data[i * XTHG_RECORD_SIZE:(i + 1) * XTHG_RECORD_SIZE])
+            for i in range(XTHG_RECORDS)]
+    return {"things": [r for r in recs if r is not None]}
+
+
+def xthg_turn_cw(data):
+    """XTHG after one clockwise view turn, as 0x465490 has the game do it (0x466410).
+
+    Record 0 is left alone. For every other used record: the tile moves like the maps,
+    (row, col) -> (127 - col, row); the 8-way direction turns by 2 (trains: the 4-way
+    direction by 1 and the sprite direction in byte 8 by 2); the second coordinate pair
+    (bytes 8, 9, or bytes 6, 7 for trains) moves like the tile; an airplane's runway
+    heading (byte 2, bits 4-6) turns by 2.
+    """
+    t = bytearray(data)
+    for i in range(1, XTHG_RECORDS):
+        r = t[i * XTHG_RECORD_SIZE:(i + 1) * XTHG_RECORD_SIZE]
+        kind = r[0]
+        if kind == 0:
+            continue
+        r[3], r[4] = (127 - r[4]) & 0xFF, r[3]
+        if kind in TRAIN_TYPES:
+            r[1] = (r[1] + 1) & 3
+            r[8] = (r[8] + 2) & 7
+            r[6], r[7] = (127 - r[7]) & 0xFF, r[6]
+        else:
+            r[1] = (r[1] + 2) & 7
+            r[8], r[9] = (127 - r[9]) & 0xFF, r[8]
+            if kind == 1:
+                r[2] = ((r[2] + 0x20) & 0x70) + (r[2] & 0x0F)
+        t[i * XTHG_RECORD_SIZE:(i + 1) * XTHG_RECORD_SIZE] = r
+    return bytes(t)
+
+
 # --- MISC (docs/sc2-format/segments/misc/README.md) ----------------------------
 #
 # 1200 big-endian 32-bit words. The game copies each into a variable of 32, 16 or
@@ -640,14 +792,14 @@ def misc_general(w):
         "view_centre": None if view == -1 else {"low7": view & 0x7F, "high": view >> 8 & 0xFF},
         "zoom": w[1029],
         "building_centre": {"row": w[1030], "col": w[1031]},
-        "microsim_population": w[1032],
+        "arcology_residents": w[1032],
         "unused_1033": w[1033],
         "sports_teams": w[1034],
         "zone_population": w[1035],
         "industry_concentration_bonus": w[1036],
         "heavy_industry_level": w[1037],
         "police_arrests": w[1038],
-        "police_not_overloaded": w[1039],
+        "prisons_have_room": w[1039],
         "disaster_thing": w[1040],
         "current_disaster": _name(DISASTERS, w[1041]),
         "disaster_active": w[1042],
@@ -905,7 +1057,7 @@ def _turn(data, size, item):
 
 def normalise(segments):
     """Turn {tag: decoded bytes} to compass 0 as the game would; returns a new dict.
-    XTHG is not adjusted (see the XTHG page)."""
+    XTHG records are turned with the maps."""
     seg = {tag: bytearray(data) for tag, data in segments.items()}
     misc = seg[b"MISC"]
     for _ in range(int.from_bytes(misc[8:12], "big") & 3):
@@ -927,6 +1079,8 @@ def normalise(segments):
                     bld[i] = TURN_XBLD[code]
                 else:
                     bit[i] |= 0x02
+        if b"XTHG" in seg:
+            seg[b"XTHG"] = bytearray(xthg_turn_cw(seg[b"XTHG"]))
     misc[8:12] = (0).to_bytes(4, "big")
     return {tag: bytes(data) for tag, data in seg.items()}
 

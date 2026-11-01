@@ -56,8 +56,7 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 
 | Question | Status | What we know | How to settle it |
 |---|---|---|---|
-| Which disaster does each of the XTXT markers `0xFB`, `0xFD` and `0xFE` belong to? | Inferred | `0xFF` is fire and `0xFC` flood (code); `0xFD`/`0xFE` move along roads like rioters. The disaster numbers have names ([general.md § Disasters](segments/misc/general.md#disasters)), most of them from OpenCity2k | Follow the dispatcher `0x45cf10` from each disaster number to the marker it writes |
-| Why do 27 moving-object tiles in 12 files not match their XTHG record's position? | Open | 1 048 of 1 075 marker tiles match XTHG bytes 3 and 4 | XTHG page (M4): look for a second position field, or stale markers |
+| Which of `0xFD` and `0xFE` marks a mass riot? | Open | Both are riots (disasters 3 and 13, `0x452fa0`); `0x461140` writes `0xFE` at the front and `0xFD` behind it | Follow disaster 13 in `0x45cf10` |
 | Why do 53 sign labels have no sign on the map? | Inferred: a disaster marker overwrote the sign | `0x461140` and `0x461190` write their markers over signs and leave the label ([xtxt.md](segments/xtxt.md#disaster-markers-0xfb0xff)) | Check whether the sign tool's edit path `0x44d7c0` can leave a label behind too |
 | Which routine fills XLAB slots 251–255 (team names), and where are they shown? | Open | The defaults are Llamas, Alpacas, Camels, Dromedaries and Army ants | Search for writes to the label buffer `0x4ca198` at + 251 × 25 |
 | Which version writes CNAM with the name length in byte 0, and which puts CNAM last? | Open | 57/107 files; 39 have CNAM last ([cnam.md](segments/cnam.md#which-files-have-which-form)). The same files have data in MISC words 1044–1070 ([general.md](segments/misc/general.md#words-10441199)) | Compare saves from the DOS, Mac and Network editions |
@@ -80,7 +79,6 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Is month index 0 January? | Inferred | The calendar and budget code only use the index (the budget months are the same index) | Find the month-name table (`0x4c71f8`, used by `0x4731e0` for the Budget window title) |
 | Why are the Health and Education floors swapped between a new city and a loaded one? | Unknown (probably a game bug) | `0x4e6750` has 90 and 150, `0x4e72b0` 150 and 90 | — |
 | Why do old Power % samples go negative in 3 files? | Inferred: an earlier version had no 100 cap | `CAPE.SC2`, `PETER2.SC2`, `CHICAGO.SCN`: −5 to −8 | — |
-| What is MISC word 1032? | Inferred: people living in large microsim buildings | The sum of the XMIC words at offset 4 of building types `0xEC`, `0xED`, `0xF3`–`0xF5`, `0xF8`, `0xFA`–`0xFE` (`0x44e390`) | XMIC page (M4) |
 
 ## MISC
 
@@ -91,7 +89,6 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Which half of word 1028 is the row? | Inferred | Low 7 bits and high byte; both 10–127 in the corpus | Read `0x412570`, or set the view in the game and save |
 | Who writes military base value 4 (navy)? | Inferred | No direct write found; 3 corpus files have it | Search for indirect writes to `0x4cc4e4`, or read the seaport code |
 | What do the weather types and the second index of the weather table (`0x4cb3e8`) mean? | Inferred (names from OpenCity2k) | The targets fit the names; 10 hurricane and 11 tornado are confirmed by the disaster code | Read the strings of the ids in `0x4e98d4`; find the writers of `0x4cb3e8` |
-| What exactly is word 1038? | Inferred: total arrests | Set by the police-station pass of `0x44e390` and fed into the next pass | Read the police part of `0x44e390` (XMIC page) |
 | Which industries does each demand adjustment in `0x468d30` touch? | Inferred | They depend on Pollution Controls, on this month's population growth and on the education quotient | Read the disassembly of `0x468d30` around the floating-point stores the decompile loses |
 | What exactly changes the R, C, I demand each month? | Inferred | The tax-rate table `0x4e9328` and the ordinances are confirmed; the floating-point part of `0x468150` is only partly readable | Read the disassembly of `0x468150` around the demand loop |
 | Does the Industry window show these words exactly? | Inferred | Its drawing code was not found | Find the window's paint routine (an indirect call) |
@@ -103,3 +100,19 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | What are the newspaper story types 1, 6, 8, `0x10`–`0x12`, `0x15`, `0x3D`–`0x3F`, `0x42`, and what do the story templates and per-type tables hold? | Inferred: monthly statistics news | Posted by `0x468150`; templates loaded by `0x4791d0` from records 1000–1005 of the `DATA` file | Parse `DATA_USA.DAT` and its index |
 | Does anything use the neighbours' economy figure? | Inferred: nothing | Only `0x468d30` updates it | — |
 | Which ratios does military growth keep, and why do 9 files have military counts that differ from the base on the map? | Inferred / Open | `0x4358b0` compares the military counts per base type; the counts are not recomputed on load | Read `0x4358b0` cases 2–5; check whether those files were edited or saved by the other version |
+
+## XMIC and XTHG
+
+| Question | Status | What we know | How to settle it |
+|---|---|---|---|
+| What rule does the stadium team dialog follow? | Inferred: one stadium per sport | `0x47c970` (from `0x440170`) sets XMIC words 4 and 6 and MISC word 1034; its handlers were not decompiled | Decompile the dialog class (reached only through a vtable) |
+| Why do 14 stadium records have sport 0 and team slot 0? | Unknown | 4 files | Look at the files' origin, or place a stadium and cancel the dialog |
+| What do the Australian, French and German builds change in the microsim window? | Unknown | `0x4501af` patches template entries; `0x44e390` has another Llama Dome formula | Read `0x4501af` and the language branches of `0x44e390` |
+| Why does XTXT `0x6F` trigger the opinion poll? | Inferred: meant for the mayor's house, a hard-coded value | `0x414b40` runs before the window for value `0x6F` (record 60) | Find which build puts the mayor's house there |
+| What are the museum's byte 1 and word 6 in some files? | Unknown | The Windows 95 game never writes them for museums | Check the files' origin (the other version) |
+| What do "Passengers/day" and "Annual Cost" count? | Inferred: trips since January; the funding level, not dollars | Counters `0x4c85a0`, `0x4c85a4`, `0x4c8600` (`0x457620`); funding fields of hospitals, schools, police and fire | Trace the increments; compare with the Budget window |
+| What does monster variant 3 leave behind? | Unknown | Variants 1 and 2 leave trees and water; 3 calls `0x440c50` with 200 | Read `0x440c50` |
+| What does `0x4cad44` switch? | Unknown | It keeps the monster at variant 0 and lets explosions start fires with disasters off | Find its writers |
+| Where does a cargo ship's first target (bytes 8, 9) come from? | Unknown | `0x452d00` does not set them | Read `0x456760` state 0 and `0x456c70` |
+| Why do 25 files hold more than 4 trains? | Inferred: the other game version allows more | `0x453600` refuses a fifth engine; 19 of the 25 files are from the other version | Compare with a DOS or Mac executable |
+| Are type 16 and sailboat byte 2 = 1 what players call "Maxis Man" and "Nessie"? | Inferred | No names in the game's strings; sprites 495/496 and 379 | Look at the sprites |

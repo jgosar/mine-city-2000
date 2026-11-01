@@ -1,6 +1,6 @@
 # XTXT: text and object index per tile
 
-One byte per tile. A non-zero value links the tile to **something drawn or named on top of it**: a sign the player placed, the name of a building with its own statistics (a *microsim*), a moving object such as a train, or a connection to a neighbouring city. The value is an **index**. The text itself is in [XLAB](xlab.md), and the details of microsims and moving objects are in XMIC and XTHG (pages planned).
+One byte per tile. A non-zero value links the tile to **something drawn or named on top of it**: a sign the player placed, the name of a building with its own statistics (a *microsim*), a moving object such as a train, or a connection to a neighbouring city. The value is an **index**. The text itself is in [XLAB](xlab.md), and the details of microsims and moving objects are in [XMIC](xmic.md) and [XTHG](xthg.md).
 
 ## At a glance
 
@@ -82,7 +82,7 @@ The delete action (`0x44ced0`) does nothing for these values (**Confirmed (code)
 
 A microsim is a building that keeps its own statistics and name: power plants, city hall, hospitals, police and fire stations, schools, stadiums, prisons, colleges, zoos, the statue, the mayor's house, water treatment and desalination plants, the arcologies and the Llama dome (**Confirmed (code)**: the codes whose entry in `0x4e7c9a` is between 1 and `0x10`: `0xC9`–`0xD3`, `0xD6`–`0xDB`, `0xF3`, `0xF4`, `0xFA`–`0xFF`).
 
-- When such a building is placed, `0x44cf60` takes the **first free XMIC record from 10 up**, writes the building code into its byte 0, writes the building's default name into XLAB slot record + `0x33`, and returns record + `0x33`. The caller writes that value into **every tile of the footprint** (**Confirmed (code)**; callers include `0x440c50` and `0x441400`). Default names come from the table at `0x4c6a8a` (25 bytes per building code); names the player chose earlier come from `0x4cde68`.
+- When such a building is placed, `0x44cf60` takes the **first free XMIC record from 10 up**, writes the building code into its byte 0, writes the building's default name into XLAB slot record + `0x33`, and returns record + `0x33`. The caller writes that value into **every tile of the footprint** (**Confirmed (code)**; callers include `0x440c50` and `0x441400`). Default names come from the table at `0x4c6a8a` (25 bytes per building code); names the player chose earlier come from `0x4cde68`. The record's figures are described in [xmic.md](xmic.md).
 - **Verified (data)**: each value covers 1, 4, 9 or 16 tiles in a file, the footprint sizes of [xbld.md](xbld.md#footprints-and-anchors).
 - **Verified (data)**: 69 296 of the 71 643 tiles (96.7%) sit on the building code stored in byte 0 of their XMIC record. Nearly all the others are on empty land (XBLD `0x00`): stale values left when a building was demolished (1 973 tiles below a former arcology `0xFE`, 297 below a police station `0xD2`, 43 below an arcology `0xFB`). By file: 97/114 match everywhere, 3 have only these leftovers on empty land, 4 have a value on another building.
 - **When all 140 records are taken**, placing an arcology takes over the first record whose building is not an arcology (code below `0xFB`) and clears that building's XTXT tiles (**Confirmed (code)**, `0x44cf60`).
@@ -90,11 +90,11 @@ A microsim is a building that keeps its own statistics and name: power plants, c
 
 ### Moving objects: `0xC9`–`0xF0`
 
-The tile holds a vehicle or other moving object from the 40 XTHG records: value − `0xC9` is the record number. Which kinds of object these are belongs to the XTHG page (planned); the corpus tiles are mostly rails, so trains are common (**Inferred**).
+The tile holds a vehicle or other moving object from the 40 XTHG records: value − `0xC9` is the record number. The objects are described in [XTHG](xthg.md); the corpus tiles are mostly rails because trains are the most common objects (**Verified (data)**: 588 of 1 119 records). The record keeps the value the marker replaced in its byte 10 and puts it back when the object moves ([xthg.md](xthg.md#the-xtxt-marker)).
 
 - The routines that move these objects write the record number + `0xC9` (in the code: index − `0x37` as a signed byte) on the tile they enter: `0x450690`, `0x452d00`, `0x452fa0`, `0x453280`, `0x453460`, `0x453600`, `0x455500`, `0x45f090`; `0x442a30` writes `0xC9` (**Confirmed (code)**).
 - The renderer `0x44d9a0` calls `0x450bb0` with the record number to draw the object (**Confirmed (code)**).
-- **Verified (data)**: bytes 3 and 4 of the XTHG record hold the tile's (row, col) for 1 048 of 1 075 tiles; 80 of the 92 files with these values match everywhere. Most of these tiles are rails (`0x2C`, `0x2D`) and empty land. `0xC9` (record 0) occurs in 1 file.
+- **Verified (data)**: bytes 3 and 4 of the XTHG record hold the tile's (row, col) for 1 048 of 1 075 tiles; 80 of the 92 files with these values match everywhere. Most of these tiles are rails (`0x2C`, `0x2D`) and empty land. `0xC9` (record 0, the tools' bulldozer cursor) occurs in 1 file.
 
 ### Neighbour connections: `0xFA`
 
@@ -117,9 +117,9 @@ These values exist only while a disaster runs. The dispatcher `0x45cf10` starts 
 | Value | Disaster | Confidence |
 |---|---|---|
 | `0xFF` | **fire**: spreads to random neighbours, goes out on water; `0x4611e0` turns a burnt tile into rubble | **Confirmed (code)** `0x460e10`, `0x461330`, `0x45e2a0`, `0x483250` |
-| `0xFE`, `0xFD` | **riots** (**Inferred**): a front that moves along roads: `0x461140` sets `0xFE` on the next tile and leaves `0xFD` behind; `0x4612d0` clears both | **Confirmed (code)** for the mechanism. OpenCity2k names `0xFD` rioters and `0xFE` rioters of mass riots, which fits |
+| `0xFE`, `0xFD` | **riots** (disasters 3 and 13, `0x452fa0`): a front that moves along roads: `0x461140` sets `0xFE` on the next tile and leaves `0xFD` behind; `0x4612d0` clears both | **Confirmed (code)** for the mechanism. OpenCity2k names `0xFD` rioters and `0xFE` rioters of mass riots, which fits |
 | `0xFC` | **flood water**: `0x461000` marks dry tiles up to a water level, removes signs and microsims there, and clears XTRF; it recedes on the timer at `0x4c93a8` | **Confirmed (code)** `0x45db00`, `0x45d4e0`, `0x461000`, `0x483250` |
-| `0xFB` | **toxic cloud** (**Inferred**): an effect on zoned buildings (XBLD `0x70`–`0xC5`) that ends on water | **Confirmed (code)** for the writers `0x45e590`, `0x45d8b0`, `0x45f5c0`, `0x45e2a0`, `0x461190`. The name is OpenCity2k's; which dispatcher case is which disaster is not traced |
+| `0xFB` | **toxic spill** (disasters 4 and 15, `0x452fa0`): an effect on zoned buildings (XBLD `0x70`–`0xC5`) that ends on water | **Confirmed (code)** for the writers `0x45e590`, `0x45d8b0`, `0x45f5c0`, `0x45e2a0`, `0x461190`. The flying rescuer targets `0xFB` for disasters 4 and 15 ([thing-ids-xthg.md](../reference/thing-ids-xthg.md#16-flying-rescuer)) |
 
 `0x461140` and `0x461190` only mark a tile whose value is below `0x33`, so a disaster can **overwrite a sign**. The sign's text stays in XLAB, which explains orphaned sign labels ([xlab.md](xlab.md#pitfalls-for-readers)).
 
@@ -144,7 +144,7 @@ For an `0xFA` tile the renderer builds a text in **XLAB slot 250**, used as a sc
 2. The neighbour's name is entry (compass + side) & 3 of the four 32-byte names at `0x4cad58`, cut to 20 characters.
 3. A space and the digit `'5'` + (*n* mod 5) are appended, where *n* is taken from the tile's position (giving signs such as "Cats Corner 5" or "Oak Creek 6").
 
-Because the neighbour is chosen with the compass, the same edge shows the same neighbour whichever way the view is turned (**Inferred**). Where the four neighbour names are saved is not traced yet (**Unknown**); they are not in XLAB.
+Because the neighbour is chosen with the compass, the same edge shows the same neighbour whichever way the view is turned (**Inferred**). The four neighbour names are saved as name ids in MISC ([neighbours.md](misc/neighbours.md#names)).
 
 ## Rotation
 
@@ -167,7 +167,7 @@ The rotation routines `0x465490` and `0x466660` move every XTXT byte to its new 
 - **XTXT is not "the label index".** Only values 1–`0xC8` name an XLAB slot. `0xC9`–`0xF0` point into XTHG and `0xFA` to a neighbour name. A reader that looks up every non-zero value in XLAB shows nonsense for trains and connections.
 - **A microsim value spans the whole footprint.** Count microsims by distinct value, not by tile.
 - **Stale values on empty land.** A demolished microsim can leave its value on bare tiles (3/114 files). Check the XBLD code before trusting it.
-- **Moving-object values are a snapshot.** They mark where objects were at the moment of saving and can disagree with XTHG (27 tiles in 12 files).
+- **Moving-object values are a snapshot.** They can disagree with XTHG (27 tiles in 12 files): ships on the map edge, stale fire units, trains ([xthg.md](xthg.md#the-xtxt-marker)). On a marked tile the sign or microsim value is in the record's byte 10.
 - **Slot 250 is not a real label.** It holds whichever connection sign was drawn last ([xlab.md](xlab.md#label-slots)).
 - **Do not write `0xFB`–`0xFF`.** They only make sense together with a running disaster.
 - **`0xFB`–`0xFF` are not the team names.** The teams are XLAB slots 251–255, the same numbers, but no XTXT value points to them ([xlab.md](xlab.md#slots-251255-sports-teams)).

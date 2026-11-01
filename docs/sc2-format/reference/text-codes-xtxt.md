@@ -19,13 +19,13 @@ Every value an [XTXT](../segments/xtxt.md) byte can hold. Long ranges are collap
 | `0x3B` | libraries (`0xF5`) | 59 | XMIC record 8 | 2 505 / 78 | **Confirmed (code)**, **Verified (data)** |
 | `0x3C` | marinas (`0xF8`) | 60 | XMIC record 9 | 4 176 / 73 | **Confirmed (code)**, **Verified (data)** |
 | `0x3D`–`0xC8` | microsim of one building; covers its whole footprint | value (61–200) | XMIC record value − `0x33` (10–149), byte 0 = the building's XBLD code | 71 643 / 104 | **Confirmed (code)** `0x44cf60`, **Verified (data)** 96.7% of tiles |
-| `0xC9`–`0xF0` | moving object | — | XTHG record value − `0xC9` (0–39); bytes 3, 4 = (row, col) | 1 075 / 92 | **Confirmed (code)** `0x44d9a0`, **Verified (data)** 97.5% of tiles |
+| `0xC9`–`0xF0` | moving object | — | [XTHG](../segments/xthg.md) record value − `0xC9` (0–39); bytes 3, 4 = (row, col); record 0 = the tools' cursor | 1 075 / 92 | **Confirmed (code)** `0x44d9a0`, **Verified (data)** 97.5% of tiles |
 | `0xF1`–`0xF9` | — | — | — | 0 / 0 | **Unused**: no writer found |
 | `0xFA` | neighbour connection on a road, rail or highway at the map edge | (250 used as scratch when drawn) | neighbour name at `0x4cad58` | 878 / 76 | **Confirmed (code)** `0x449bb0`, `0x449f50`, `0x4621f0`, **Verified (data)** |
-| `0xFB` | disaster marker on zoned buildings: toxic cloud (**Inferred**) | — | — | 0 / 0 | **Confirmed (code)** `0x45e590`, `0x461190`; never saved |
+| `0xFB` | disaster marker on zoned buildings: toxic spill, pollution accident (disasters 4, 15; `0x452fa0`) | — | — | 0 / 0 | **Confirmed (code)** `0x45e590`, `0x461190`; never saved |
 | `0xFC` | flood water | — | — | 0 / 0 | **Confirmed (code)** `0x461000`; never saved |
-| `0xFD` | trail behind a front moving along roads: rioters (**Inferred**) | — | — | 0 / 0 | **Confirmed (code)** `0x461140`, `0x4612d0`; never saved |
-| `0xFE` | front moving along roads: rioters (**Inferred**) | — | — | 0 / 0 | **Confirmed (code)** `0x461140`, `0x4612d0`; never saved |
+| `0xFD` | trail behind a front moving along roads: riots (disasters 3, 13; `0x452fa0`) | — | — | 0 / 0 | **Confirmed (code)** `0x461140`, `0x4612d0`; never saved |
+| `0xFE` | front moving along roads: riots (disasters 3, 13; `0x452fa0`) | — | — | 0 / 0 | **Confirmed (code)** `0x461140`, `0x4612d0`; never saved |
 | `0xFF` | fire | — | — | 0 / 0 | **Confirmed (code)** `0x460e10`, `0x4611e0`; never saved |
 
 Details and the code behind each range: [xtxt.md § Values](../segments/xtxt.md#values). The labels are described on [xlab.md](../segments/xlab.md#label-slots).
