@@ -42,7 +42,7 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 
 ## Segment table
 
-"Decoded size" is the size the game decodes the segment into. It is fixed, and every file in the corpus matches it exactly (**Confirmed (code), Verified (data)** 114/114; see [container.md § Segment table](container.md#segment-table)). "Byte order fix-up" is what the loader does to the decoded bytes before use. Where the Page column says *planned*, the purpose column still summarises the older documents; it gets confirmed when that page is written.
+"Decoded size" is the size the game decodes the segment into. It is fixed, and every file in the corpus matches it exactly (**Confirmed (code), Verified (data)** 114/114; see [container.md § Segment table](container.md#segment-table)). "Byte order fix-up" is what the loader does to the decoded bytes before use.
 
 | Tag | Stored | Decoded size | Shape | Byte order fix-up | Purpose | Page |
 |---|---|---|---|---|---|---|
@@ -67,10 +67,10 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 | `XPOP` | RLE | 1024 | 32 × 32 × byte | none | Building density (not people) | [minimaps.md](segments/minimaps.md#xpop-building-density) |
 | `XROG` | RLE | 1024 | 32 × 32 × byte | none | Rate of growth (127 and 128 = no change) | [minimaps.md](segments/minimaps.md#xrog-rate-of-growth) |
 | `XGRP` | RLE | 3328 | 16 × 52 × int32 | each 4-byte word big-endian | Graph window history: 16 statistics × 52 samples (12 monthly, 20 half-yearly, 20 five-yearly), newest first | [xgrp.md](segments/xgrp.md) |
-| `TEXT` | raw | 4-byte id + text | string | id is **little-endian** | Scenario briefing texts (two per file) | planned |
-| `SCEN` | raw | 4-byte id + record | record | id is **little-endian** | Scenario goals, disaster, time limit | planned |
-| `PICT` | raw | 4-byte id + image | image | id is **little-endian** | Scenario picture | planned |
-| `TMPL` | raw | varies | records | — | Field names for `SCEN`; **never read** by the game | planned |
+| `TEXT` | raw | 4-byte id + text | string | id is **little-endian** | Scenario texts: list description (id `0x80`) and briefing (id `0x81`) | [text.md](segments/text.md) |
+| `SCEN` | raw | 4-byte id + 48 or 52 bytes | record | id is **little-endian**; the fields are big-endian, swapped by `0x4345c0` | Scenario disaster, time limit and goals | [scen.md](segments/scen.md) |
+| `PICT` | raw | 4-byte id + image | image | id and the size header are **little-endian** | Scenario picture, 65 × 65, `PAL_MAC.BMP` colours | [pict.md](segments/pict.md) |
+| `TMPL` | raw | varies | records | — | Field names for the 48-byte `SCEN`; **never read** by the game | [scen.md § TMPL](segments/scen.md#tmpl) |
 
 Notes:
 

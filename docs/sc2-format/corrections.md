@@ -19,7 +19,7 @@ Both are good, and most of what they say holds. This page lists only where the W
 | MISC word 0 | OpenCity2k: "header, unknown" | **File version**: must be 0x122, otherwise the game refuses the file | [container.md § Version check](container.md#version-check) |
 | MISC words 124–379 (building counts) | djm: tile counts per building code | Correct, but the game **recomputes** them from XBLD and XZON on every load, so the stored values are never used. Tiles in the military zone are not counted | [container.md § After the walk](container.md#after-the-walk), [tile-counts.md](segments/misc/tile-counts.md#building-counts-words-124379) |
 | Scenario segment order | Not stated | `TEXT`, `SCEN` and `PICT` are looked up by tag and id, so their position does not matter | [container.md § Scenario segments](container.md#scenario-segments) |
-| TEXT maximum length | OpenCity2k: unknown | The game reads at most **768 bytes** of text | [container.md § Scenario segments](container.md#scenario-segments) |
+| TEXT maximum length | OpenCity2k: unknown | The game reads at most **768 bytes** of text | [container.md § Scenario segments](container.md#scenario-segments), [text.md](segments/text.md#layout) |
 | PICT size | Not stated | The game reads at most **4300 bytes** | [container.md § Scenario segments](container.md#scenario-segments) |
 | Byte order of scenario ids | OpenCity2k shows the bytes (`80 00 00 00`) without naming an order | **Little-endian**, unlike the rest of the file | [conventions.md § Byte order](conventions.md#byte-order) |
 | TMPL | OpenCity2k: "no function in actual game usage" | Confirmed: `SIMCITY.EXE` never refers to the tag | [container.md § Scenario segments](container.md#scenario-segments) |
@@ -188,3 +188,20 @@ OpenCity2k numbers MISC by byte offset (hex), djm by word (#*n*); the rows give 
 | XTHG record 0 | OpenCity2k: "first chunk appears to be a header" | The drag cursor of the bulldozer and level-terrain tools (type 4); not a header and not a vehicle | [xthg.md § Record 0](segments/xthg.md#record-0) |
 | XTHG types 4, 12, 13, 16 | OpenCity2k: 4 unknown; 12, 13 "related to a train in a subway tunnel"; ids 1–15 only | 4 is the tool cursor; 12 and 13 are a subway engine and car (a train underground, not drawn); 16 is the flying rescuer | [thing-ids-xthg.md](reference/thing-ids-xthg.md) |
 | XTHG bytes 6–11 | OpenCity2k: px, py, dx, dy, label, goal | Sub-tile position, target (trains: next tile and sprite direction), the XTXT value under the object, a per-type extra (fire flag, monster variant, rescuer target) | [xthg.md § Layout](segments/xthg.md#layout) |
+
+## Scenario segments
+
+| Topic | Older document says | What the game does | Evidence |
+|---|---|---|---|
+| TEXT `0x81` | OpenCity2k: the description shown when the scenario starts | Correct, and required: without it the scenario does not start (message `0xEF`). The two texts are found by id, so their order does not matter (FLINT stores `0x81` first) | [text.md § The two texts](segments/text.md#the-two-texts) |
+| TEXT character set | Not stated | Converted by `0x42a080`; the effect is reading **Mac Roman**, not the Windows code page of the other strings | [text.md § Character set](segments/text.md#character-set) |
+| SCEN length | OpenCity2k: 48 bytes after the id, then "Padding (Optional)" of 4 zero bytes | The Windows 95 game reads 52 bytes: a **life expectancy goal** and an **education goal** (16-bit each) follow the land value goal, and the later fields move by 4. The 48-byte form is the older one, and TMPL describes it | [scen.md § Two forms](segments/scen.md#two-forms-48-and-52-bytes) |
+| SCEN byte order | OpenCity2k: not stated | The id is little-endian; every field after it is big-endian | [scen.md § Layout](segments/scen.md#layout) |
+| SCEN disaster location | OpenCity2k: X, then Y | Row, then column, in the stored map at the file's compass | [scen.md § The disaster spot](segments/scen.md#the-disaster-spot) |
+| SCEN residential, commercial, industrial goals | OpenCity2k: "Residential Population" and so on | Compared with the residential, commercial and industrial **tax bases** (budget words 479, 506, 533) | [scen.md § Layout](segments/scen.md#layout) |
+| SCEN cash goal | OpenCity2k: "total cash on hand, not counting debts from bonds" | Funds minus the **number** of bonds (MISC word 5 − word 6), not their value | [scen.md § Layout](segments/scen.md#layout) |
+| SCEN time limit | OpenCity2k: months | Months, counted down by the monthly goal check; the scenario is lost at 0. Meeting all goals wins at once, and play goes on | [scen.md § How the game uses it](segments/scen.md#how-the-game-uses-it) |
+| TMPL | OpenCity2k: no function in the game; identical to SCEN | Never read, correct. It matches only the 48-byte SCEN | [scen.md § TMPL](segments/scen.md#tmpl) |
+| PICT size | OpenCity2k: the game uses the X/Y size in the header | The game ignores the header and always reads **65 × 65** pixels, rows 66 bytes apart; MALIBU's 66th row is not drawn | [pict.md § Layout](segments/pict.md#layout) |
+| PICT row end | OpenCity2k: `0xFF` in older scenarios, `0x00` in newer ones | `0x00` in 15 files, `0xFF` in 3; the game skips it | [pict.md § Layout](segments/pict.md#layout) |
+| PICT colours | OpenCity2k: `PAL_MSTR.BMP` indices with a −16 offset and some special cases; black unexplained | Indices into **`PAL_MAC.BMP`** with entries 0 and 255 swapped (0 is black); for 2–154 that equals `PAL_MSTR` + 16 | [pict.md § Colours](segments/pict.md#colours) |

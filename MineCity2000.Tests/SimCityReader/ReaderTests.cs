@@ -38,11 +38,24 @@ public class ReaderTests
   public void scenarioFile_isRead()
   {
     byte[] file = new IffBuilder()
-      .extraSegment("TEXT", new byte[] { 0x81, 0, 0, 0, (byte)'H', (byte)'i', 0 })
+      .extraSegment("TEXT", new byte[] { 0x80, 0, 0, 0, (byte)'H', (byte)'i' })
+      .extraSegment("TEXT", new byte[] { 0x81, 0, 0, 0, (byte)'H', (byte)'o' })
       .extraSegment("SCEN", new byte[] { 0x80, 0, 0, 0, 0, 0 })
       .build();
     CityData city = Reader.read(file, "x");
     Assert.Empty(city.getBuildings());
+  }
+
+  [Fact]
+  public void repeatedSegment_lastOneWins()
+  {
+    byte[] misc = new byte[4096];
+    misc[IffBuilder.MISC_WATER_LEVEL_OFFSET] = 7;
+    byte[] file = new IffBuilder()
+      .waterLevel(5)
+      .extraSegment("MISC", IffBuilder.rle(misc))
+      .build();
+    Assert.Equal(7, Reader.read(file, "x").getWaterLevel());
   }
 
   [Fact]

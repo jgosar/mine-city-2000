@@ -26,7 +26,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x42ae10` | `ReadScenarioSegment` | Finds a `TEXT`/`SCEN`/`PICT` segment by tag and little-endian id and reads its body | [container.md](container.md#scenario-segments) |
 | `0x42cef0`, `0x42d940` | `AllocCityBuffers`?, `FreeCityBuffers`? | Allocate and free the segment buffers | [minimaps.md](segments/minimaps.md#layout) |
 | `0x42d820` | `AllocateGraphs` | Allocates the 3328-byte XGRP buffer and points the 16 series pointers (`0x4cc470`) at it, 0xD0 bytes apart | [xgrp.md](segments/xgrp.md#layout) |
-| `0x432350` | `SaveCity` | Save routine: writes CNAM first, then each segment from its buffer | [cnam.md](segments/cnam.md#how-the-game-uses-it) |
+| `0x432350` | `SaveCity` | Save routine: writes CNAM first, then each segment from its buffer. It writes no TEXT, SCEN or PICT, so a saved scenario is an ordinary city | [cnam.md](segments/cnam.md#how-the-game-uses-it) |
 | `0x432990` | `WriteCnam` | Writes the tag, length 32, byte `0x1F`, then 31 bytes starting at the name (whatever follows it in memory) | [cnam.md](segments/cnam.md#layout) |
 | `0x430c90` | `UnconvertLabels` | Before saving: turns the 256 C-string labels back into length + text; writes only bytes 0 … length | [xlab.md](segments/xlab.md#layout) |
 | `0x40e250` | `ResetCityData` | New city: clears the overlays (XROG to `0x7F`), zeroes all 832 XGRP values and sets the graph maxima from `0x4e6750`, resets the power and water figures | [minimaps.md](segments/minimaps.md#xrog-rate-of-growth), [xgrp.md](segments/xgrp.md#graph-scale-not-stored) |
@@ -46,6 +46,7 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x42a880` | `Swap16Array` | Swaps every 2-byte word of a buffer (ALTM) |
 | `0x42a820` | `SwapMicrosims` | Swaps the 16-bit words at bytes 2, 4 and 6 of every 8-byte record (XMIC) |
 | `0x42a8c0` | `Swap16` | Reverses the 2 bytes of a 16-bit value |
+| `0x42a900` | `Swap16InPlace` | Swaps a 16-bit value in place (SCEN fields) |
 
 ## Simulation cycle
 
@@ -261,6 +262,30 @@ The functions and variables in SimCity 2000 for Windows 95 that these pages cite
 | `0x472510` | `OpinionPoll` | Samples 100 citizens over 7 problems, ranks them (`0x4c9410`) and sets the mayor rating (`0x4e9904`) | [newspapers.md](segments/misc/newspapers.md#the-three-kinds-of-slot) |
 | `0x445460` | `ViewCentreTile`? | The tile under a screen point, packed as low byte and high byte (used by the saver for MISC word 1028) | [general.md](segments/misc/general.md#view) |
 
+## Scenarios
+
+| Address | Our name | What it does | Cited in |
+|---|---|---|---|
+| `0x42f500`, `0x42f820` | `StartScenario` | The two routines that start a scenario: `0x4345c0`, then read `TEXT 0x81` (message `0xEF` if it is missing), convert it and show it | [scen.md](segments/scen.md#how-the-game-uses-it), [text.md](segments/text.md#how-the-game-uses-it) |
+| `0x4345c0` | `LoadScenario` | Loads the file as a city (`0x4300e0`), sets the scenario flag `0x4cad44`, reads `SCEN 0x80` into `0x4cc918` and swaps its fields from big-endian, copies the disaster to MISC word 28 (`0x4ca420`) and the spot to `0x4caa58`/`0x4caa5c` (string 239 if there is no SCEN) | [scen.md](segments/scen.md#how-the-game-uses-it) |
+| `0x413520` step 22 | `ScenarioCheck` | Monthly, while `0x4cad44` is set: all goals met → `0x4149b0(1)`; otherwise the time limit goes down by one, and at 0 → `0x4149b0(0)`. For every city: funds below −100000 → `0x4149b0(2)` | [scen.md](segments/scen.md#how-the-game-uses-it) |
+| `0x4149b0` | `EndScenario` | 0 lost (string 286), 1 won (string 285), 2 bankrupt (string 287); clears `0x4cad44`; after a loss sets the game state `0x4c7334` to 7 | [scen.md](segments/scen.md#how-the-game-uses-it) |
+| `0x405ab0` | `MainTick` | Among other things starts the pending disaster (`0x45cf10`) on the next tick | [scen.md](segments/scen.md#how-the-game-uses-it) |
+| `0x425854` | `ScenarioListInit`? | Scenario dialog set-up: lists the `*.scn` files, loads `pal_mac.bmp` from the graphics folder, creates the 65 × 65 bitmap | [pict.md](segments/pict.md#how-the-game-uses-it) |
+| `0x426180` | `ReadScenarioListData` | Reads `PICT 0x80` and `TEXT 0x80` of one scenario file | [text.md](segments/text.md#how-the-game-uses-it), [pict.md](segments/pict.md#how-the-game-uses-it) |
+| `0x425e40` | `DrawScenarioEntry` | Draws one list entry: the picture, and `TEXT 0x80` beside it (`\r` and tab shown as spaces) | [text.md](segments/text.md#how-the-game-uses-it), [pict.md](segments/pict.md#how-the-game-uses-it) |
+| `0x426260` | `IsScenarioFileNew` | True if the file's creation date is after 1993-12-30; picks how the picture's colours are mapped | [pict.md](segments/pict.md#colours) |
+| `0x42a080` | `ConvertScenarioText` | `OemToCharA`, 31 character fix-ups, and drops a `-` before `!:?;,.`; the net effect is reading Mac Roman | [text.md](segments/text.md#character-set) |
+| `0x42dc20` | `ShowMessageWindow`? | Shows the `TEXT 0x81` briefing | [text.md](segments/text.md#how-the-game-uses-it) |
+| `0x474bc0` | `CreateDib8` | Creates an 8-bit top-down bitmap | [pict.md](segments/pict.md#how-the-game-uses-it) |
+| `0x475790` | `CopyPictPixels` | Copies 65 rows of 65 bytes, 66 bytes apart, from body + 4 | [pict.md](segments/pict.md#layout) |
+| `0x4759b0` | `SetDibColours` | Gives the bitmap the `PAL_MAC.BMP` colours | [pict.md](segments/pict.md#colours) |
+| `0x475e20`, `0x475c90` | `RemapDibOld` | Files dated up to 1993-12-30: nearest-colour remap without the swap | [pict.md](segments/pict.md#colours) |
+| `0x475e60` | `RemapDibSwap` | Swaps colours 0 and 255, then the nearest-colour remap | [pict.md](segments/pict.md#colours) |
+| `0x476d60` | `NearestColour` | Nearest entry of the game palette `0x4c7010` | [pict.md](segments/pict.md#colours) |
+| `0x45e590` | toxic spill | Writes XTXT `0xFB` (toxic spill marker) at the disaster spot | [scen.md](segments/scen.md#the-disaster-spot) |
+| `0x45f2b0` | meltdown | Uses the disaster spot; without one, the first XBLD `0xCB` tile | [scen.md](segments/scen.md#the-disaster-spot) |
+
 ## Variables
 
 ### Segment buffers
@@ -365,7 +390,11 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | `0x4cc4d8` | Road neighbour connections | recounted by `0x434b70` from XTXT `0xFA` |
 | `0x4ca3f0` | Rail and highway neighbour connections | not traced yet |
 | `0x4e99c0` … `0x4e99dc` | Moving objects of each kind (airplanes, helicopters, cargo ships, rescuers, sailboats, monsters, train engines, tornadoes), recounted in each animation pass; the spawn limits read them | `0x450890` |
-| `0x4caa58`, `0x4caa5c` | Disaster spot (row, col) | set by the dispatcher |
+| `0x4caa58`, `0x4caa5c` | Disaster spot (row, col) | set from SCEN by `0x4345c0`, and by the dispatcher |
+| `0x4cad44` | Scenario in progress ([scen.md](segments/scen.md#how-the-game-uses-it)); also keeps the monster at variant 0 and lets explosions start fires with disasters off | set by `0x4345c0` and `0x42de20` (state `0xd`); cleared by `0x4149b0` and `0x40e250`; read by `0x413520` and `0x45ee10` |
+| `0x4cc918` | SCEN record (52 bytes, Windows 95 layout, native byte order; a 48-byte body leaves bytes 48–51 as they were) | `0x4345c0` |
+| `0x4c7334` | Game state; 7 after a lost scenario (**Inferred**: ends the game) | `0x4149b0` |
+| `0x4ea04c` | 1 when the display has fewer than 5 bits per pixel; the scenario picture is then not remapped | — |
 | `0x4c7da0`/`0x4c7dc0`, `0x4c85b0`/`0x4c85d0`, `0x4c85f8`/`0x4c8608` | Positions of the police, fire and military units (not saved; turned by `0x466410`) | `0x44f910` |
 | `0x4c93a8` | Flood timer | reset by `0x434b70` |
 | `0x4c93b4` | Developed tiles (XBLD above `0x1C`, or zoned) | recomputed by `0x434b70` and `0x46a840` |
@@ -381,7 +410,8 @@ Every variable the MISC loader `0x431330` fills, in word order ([misc/README.md]
 | Address | Contents |
 |---|---|
 | `0x4e736c`–`0x4e740c` | The 21 tags the city loader knows, 8 bytes apart: CNAM, XGRP, XROG, XPOP, XFIR, XPLC, XCRM, XVAL, XPLT, XTRF, XBIT, XTHG, XMIC, XLAB, XTXT, XUND, XZON, XBLD, XTER, ALTM, MISC |
-| `0x4e7214`, `0x4e7108`, `0x4e61b8` | The tags `SCEN`, `PICT`, `TEXT` used by the scenario code |
+| `0x4e7214`, `0x4e7108`, `0x4e61b8` | The tags `SCEN`, `PICT`, `TEXT` used by the scenario code. Only read: nothing writes these segments |
+| `0x4c7010` | The game palette (256 RGB); the scenario picture's colours are mapped to their nearest entry |
 | `0x4e721c`, `0x4e7224` | `SCDH`, `FORM` |
 | `0x4e7414` | "Unable To Load. Old File Version = " |
 | `0x4e8fa0`, `0x4e9110` | XBLD remap tables for one clockwise / counter-clockwise view turn (256 bytes each, inverses of each other) |

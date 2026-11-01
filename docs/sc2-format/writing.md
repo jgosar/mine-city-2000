@@ -78,6 +78,14 @@ See [misc/README.md § Recomputed and trusted](segments/misc/README.md#recompute
 - A tool that changes MISC words 18–22 or 1001 changes only the next monthly sample; the history stays as it is.
 - When generating history, keep the block rules (slot 12 is an earlier slot 0, slot 32 an earlier slot 12); the game does not check them ([xgrp.md § When samples are taken](segments/xgrp.md#when-samples-are-taken)).
 
+## Scenarios
+
+- **TEXT.** Write two segments with ids `0x80` (the short description in the scenario list) and `0x81` (the briefing; without it the scenario does not start). Plain ASCII, or Mac Roman for accented letters; at most 768 bytes; no zero byte. `\r` is optional, as the game wraps the text itself ([text.md](segments/text.md)).
+- **SCEN.** Id `0x80` little-endian, every field big-endian. Write the 52-byte form for the Windows 95 game; a 48-byte body leaves the last 4 bytes of the game's buffer as they were. 0 means "no goal" or "no limit", disaster 0 none. The disaster spot is (row, col) in stored coordinates. Make sure the goals are not met at load, or the scenario is won at the first monthly check ([scen.md](segments/scen.md)).
+- **PICT.** One segment with id `0x80`: width 65 and height 65 (16-bit little-endian), then 65 rows of 65 colour bytes and one end byte (`0x00`), 4294 bytes after the id. Avoid colours 0 and 255 if they must not depend on the file's date ([pict.md](segments/pict.md#colours)).
+- **TMPL** is optional and never read.
+- The game's save routine writes none of these, so saving a scenario in the game gives an ordinary city; a tool that round-trips a scenario must copy them itself.
+
 ## Not yet known
 
 - Which other stored values the game trusts without checking, and which combinations of segments it needs to be consistent (for example XBLD with XZON, XBIT and XTXT).

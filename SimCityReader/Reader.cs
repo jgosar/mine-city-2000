@@ -62,7 +62,8 @@ namespace com.mc2k.SimCityReader
                         offset++;
                     }
 
-                    segments.Add(segmentName, new Segment(segmentName, segmentBytes));
+                    // a repeated tag replaces the earlier one, as in the game's loader; a scenario has two TEXT segments
+                    segments[segmentName] = new Segment(segmentName, segmentBytes);
                 }
             }
             catch (Exception ex) when (ex is IndexOutOfRangeException || ex is OverflowException || ex is ArgumentException)

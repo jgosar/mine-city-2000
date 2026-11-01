@@ -857,6 +857,121 @@ def xthg_misc_link(f):
                                    "record of type %d" % recs[v][0] if 0 <= v < 40 else str(v))
 
 
+# --- SCEN and TMPL (docs/sc2-format/segments/scen.md) ---------------------------
+
+@check
+def scen_layout(f):
+    data = _seg(f, b"SCEN")
+    if data is None:
+        yield "no SCEN"
+        return
+    body = data[4:]
+    yield "SCEN id = 0x%X" % struct.unpack("<I", data[:4])[0]
+    yield "SCEN body (after the id) = %d bytes" % len(body)
+    if len(body) == 48:
+        yield "48-byte body: bytes 30-47 all zero (both layouts read the same): %s" % (not any(body[30:]))
+    if len(body) > 48:
+        yield "52-byte body: bytes 48-51 all zero: %s" % (not any(body[48:52]))
+
+
+@check
+def scen_values(f):
+    data = _seg(f, b"SCEN")
+    if data is None:
+        return
+    s = sc2.decode_scen(data)
+    yield "disaster = %d (%s)" % (s["disaster"], s["disaster_name"])
+    yield "time limit (months) = %d" % s["time_limit_months"]
+    if s["disaster"]:
+        r, c = s["disaster_row"], s["disaster_col"]
+        yield "disaster spot inside the map: %s" % (r < 128 and c < 128)
+        if s["disaster"] == 9:
+            yield "meltdown spot on a nuclear plant tile (XBLD 0xCB) in stored coordinates: %s" % (
+                _seg(f, b"XBLD")[r * 128 + c] == 0xCB)
+    goals = [k for k in s if k.endswith(("_goal", "_limit")) and s[k]] + [
+        "build_item_%d" % k for k in (1, 2) if s["build_item_%d" % k]]
+    yield "goals set: %s" % (", ".join(goals) or "none")
+
+
+@check
+def scen_goals_at_load(f):
+    data = _seg(f, b"SCEN")
+    if data is None:
+        return
+    s = sc2.decode_scen(data)
+    g = lambda k: s.get(k) or 0
+    w = sc2.misc_words(_seg(f, b"MISC"))
+    met = (g("city_size_goal") <= w[1035] and g("residential_goal") <= w[479] and
+           g("commercial_goal") <= w[506] and g("industrial_goal") <= w[533] and
+           g("funds_goal") <= w[5] - w[6] and g("land_value_goal") <= w[10] and
+           g("life_expectancy_goal") <= w[18] and g("education_goal") <= w[19] and
+           not 0 < g("pollution_limit") < w[13] and not 0 < g("crime_limit") < w[11] and
+           not 0 < g("traffic_limit") < w[12] and
+           all(not s["build_item_%d" % k] or w[124 + s["build_item_%d" % k]] >= g("build_item_%d_tiles" % k)
+               for k in (1, 2)))
+    yield "goals already met by the stored MISC values: %s" % met
+
+
+@check
+def tmpl_fields(f):
+    data = _seg(f, b"TMPL")
+    if data is None:
+        yield "no TMPL"
+        return
+    t = sc2.decode_tmpl(data)
+    yield "TMPL id = 0x%X, %d fields" % (t["id"], len(t["fields"]))
+    yield "TMPL fields add up to %d bytes" % sum(x["bytes"] or 0 for x in t["fields"])
+    yield "TMPL types only DBYT/DWRD/DLNG: %s" % all(x["bytes"] for x in t["fields"])
+    scen = _seg(f, b"SCEN")
+    yield "file has SCEN: %s, SCEN body = %s bytes" % (scen is not None, len(scen) - 4 if scen else "-")
+
+
+# --- TEXT and PICT (docs/sc2-format/segments/text.md, pict.md) ----------------
+
+def _scenario(f, tag):
+    return [s for s in f.c.segments if s.tag == tag]
+
+
+@check
+def text_segments(f):
+    texts = _scenario(f, b"TEXT")
+    if not texts:
+        return
+    ids = sorted(sc2.scenario_id(s.data) for s in texts)
+    yield "TEXT ids %s" % " ".join("0x%02X" % i for i in ids)
+    for s in texts:
+        body = s.data[4:]
+        name = "TEXT 0x%02X" % sc2.scenario_id(s.data)
+        yield "%s: at most 768 bytes: %s" % (name, len(body) <= sc2.TEXT_LIMIT)
+        yield "%s: bytes 0x20-0x7E, CR and tab only: %s" % (
+            name, all(0x20 <= b < 0x7F or b in (0x0D, 0x09) for b in body))
+        yield "%s: contains CR: %s" % (name, b"\r" in body)
+        yield "%s: contains LF or zero: %s" % (name, b"\n" in body or b"\0" in body)
+
+
+@check
+def pict_segments(f):
+    picts = _scenario(f, b"PICT")
+    if not picts:
+        return
+    yield "PICT segments: %d" % len(picts)
+    for s in picts:
+        d = sc2.decode_pict(s.data)
+        body = s.data[4:]
+        yield "PICT id 0x%02X" % d["id"]
+        yield "PICT stored size %dx%d, body %d bytes" % (d["stored_width"], d["stored_height"], len(body))
+        yield "PICT body covers the 65 x 65 pixels the game reads: %s" % (
+            all(v is not None for row in d["pixels"] for v in row))
+        yield "PICT body == 4 + height x (width + 1): %s" % (
+            len(body) == 4 + d["stored_height"] * (d["stored_width"] + 1))
+        yield "PICT row ends %s" % d["row_ends"]
+        px = [v for row in d["pixels"] for v in row]
+        yield "PICT pixels 0-154 or 254 only: %s" % all(v <= 154 or v == 254 for v in px)
+        edge = {v for v in d["pixels"][0] + d["pixels"][-1] + [r[0] for r in d["pixels"]]}
+        yield "PICT top, bottom and left edge one value: %s" % (
+            "%d" % edge.pop() if len(edge) == 1 else "no")
+
+
 # --- MISC: raw words as stored (the decoders in sc2dump see misc_words) -----
 
 def _misc(f):
