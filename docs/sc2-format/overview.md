@@ -6,18 +6,36 @@ The container, segment headers and walk order are described in [container.md](co
 
 ## Anatomy of a typical file
 
+The segments in the order the game writes them, top to bottom and left to right. The loader accepts any order.
+
 ```mermaid
-flowchart LR
-    subgraph hdr["File header (12 bytes)"]
-        F["'FORM'"] --> S["size"] --> T["'SCDH'"]
+flowchart TB
+    hdr["File header (12 bytes): 'FORM', size, 'SCDH'"]
+    subgraph g1["City name and general state"]
+        direction LR
+        CNAM --> MISC
     end
-    subgraph city["City segments (any order; this is the order the game writes)"]
-        CNAM --> MISC --> ALTM --> XTER --> XBLD --> XZON --> XUND --> XTXT --> XLAB --> XMIC --> XTHG --> XBIT --> XTRF --> XPLT --> XVAL --> XCRM --> XPLC --> XFIR --> XPOP --> XROG --> XGRP
+    subgraph g2["Per-tile maps, 128 × 128"]
+        direction LR
+        ALTM --> XTER --> XBLD --> XZON --> XUND --> XTXT
     end
-    subgraph scn["Scenario segments (.scn only)"]
+    subgraph g3["Labels, microsims, moving things; then XBIT, another per-tile map"]
+        direction LR
+        XLAB --> XMIC --> XTHG --> XBIT
+    end
+    subgraph g4["Overlays, 64 × 64"]
+        direction LR
+        XTRF --> XPLT --> XVAL --> XCRM
+    end
+    subgraph g5["Overlays, 32 × 32, and graphs"]
+        direction LR
+        XPLC --> XFIR --> XPOP --> XROG --> XGRP
+    end
+    subgraph g6["Scenario segments (.scn only)"]
+        direction LR
         TEXT1["TEXT id 0x80"] --> TEXT2["TEXT id 0x81"] --> SCEN --> PICT --> TMPL["TMPL (5 files)"]
     end
-    hdr --> city --> scn
+    hdr --> g1 --> g2 --> g3 --> g4 --> g5 --> g6
 ```
 
 Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing in 7/114 (**Verified (data)**). The game does not care about order ([container.md § Segment order](container.md#segment-order)).
