@@ -16,9 +16,25 @@ This page collects what has turned up so far, so that work can start from it lat
 
 The game overwrites these after loading, so a writer does not need to get them right ([container.md § After the walk](container.md#after-the-walk)):
 
-- MISC words 124–379 (tile count per XBLD code);
+- MISC words 124–379 (tile count per XBLD code; military-zone tiles are not counted);
 - the statistics recounted by `0x434b70` (details on the MISC pages, planned);
+- XBIT `0x40` (powered), `0x10` (watered) and `0x08` (mask), which are rebuilt by `0x467860`, `0x464550` and the mask step, so they can be left 0 ([xbit.md § What to trust](segments/xbit.md#what-to-trust));
 - the XGRP graph maxima (not stored in the file at all).
+
+The game does **not** recompute XTER, ALTM, XZON or XUND on load, and it does not redraw subway or pipe shapes until a neighbouring piece is laid. A writer has to make them consistent itself.
+
+## Map layers
+
+- **Orientation.** All maps are stored as seen at the saved compass, and MISC word 2 must match how the arrays are turned. A writer that rotates a map must remap XBLD, XTER and XUND codes and the bridge and on-ramp flags with the same rules as a reader ([conventions.md § Orientation](conventions.md#orientation)). The XTHG positions turn too (XTHG page, planned).
+- **ALTM.** Stored raw and exactly 32 768 bytes. Keep bit 15 zero and the altitude at most 30.
+- **Water.** For underwater and shore codes (`0x10`–`0x2D`) the ALTM water height must equal the sea level (MISC word 912), and a shore tile's altitude is sea level − 1. For surface water (`0x30`–`0x45`) the water height equals the altitude. XBIT `0x04` is set on water tiles and clear on land ([altm.md](segments/altm.md#water-height-bits-59)).
+- **Slopes.** Write XTER slopes that match the neighbouring altitudes, ideally with the game's rule (`0x447020`, [xter.md](segments/xter.md#slope-and-altitude)).
+- **Buildings.** Write the code on every tile of a multi-tile building and set the XZON corner bits for the current compass: corner *k* gets `0x10 << ((k + compass) & 3)`, one-tile buildings get `0xF0`, edge and interior tiles and all infrastructure get none ([xzon.md § Corner bits](segments/xzon.md#corner-bits)). The game draws a building only at the corner whose bit matches the compass, so wrong corner bits make it invisible or drawn twice (**Inferred** from `0x43c730`).
+- **Highways.** Lay them in even-aligned 2 × 2 cells ([xbld.md § Highways](segments/xbld.md#highways)).
+- **Military base.** Mark its land with XZON zone 7.
+- **XUND.** Write only `0x00`–`0x23`; codes from `0x24` up break rotation. Slope pieces must match the tile's XTER slope; `0x23` belongs under XBLD `0xE9` and `0x6C`–`0x6F`; pipes go with XBIT `0x20` ([xund.md](segments/xund.md#values)).
+- **XBIT.** `0x80` (conducts power) and `0x20` (carries water) are trusted: a building or pipe without them never gets power or water. Runways and piers store their `0x02` flag as "along row XOR odd compass"; bridges as "along row" ([xbit.md](segments/xbit.md#0x02-mirror-rotate)).
+- **Codes to avoid.** XBLD `0x59` (raised drawbridge) never occurs in saved files.
 
 ## Not yet known
 

@@ -16,6 +16,7 @@ import collections
 import hashlib
 import importlib.util
 import os
+import struct
 import sys
 
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -133,6 +134,370 @@ def compression_run_lengths(f):
                 i += 2
     yield "longest literal run %d" % lit
     yield "longest repeat run %d" % rep
+
+
+# --- helpers for the map checks ------------------------------------------------
+
+def _seg(f, tag):
+    return next((s.data for s in f.c.segments if s.tag == tag), None)
+
+
+def _compass(f):
+    return sc2.u32be(_seg(f, b"MISC"), 8)
+
+
+def _altm(f):
+    return struct.unpack(">16384H", _seg(f, b"ALTM"))
+
+
+def _flood(sources, passable):
+    """Tiles reachable from sources through 4-neighbours for which passable(index) holds."""
+    seen = set(sources)
+    todo = list(sources)
+    while todo:
+        row, col = divmod(todo.pop(), 128)
+        for r, c in ((row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)):
+            i = r * 128 + c
+            if 0 <= r < 128 and 0 <= c < 128 and i not in seen and passable(i):
+                seen.add(i)
+                todo.append(i)
+    return seen
+
+
+# --- ALTM and XTER -------------------------------------------------------------
+
+SLOPE_FROM_RAISED_CORNERS = (0x00, 0x09, 0x0A, 0x02, 0x0B, 0x0D, 0x03, 0x06,
+                             0x0C, 0x01, 0x0D, 0x05, 0x04, 0x08, 0x07, None)
+# neighbour (d_row, d_col) -> corners it raises when higher: 1 = row-/col-, 2 = row+/col-, 4 = row+/col+, 8 = row-/col+
+NEIGHBOUR_CORNERS = ((0, -1, 0x3), (1, -1, 0x2), (1, 0, 0x6), (1, 1, 0x4),
+                     (0, 1, 0xC), (-1, 1, 0x8), (-1, 0, 0x9), (-1, -1, 0x1))
+
+
+@check
+def altm_bits(f):
+    v = _altm(f)
+    yield "bit 15 never set" if all(x < 0x8000 for x in v) else "bit 15 set somewhere"
+    top = max(x & 0x1F for x in v)
+    yield "altitude <= 30" if top <= 30 else "altitude 31 present"
+    depths = [x >> 10 & 0x1F for x in v if x >> 10 & 0x1F]
+    yield "has tunnel depths" if depths else "no tunnel depths"
+
+
+@check
+def altm_water_height(f):
+    v = _altm(f)
+    x = _seg(f, b"XTER")
+    sea = sc2.u32be(_seg(f, b"MISC"), 912 * 4)
+    yield "sea level (MISC word 912) in 0..31" if sea < 32 else "sea level out of range"
+    under = shore = surf = True
+    dry_below = False
+    for i in range(16384):
+        a, w, t = v[i] & 0x1F, v[i] >> 5 & 0x1F, x[i]
+        if t < 0x10 and a < sea:
+            dry_below = True
+        if 0x10 <= t < 0x20 and not (w == sea and w > a):
+            under = False
+        elif 0x20 <= t < 0x30 and not (w == sea and w == a + 1):
+            shore = False
+        elif t >= 0x30 and w != a:
+            surf = False
+    yield "underwater: water height = sea level > altitude" + ("" if under else " VIOLATED")
+    yield "shore: water height = sea level = altitude + 1" + ("" if shore else " VIOLATED")
+    yield "surface water: water height = altitude" + ("" if surf else " VIOLATED")
+    yield "has dry land below sea level" if dry_below else "no dry land below sea level"
+
+
+@check
+def altm_tunnel_portals(f):
+    v = _altm(f)
+    b = _seg(f, b"XBLD")
+    portals = [v[i] >> 10 & 0x1F for i in range(16384) if 0x3F <= b[i] <= 0x42]
+    if portals:
+        yield "tunnel portals have depth 1" if all(d == 1 for d in portals) else "tunnel portal with depth != 1"
+
+
+@check
+def xter_codes(f):
+    codes = set(_seg(f, b"XTER"))
+    bad = sorted(c for c in codes if sc2.xter_kind(c) == "unused")
+    yield "only documented codes" if not bad else "undocumented codes: " + " ".join("%02X" % c for c in bad)
+
+
+@check
+def xter_water_bit(f):
+    x = _seg(f, b"XTER")
+    bit = _seg(f, b"XBIT")
+    for kind in ("land", "underwater", "shore", "surface water"):
+        tiles = [bit[i] & 4 for i in range(16384) if sc2.xter_kind(x[i]) == kind]
+        if tiles:
+            yield "%s: XBIT 0x04 %s" % (kind, "always set" if all(tiles) else "never set" if not any(tiles) else "mixed")
+
+
+@check
+def xter_slope_vs_altitude(f):
+    v = _altm(f)
+    x = _seg(f, b"XTER")
+    alt = [a & 0x1F for a in v]
+    total = same = 0
+    for r in range(128):
+        for c in range(128):
+            t = x[r * 128 + c]
+            if t >= 0x30:
+                continue
+            a = alt[r * 128 + c]
+            mask = 0
+            for dr, dc, m in NEIGHBOUR_CORNERS:
+                rr, cc = r + dr, c + dc
+                if 0 <= rr < 128 and 0 <= cc < 128 and alt[rr * 128 + cc] > a:
+                    mask |= m
+            total += 1
+            same += SLOPE_FROM_RAISED_CORNERS[mask] == t & 0x0F
+    share = 100.0 * same / total
+    yield "slope matches neighbour heights on %s of tiles" % (
+        "100%" if same == total else ">= 99%" if share >= 99 else ">= 95%" if share >= 95 else "< 95%")
+
+
+# --- XBLD ------------------------------------------------------------------------
+
+@check
+def xbld_codes(f):
+    for code in sorted(set(_seg(f, b"XBLD"))):
+        yield "uses code 0x%02X" % code
+
+
+@check
+def xbld_footprints(f):
+    """A multi-tile building is found from its anchor: the tile whose XZON
+    corner bit is corner D (min row, max col). Its n x n block must hold the
+    same code, with corner bits A, B, C, D at its corners and none inside.
+    Tiles of multi-tile codes outside every such block are fragments."""
+    xbld, xzon = _seg(f, b"XBLD"), _seg(f, b"XZON")
+    A, B, C, D = sc2.corner_bits(_compass(f))
+    covered = set()
+    blocks = bad = 0
+    for r in range(128):
+        for c in range(128):
+            code = xbld[r * 128 + c]
+            n = sc2.XBLD_SIZE[code] if code >= 0x70 else 1
+            if n < 2 or xzon[r * 128 + c] & 0xF0 != D:
+                continue
+            cells = [(r + i, c - j) for i in range(n) for j in range(n)]
+            want = {(r, c): D, (r, c - n + 1): A, (r + n - 1, c - n + 1): B, (r + n - 1, c): C}
+            if all(0 <= rr < 128 and 0 <= cc < 128 and xbld[rr * 128 + cc] == code
+                   and xzon[rr * 128 + cc] & 0xF0 == want.get((rr, cc), 0) for rr, cc in cells):
+                blocks += 1
+                covered.update(cells)
+            else:
+                bad += 1
+    fragments = sum(1 for r in range(128) for c in range(128)
+                    if xbld[r * 128 + c] >= 0x70 and sc2.XBLD_SIZE[xbld[r * 128 + c]] >= 2 and (r, c) not in covered)
+    yield "has multi-tile buildings" if blocks else "no multi-tile buildings"
+    yield "every anchor starts a well-formed block" if bad == 0 else "some anchors start a malformed block"
+    yield "no fragments" if fragments == 0 else "has fragments"
+    if fragments:
+        yield "fragments: %s" % ("1-5 tiles" if fragments <= 5 else "6-25 tiles" if fragments <= 25 else "over 25 tiles")
+
+
+@check
+def xbld_one_tile_buildings(f):
+    xbld, xzon = _seg(f, b"XBLD"), _seg(f, b"XZON")
+    nibbles = {xzon[i] & 0xF0 for i in range(16384) if xbld[i] >= 0x70 and sc2.XBLD_SIZE[xbld[i]] == 1}
+    yield "1x1 buildings (0x70+) carry all four corner bits" if nibbles <= {0xF0} else \
+        "some 1x1 buildings (0x70+) lack corner bits"
+
+
+@check
+def xbld_highways(f):
+    """0x61-0x6B fill even-aligned uniform 2x2 blocks; 0x49-0x50 sit in
+    even-aligned 2x2 blocks made only of highway codes."""
+    xbld = _seg(f, b"XBLD")
+    hwy = lambda v: 0x49 <= v <= 0x50 or 0x61 <= v <= 0x6B
+    big_ok = small_ok = True
+    seen = False
+    for r in range(128):
+        for c in range(128):
+            code = xbld[r * 128 + c]
+            if not hwy(code):
+                continue
+            seen = True
+            block = [xbld[((r & ~1) + i) * 128 + (c & ~1) + j] for i in (0, 1) for j in (0, 1)]
+            if code >= 0x61:
+                big_ok &= all(b == code for b in block)
+            else:
+                small_ok &= all(hwy(b) for b in block)
+    if seen:
+        yield "0x61-0x6B in uniform even-aligned 2x2 blocks: %s" % big_ok
+        yield "0x49-0x50 in even-aligned 2x2 highway blocks: %s" % small_ok
+    else:
+        yield "no highways"
+
+
+# --- XZON and XUND -----------------------------------------------------------------
+
+@check
+def xzon_values(f):
+    z = _seg(f, b"XZON")
+    yield "zones only 0-9" if all((v & 0x0F) <= 9 for v in z) else "zone above 9"
+    yield "corner bits only 0x00, single bit or 0xF0" if all((v & 0xF0) in (0, 0x10, 0x20, 0x40, 0x80, 0xF0) for v in z) \
+        else "other corner bit combination"
+    if any((v & 0x0F) == 7 for v in z):
+        yield "has zone 7 (military)"
+
+
+@check
+def xzon_corner_rule(f):
+    """Bit k sits at corner (k - compass) mod 4; the footprint (same XBLD code) continues away from it."""
+    z, b, comp = _seg(f, b"XZON"), _seg(f, b"XBLD"), _compass(f)
+    into = {0: (1, 1), 1: (-1, 1), 2: (-1, -1), 3: (1, -1)}
+    B = lambda r, c: b[r * 128 + c] if 0 <= r < 128 and 0 <= c < 128 else -1
+    bad = 0
+    for r in range(128):
+        for c in range(128):
+            bits = z[r * 128 + c] & 0xF0
+            if bits in (0x10, 0x20, 0x40, 0x80):
+                dr, dc = into[((bits.bit_length() - 5) - comp) & 3]
+                code = B(r, c)
+                if not (B(r + dr, c) == code and B(r, c + dc) == code and B(r + dr, c + dc) == code):
+                    bad += 1
+    yield "every corner bit at its predicted corner" if bad == 0 else "some corner bits off the predicted corner"
+
+
+@check
+def xzon_footprint_walk(f):
+    """Walking from corner 0 to corner 1 recovers each multi-tile footprint."""
+    z, comp = _seg(f, b"XZON"), _compass(f)
+    bit = lambda v: 0x10 << ((v + comp) & 3)
+    H = lambda r, c: z[r * 128 + c] & 0xF0 if 0 <= r < 128 and 0 <= c < 128 else None
+    bad = 0
+    for r in range(128):
+        for c in range(128):
+            if H(r, c) != bit(0):
+                continue
+            size = next((k + 1 for k in range(4) if H(r + k, c) == bit(1)), None)
+            if not (size and H(r, c + size - 1) == bit(3) and H(r + size - 1, c + size - 1) == bit(2)):
+                bad += 1
+    yield "every footprint recovered from corners" if bad == 0 else "some footprints not recoverable from corners"
+
+
+@check
+def xund_values(f):
+    u = set(_seg(f, b"XUND"))
+    yield "codes only 0x00-0x23" if max(u) <= 0x23 else "code above 0x23"
+    for code, name in ((0x21, "0x21"), (0x22, "0x22 (silo)"), (0x23, "0x23 (station)")):
+        if code in u:
+            yield "has " + name
+    if u & set(range(0x01, 0x10)):
+        yield "has subway"
+    if u & set(range(0x10, 0x1F)):
+        yield "has pipes"
+
+
+@check
+def xund_station_under(f):
+    u, b = _seg(f, b"XUND"), _seg(f, b"XBLD")
+    stray = sum(1 for i in range(16384) if u[i] == 0x23 and b[i] != 0xE9 and not 0x6C <= b[i] <= 0x6F)
+    if 0x23 in u:
+        yield "every 0x23 under XBLD 0xE9 or 0x6C-0x6F" if stray == 0 else "0x23 elsewhere too"
+
+
+@check
+def xund_slope_xter(f):
+    """A slope piece sits on the XTER slope with the matching low bits (1-4)."""
+    u, t = _seg(f, b"XUND"), _seg(f, b"XTER")
+    want = {0x03: 1, 0x04: 2, 0x05: 3, 0x06: 4, 0x12: 1, 0x13: 2, 0x14: 3, 0x15: 4}
+    tiles = [i for i in range(16384) if u[i] in want]
+    if tiles:
+        bad = sum(1 for i in tiles if not (t[i] < 0x31 and (t[i] & 0x0F) == want[u[i]]))
+        yield "every slope piece on its XTER slope" if bad == 0 else "some slope pieces off their XTER slope"
+
+
+# --- XBIT and orientation -------------------------------------------------------------
+
+@check
+def xbit_bits_present(f):
+    xbit = _seg(f, b"XBIT")
+    for mask in (0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01):
+        if any(v & mask for v in xbit):
+            yield "has 0x%02X" % mask
+
+
+@check
+def xbit_implications(f):
+    xbit = _seg(f, b"XBIT")
+    xter = _seg(f, b"XTER")
+    yield "0x40 implies 0x80" if all(v & 0x80 for v in xbit if v & 0x40) else "0x40 without 0x80"
+    yield "0x10 implies 0x20" if all(v & 0x20 for v in xbit if v & 0x10) else "0x10 without 0x20"
+    yield "0x04 only on water XTER (>= 0x10)" if all(xter[i] >= 0x10 for i in range(16384) if xbit[i] & 0x04) \
+        else "0x04 on land XTER"
+    yield "0x01 without 0x04 occurs" if any(v & 0x01 and not v & 0x04 for v in xbit) else "0x01 only with 0x04"
+
+
+@check
+def xbit_power_reach(f):
+    xbit, xbld = _seg(f, b"XBIT"), _seg(f, b"XBLD")
+    plants = [i for i in range(16384) if 0xC6 <= xbld[i] <= 0xCF and xbit[i] & 0x80]
+    reach = _flood(plants, lambda i: xbit[i] & 0x80)
+    yield "powered tiles reachable from a plant through 0x80" \
+        if all(i in reach for i in range(16384) if xbit[i] & 0x40) else "some powered tiles unreachable"
+
+
+@check
+def xbit_water_reach(f):
+    xbit, xbld = _seg(f, b"XBIT"), _seg(f, b"XBLD")
+    sources = [i for i in range(16384) if xbld[i] in (0xDC, 0xFA) and xbit[i] & 0x20]
+    reach = _flood(sources, lambda i: xbit[i] & 0x20)
+    yield "watered tiles reachable from a pump or desalination plant through 0x20" \
+        if all(i in reach for i in range(16384) if xbit[i] & 0x10) else "some watered tiles unreachable"
+
+
+@check
+def xbit_mask08(f):
+    xbit, xbld, xzon = _seg(f, b"XBIT"), _seg(f, b"XBLD"), _seg(f, b"XZON")
+    yield "no 0x08 outside rows/cols 0-63" if not any(
+        xbit[i] & 0x08 for i in range(16384) if i // 128 >= 64 or i % 128 >= 64) else "0x08 outside rows/cols 0-63"
+    got = [bool(xbit[r * 128 + c] & 0x08) for r in range(64) for c in range(64)]
+    want = [any(xbld[(2 * r + a) * 128 + 2 * c + b] > 0x1C or xzon[(2 * r + a) * 128 + 2 * c + b] & 0x0F
+                for a in (0, 1) for b in (0, 1)) for r in range(64) for c in range(64)]
+    yield "quadrant equals the developed mask" if got == want else \
+        "quadrant all clear" if not any(got) else "quadrant partly the mask"
+
+
+@check
+def xbit_rotate_codes(f):
+    xbit, xbld = _seg(f, b"XBIT"), _seg(f, b"XBLD")
+    for code in sorted({xbld[i] for i in range(16384) if xbit[i] & 0x02}):
+        yield "0x02 on XBLD %02X" % code
+
+
+@check
+def xbit_rotate_direction(f):
+    """Bridges: along row = flag. Runways/piers: along row = flag XOR odd compass.
+    Only tiles with a same-kind neighbour along exactly one axis are judged."""
+    xbit, xbld = _seg(f, b"XBIT"), _seg(f, b"XBLD")
+    odd = _compass(f) & 1
+    kinds = (("bridge", set(range(0x51, 0x5D)), set(range(0x51, 0x5D)), False),
+             ("runway", {0xDD}, {0xDD, 0xDE}, True),
+             ("pier", {0xDF}, {0xDF}, True))
+    for name, codes, group, uses_compass in kinds:
+        for i in range(16384):
+            if xbld[i] not in codes:
+                continue
+            row, col = divmod(i, 128)
+
+            def same(r, c):
+                return 0 <= r < 128 and 0 <= c < 128 and xbld[r * 128 + c] in group
+            along_row = same(row - 1, col) or same(row + 1, col)
+            along_col = same(row, col - 1) or same(row, col + 1)
+            if along_row == along_col:
+                continue
+            flag = bool(xbit[i] & 0x02)
+            predicted = flag ^ bool(odd) if uses_compass else flag
+            yield "%s rule holds" % name if predicted == along_row else "%s rule fails" % name
+
+
+@check
+def orientation_compass(f):
+    yield "compass %d" % _compass(f)
 
 
 # --- driver ----------------------------------------------------------------

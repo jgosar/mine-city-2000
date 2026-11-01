@@ -1,10 +1,11 @@
 using System.Text;
+using com.mc2k.SimCityReader;
 
 namespace MineCity2000.Tests;
 
 // Builds a minimal in-memory SimCity 2000 file: "FORM" + length + "SCDH" + the segments the reader needs.
-// ALTM and CNAM are stored raw, XBLD/XTER/MISC/XBIT are run-length encoded like the real format.
-// XBIT is only written once xbit() has been called, so by default the city has no XBIT segment, like the real optional case.
+// ALTM and CNAM are stored raw, XBLD/XTER/XZON/MISC/XBIT are run-length encoded like the real format.
+// XBIT and XZON are only written once xbit() / withXzon() have been called, so by default the city has neither, like a hand-built city.
 public class IffBuilder
 {
   public const int MISC_WATER_LEVEL_OFFSET = 3651; // CityData.interpretMISC reads the water level from here
@@ -14,6 +15,8 @@ public class IffBuilder
   private readonly byte[] _altm = new byte[32768];  // 128 * 128 squares, 2 bytes each, altitude in the second byte
   private readonly byte[] _xbld = new byte[16384];  // 128 * 128 building codes
   private readonly byte[] _xter = new byte[16384];  // 128 * 128 terrain codes
+  private readonly byte[] _xzon = new byte[16384];  // 128 * 128 zone and corner bits, only written after withXzon()
+  private bool _writeXzon;
   private readonly byte[] _misc = new byte[4096];
   private byte[]? _xbit;                            // 128 * 128 flag bytes, null until xbit() is called
   private byte[]? _cnam;
@@ -26,9 +29,44 @@ public class IffBuilder
     return this;
   }
 
+  // Places a building like the game does: its code on every square of the footprint, with (x, z) the corner with the lowest x
+  // and z, and the footprint's corner bits in XZON for the current compass (so call compass() first). Buildings below 0x70
+  // (roads, rails, highways, ...) carry no corner bits.
   public IffBuilder building(int x, int z, byte code)
   {
+    int size = BuildingType.getByCode(code).getSize();
+    for (int i = 0; i < size; i++)
+    {
+      for (int j = 0; j < size; j++)
+      {
+        _xbld[(x + i) * 128 + z + j] = code;
+      }
+    }
+    if (code >= 0x70)
+    {
+      int compass = _misc[MISC_COMPASS_OFFSET + 3];
+      // corners with the lowest x/lowest z, highest x/lowest z, highest x/highest z, lowest x/highest z
+      (int, int)[] corners = { (x, z), (x + size - 1, z), (x + size - 1, z + size - 1), (x, z + size - 1) };
+      for (int k = 0; k < 4; k++)
+      {
+        var (cx, cz) = corners[k];
+        _xzon[cx * 128 + cz] |= (byte)(0x10 << ((k + compass) & 3));
+      }
+    }
+    return this;
+  }
+
+  // Writes a single XBLD square, e.g. a leftover piece of a demolished building
+  public IffBuilder buildingSquare(int x, int z, byte code)
+  {
     _xbld[x * 128 + z] = code;
+    return this;
+  }
+
+  // Makes build() emit an XZON segment with the corner bits written by building(), like every city saved by the game
+  public IffBuilder withXzon()
+  {
+    _writeXzon = true;
     return this;
   }
 
@@ -96,6 +134,7 @@ public class IffBuilder
     body.AddRange(segment("ALTM", _altmLength is int n ? _altm.Take(n).ToArray() : _altm));
     body.AddRange(segment("XBLD", rle(_xbld)));
     body.AddRange(segment("XTER", rle(_xter)));
+    if (_writeXzon) body.AddRange(segment("XZON", rle(_xzon)));
     body.AddRange(segment("MISC", rle(_misc)));
     if (_xbit != null) body.AddRange(segment("XBIT", rle(_xbit)));
     foreach (var (name, content) in _extra) body.AddRange(segment(name, content));
