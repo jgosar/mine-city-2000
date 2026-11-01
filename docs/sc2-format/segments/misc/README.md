@@ -84,11 +84,11 @@ Byte offsets are hexadecimal. "Recomputed" means the game overwrites the stored 
 | 1019–1027 | `0xFEC`–`0x100F` | Game options: speed, auto budget, auto goto, sound, music, no disasters, newspaper options | int16, int32 | [general.md § Game options](general.md#game-options) |
 | 1028, 1029 | `0x1010`–`0x1017` | View centre tile (packed), zoom | int16 | [general.md § View](general.md#view) |
 | 1030, 1031 | `0x1018`–`0x101F` | Centre of the buildings (row, col) | int16 | [general.md § Counters](general.md#counters) |
-| 1032 | `0x1020` | People in large microsim buildings (**Inferred**) | int32 | [general.md § Layout](general.md#layout) |
+| 1032 | `0x1020` | Arcology residents | int32 | [xmic.md](../xmic.md#misc-words-set-from-xmic) |
 | 1033 | `0x1024` | Never used (**Unused**) | int16 | [general.md § Layout](general.md#layout) |
 | 1034 | `0x1028` | Sports teams (bit mask) | int16 | [general.md § Counters](general.md#counters) |
 | 1035 | `0x102C` | Population: 10 × word 380 | int32 | [general.md § Statistics](general.md#statistics) |
-| 1036–1039 | `0x1030`–`0x103F` | Industry bonus, heavy-industry level, arrests, police bonus | int16 | [general.md § Counters](general.md#counters) |
+| 1036–1039 | `0x1030`–`0x103F` | Industry bonus, heavy-industry level, arrests, prisons have room | int16 | [general.md § Counters](general.md#counters) |
 | 1040–1042 | `0x1040`–`0x104B` | Disaster object (−1 = none), current disaster, disaster active | int16, int32 | [general.md § Disasters](general.md#disasters) |
 | 1043 | `0x104C` | Water treatment plants cover the water delivered | int16 | [general.md § Counters](general.md#counters) |
 | 1044–1199 | `0x1050`–`0x12BF` | Not loaded; 0 from the Windows 95 saver | — | [general.md § Words 1044–1199](general.md#words-10441199) |

@@ -705,6 +705,158 @@ def xgrp_ranges(f):
     yield "Power % at most 100: " + str(max(ser[8]) <= 100)
 
 
+# --- XMIC ----------------------------------------------------------------------
+
+def _xmic(f):
+    data = _seg(f, b"XMIC")
+    return [struct.unpack_from(">BBHHH", data, 8 * r) for r in range(150)]
+
+
+@check
+def xmic_fixed_records(f):
+    r = _xmic(f)
+    yield "record 0 byte 0 = 0x%02X" % r[0][0]
+    yield "record 0 bytes 1-7 all zero: %s" % (r[0][1:] == (0, 0, 0, 0))
+    expected = (0xEC, 0xED, 0xE9, 0xC8, (0xC6, 0xC7), 0xD5, 0xD4, 0xF5, 0xF8)
+    ok = all(r[i + 1][0] in (e if isinstance(e, tuple) else (e,)) for i, e in enumerate(expected))
+    yield "records 1-9 hold the nine city-wide systems: %s" % ok
+    yield "record 5 (hydro) byte 0 = 0x%02X" % r[5][0]
+
+
+@check
+def xmic_own_records(f):
+    r = _xmic(f)
+    codes = [x[0] for x in r[10:] if x[0]]
+    yield "records 10-149: only codes with a record of their own: %s" % all(
+        c in sc2.MICROSIM_OWN for c in codes)
+    xtxt = _seg(f, b"XTXT")
+    on_map = set(v for v in xtxt if 0x3D <= v <= 0xC8)
+    for i in range(10, 150):
+        used, shown = r[i][0] != 0, (i + 0x33) in on_map
+        if used != shown:
+            yield "a record %s" % ("in use with no XTXT value on the map" if used
+                                   else "free with its XTXT value on the map")
+    xbld = _seg(f, b"XBLD")
+    wrong = sum(1 for v, b in zip(xtxt, xbld) if 0x3D <= v <= 0xC8 and r[v - 0x33][0] not in (b, 0) and b)
+    yield "tiles whose building differs from their record's byte 0: %s" % ("none" if not wrong else "some")
+
+
+@check
+def xmic_misc_links(f):
+    r = _xmic(f)
+    w = sc2.misc_words(_seg(f, b"MISC"))
+    arco = sum(x[3] for x in r[1:] if 0xFB <= x[0] <= 0xFE)
+    yield "MISC 1032 == sum of arcology residents (word 4): %s" % (w[1032] == arco)
+    arrests = min(sum(x[4] for x in r[1:] if x[0] == 0xD2), 0xFFFF)
+    yield "MISC 1038 == sum of police arrests (word 6): %s" % (w[1038] == arrests)
+    prisons = sum(1 for b in _seg(f, b"XBLD") if b == 0xD8) // 16
+    load = sum(x[4] for x in r[1:] if x[0] == 0xD8)
+    expected = 0 if prisons < 1 or load // prisons > 79 else 1
+    yield "MISC 1039 == 1 if prisons exist and are on average at most 79%% full: %s" % (w[1039] == expected)
+    for x in r[1:]:
+        if x[0] == 0xD7:
+            yield "stadium team label slot (word 6) == 251 + sport (word 4): %s" % (x[4] == 251 + x[3])
+            yield "stadium's sport bit set in MISC 1034: %s" % bool(x[3] < 5 and w[1034] >> x[3] & 1)
+
+
+@check
+def xmic_constants(f):
+    r = _xmic(f)
+    w = sc2.misc_words(_seg(f, b"MISC"))
+    mw = {0xC9: 50, 0xCA: 220, 0xCB: 500, 0xCC: 50, 0xCD: 1600, 0xCE: 2500, 0xCF: 200}
+    design = {0xFB: 55, 0xFC: 30, 0xFD: 45, 0xFE: 65}
+    for x in r[10:]:
+        if x[0] in mw:
+            yield "power plant: max output == the plant's MW: %s" % (x[2] == mw[x[0]])
+            yield "power plant: age 0-50: %s" % (x[1] <= 50)
+        if x[0] in design:
+            yield "arcology: design capacity == the type's: %s" % (x[2] == design[x[0]])
+            yield "arcology: residents <= design x 1000 + 63: %s" % (x[3] <= design[x[0]] * 1000 + 63)
+        if x[0] in (0xD1, 0xD6, 0xD9, 0xFB, 0xFC, 0xFD, 0xFE):
+            yield "grade 0-12: %s" % (x[1] <= 12)
+        if x[0] == 0xD3:
+            yield "fire station: engines == firefighters / 16 + 1: %s" % (x[3] == x[2] // 16 + 1)
+    yield "wind: output == 4 x generators: %s" % (r[4][3] == 4 * r[4][2])
+    yield "hydro: output == 20 x generators: %s" % (r[5][3] == 20 * r[5][2])
+    yield "bus: stations == bus station tiles / 4, buses == tiles: %s" % (
+        (r[1][2], r[1][3]) == (w[124 + 0xEC] // 4, w[124 + 0xEC]))
+    yield "subway: stations == subway station tiles: %s" % (r[3][2] == w[124 + 0xE9])
+    yield "parks: acres == small park + park tiles: %s" % (r[6][3] == w[124 + 0x0D] + w[124 + 0xD5])
+
+
+# --- XTHG (docs/sc2-format/segments/xthg.md) -----------------------------------
+
+def _things(f):
+    data = _seg(f, b"XTHG")
+    return [data[i * 12:(i + 1) * 12] for i in range(40)]
+
+
+@check
+def xthg_types(f):
+    recs = _things(f)
+    yield "record 0 type %d" % recs[0][0]
+    yield "types 1-16 only: %s" % all(r[0] <= 16 for r in recs)
+    for t in sorted({r[0] for r in recs[1:] if r[0]}):
+        yield "has type %d (%s)" % (t, sc2.THING_TYPES.get(t))
+    free = [r for r in recs[1:] if not r[0]]
+    yield "free records all zero: %s" % all(not any(r) for r in free)
+
+
+@check
+def xthg_markers(f):
+    recs = _things(f)
+    xtxt = _seg(f, b"XTXT")
+    for i, r in enumerate(recs[1:], 1):
+        if r[0]:
+            ok = r[3] < 128 and r[4] < 128 and xtxt[r[3] * 128 + r[4]] == 0xC9 + i
+            yield "type %d: XTXT at (byte 3, byte 4) == 0xC9 + record: %s" % (r[0], ok)
+    for v in xtxt:
+        if 0xC9 <= v <= 0xF0 and v != 0xC9 and recs[v - 0xC9][0] == 0:
+            yield "XTXT marker of a free record"
+            break
+
+
+@check
+def xthg_trains(f):
+    recs = _things(f)
+    for r in recs[1:]:
+        if r[0] in (10, 12):
+            car1 = r[2]
+            ok1 = 0 < car1 < 40 and recs[car1][0] in (11, 13)
+            ok2 = ok1 and 0 < recs[car1][2] < 40 and recs[recs[car1][2]][0] in (11, 13)
+            yield "engine -> car -> car links valid: %s" % ok2
+            yield "engine underground (12) with underground cars: %s" % (
+                r[0] == 12 and ok2 and recs[car1][0] == 13) if r[0] == 12 else "engine above ground (10)"
+
+
+@check
+def xthg_fields(f):
+    recs = _things(f)
+    for r in recs[1:]:
+        t = r[0]
+        if not t:
+            continue
+        if t in (10, 11, 12, 13):
+            yield "train: direction 0-3: %s" % (r[1] < 4)
+        elif t == 9:
+            yield "sailboat: direction 0-3: %s" % (r[1] < 4)
+            yield "sailboat: byte 2 = %d" % r[2]
+        else:
+            yield "type %d: direction 0-7: %s" % (t, r[1] < 8)
+            yield "type %d: sub-tile bytes 6, 7 within 0-16: %s" % (t, r[6] <= 16 and r[7] <= 16)
+        if t in (1, 2, 3):
+            yield "type %d: height (byte 5) = %d" % (t, r[5])
+
+
+@check
+def xthg_misc_link(f):
+    w = sc2.misc_words(_seg(f, b"MISC"))
+    recs = _things(f)
+    v = w[1040]
+    yield "MISC word 1040 = %s" % ("-1" if v == -1 else
+                                   "record of type %d" % recs[v][0] if 0 <= v < 40 else str(v))
+
+
 # --- MISC: raw words as stored (the decoders in sc2dump see misc_words) -----
 
 def _misc(f):

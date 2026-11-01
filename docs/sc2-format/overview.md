@@ -55,8 +55,8 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 | `XUND` | RLE | 16384 | 128 × 128 × byte | none | Underground: pipes, subways, subway stations | [xund.md](segments/xund.md) |
 | `XTXT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile index: sign or microsim label, moving object, neighbour connection | [xtxt.md](segments/xtxt.md) |
 | `XLAB` | RLE | 6400 | 256 × 25-byte string | none (see note) | Label texts: mayor, signs, microsim names, team names | [xlab.md](segments/xlab.md) |
-| `XMIC` | RLE | 1200 | 150 × 8-byte record | per record: bytes 0–1 as is, then three big-endian uint16 | Microsimulation records (stadiums, …) | planned |
-| `XTHG` | RLE | 480 | records | none | Moving things: planes, ships, monsters, … | planned |
+| `XMIC` | RLE | 1200 | 150 × 8-byte record | per record: bytes 0–1 as is, then three big-endian uint16 | Microsim statistics: city-wide systems, power plants, services, stadiums, arcologies | [xmic.md](segments/xmic.md) |
+| `XTHG` | RLE | 480 | 40 × 12-byte record | none | Moving objects: vehicles, monster, tornado, dispatched units | [xthg.md](segments/xthg.md) |
 | `XBIT` | RLE | 16384 | 128 × 128 × byte | none | Per-tile flags: power, water, salt, sprite mirror | [xbit.md](segments/xbit.md) |
 | `XTRF` | RLE | 4096 | 64 × 64 × byte | none | Traffic | [minimaps.md](segments/minimaps.md#xtrf-traffic) |
 | `XPLT` | RLE | 4096 | 64 × 64 × byte | none | Pollution | [minimaps.md](segments/minimaps.md#xplt-pollution) |
@@ -74,7 +74,7 @@ Where CNAM sits varies. It is first in 68/114 files, last in 39/114 and missing 
 
 Notes:
 
-- **Shapes** are fixed by the decoded sizes and by how the loader byte-swaps them (**Confirmed (code)**, loader `0x4302e0`). XGRP is 16 series of 52 values: the post-load routine `0x431fd0` walks it that way ([xgrp.md](segments/xgrp.md#layout)). The 25-byte XLAB records are **Confirmed (code)** by the label routine `0x430c00` ([xlab.md](segments/xlab.md#layout)). The record layout of XTHG is not settled yet.
+- **Shapes** are fixed by the decoded sizes and by how the loader byte-swaps them (**Confirmed (code)**, loader `0x4302e0`). XGRP is 16 series of 52 values: the post-load routine `0x431fd0` walks it that way ([xgrp.md](segments/xgrp.md#layout)). The 25-byte XLAB records are **Confirmed (code)** by the label routine `0x430c00` ([xlab.md](segments/xlab.md#layout)). The XMIC and XTHG records are **Confirmed (code)** by the microsim and animation routines ([xmic.md](segments/xmic.md#layout), [xthg.md](segments/xthg.md#layout)).
 - **XLAB** is not byte-swapped. Each 25-byte record starts with a length byte, which the game converts to a C string after loading ([container.md § After the walk](container.md#after-the-walk)).
 - **TMPL** appears in 5 of the 18 scenario files and is not referenced anywhere in `SIMCITY.EXE` (**Confirmed (code)**: no code or data refers to the tag).
 
