@@ -67,7 +67,7 @@ The older documents say these shapes are coded like the power lines in XBLD (`0x
 
 | Function | What it does with XUND | Confidence |
 |---|---|---|
-| `0x442370` | The only routine that writes a code. It also keeps the **subway tile count** (`0x4ca41c`): +1 for each tile set to `0x01`–`0x0F`, `0x1F`, `0x20`, `0x22` or `0x23`, −1 when such a tile is overwritten. Tiles in a military base (XZON zone 7) are not counted | **Confirmed (code)** |
+| `0x442370` | The only routine that writes a code. It also keeps the **subway tile count** (`0x4ca41c`, MISC word 1018, which is not recounted on load: [general.md](misc/general.md#counters)): +1 for each tile set to `0x01`–`0x0F`, `0x1F`, `0x20`, `0x22` or `0x23`, −1 when such a tile is overwritten. Tiles in a military base (XZON zone 7) are not counted | **Confirmed (code)** |
 | `0x44bb20` | Lays subway: empty → `0x01`; pipe `0x10` → `0x20`; pipe `0x11` → `0x1F`. Then fixes the shape of the tile and its four neighbours (`0x44bc40`) | **Confirmed (code)** |
 | `0x44bc40` | Picks a subway piece: a slope from the tile's own XTER, otherwise a shape from the neighbours that hold subway (`0x01`–`0x0F`, `0x1F`, `0x20`, `0x22`, `0x23`) | **Confirmed (code)** |
 | `0x44b790` | Lays pipe: empty → `0x10`; subway `0x01` → `0x1F`; subway `0x02` → `0x20`. Sets XBIT bit `0x20` on the tile ([xbit.md](xbit.md#bit-layout)), then fixes the shape (`0x44b8d0`) | **Confirmed (code)** |

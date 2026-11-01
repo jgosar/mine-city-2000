@@ -142,7 +142,7 @@ How the game treats a fragment when drawing or simulating is **Unknown** ([open 
 | Placing runways and piers | `0x4382b0` | Sets `0xDD` / `0xDF` and the XBIT rotate flag for their direction |
 | Turning the view | `0x465490`, `0x466660` | Remaps the codes; see [Rotation](#rotation) |
 
-The military count table indexes the codes as follows (**Confirmed (code)**, `0x441f00`): 0 other, 1 `0xDD`, 2 `0xDE`, 3 `0xEF`, 4 `0xF2`, 5 `0xEA`, 6 `0xE3`, 7 `0xE4`, 8 `0xE5`, 9 `0xF1`, 10 `0xE0`, 11 `0xE2`, 12 `0xE7`, 13 `0xE8`, 14 `0xF6`, 15 `0xF9`. Where it is stored in the file is covered by the MISC pages (planned).
+The military count table indexes the codes as follows (**Confirmed (code)**, `0x441f00`): 0 other, 1 `0xDD`, 2 `0xDE`, 3 `0xEF`, 4 `0xF2`, 5 `0xEA`, 6 `0xE3`, 7 `0xE4`, 8 `0xE5`, 9 `0xF1`, 10 `0xE0`, 11 `0xE2`, 12 `0xE7`, 13 `0xE8`, 14 `0xF6`, 15 `0xF9`. It is stored in MISC words 1002–1017 and is not recomputed on load ([tile-counts.md](misc/tile-counts.md#military-counts-words-10021017)).
 
 ## Rotation
 

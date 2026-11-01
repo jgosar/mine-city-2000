@@ -16,8 +16,8 @@ This page collects what has turned up so far, so that work can start from it lat
 
 The game overwrites these after loading, so a writer does not need to get them right ([container.md § After the walk](container.md#after-the-walk)):
 
-- MISC words 124–379 (tile count per XBLD code; military-zone tiles are not counted);
-- the statistics recounted by `0x434b70` (details on the MISC pages, planned);
+- MISC words 124–379 (tile count per XBLD code; military-zone tiles are not counted; [tile-counts.md](segments/misc/tile-counts.md#building-counts-words-124379));
+- the totals `0x434b70` recounts (developed tiles, road connections, the sum of the bond rates), none of which is stored in MISC;
 - XBIT `0x40` (powered), `0x10` (watered) and `0x08` (mask), which are rebuilt by `0x467860`, `0x464550` and the mask step, so they can be left 0 ([xbit.md § What to trust](segments/xbit.md#what-to-trust));
 - the road neighbour connection count, recounted from the XTXT `0xFA` tiles ([xtxt.md](segments/xtxt.md#neighbour-connections-0xfa));
 - the XGRP graph maxima (not stored in the file at all).
@@ -36,6 +36,22 @@ The game does **not** recompute XTER, ALTM, XZON, XUND, the eight overlays or XG
 - **XUND.** Write only `0x00`–`0x23`; codes from `0x24` up break rotation. Slope pieces must match the tile's XTER slope; `0x23` belongs under XBLD `0xE9` and `0x6C`–`0x6F`; pipes go with XBIT `0x20` ([xund.md](segments/xund.md#values)).
 - **XBIT.** `0x80` (conducts power) and `0x20` (carries water) are trusted: a building or pipe without them never gets power or water. Runways and piers store their `0x02` flag as "along row XOR odd compass"; bridges as "along row" ([xbit.md](segments/xbit.md#0x02-mirror-rotate)).
 - **Codes to avoid.** XBLD `0x59` (raised drawbridge) never occurs in saved files.
+
+## MISC
+
+See [misc/README.md § Recomputed and trusted](segments/misc/README.md#recomputed-and-trusted) for what the game overwrites.
+
+- **Layout.** Write word 0 = `0x122`, write 16-bit values sign-extended and 8-bit values zero-extended, and write 0 in words 1044–1199, as the Windows 95 saver does ([misc/README.md](segments/misc/README.md#how-the-words-are-stored)). Write booleans as 0 or 1: the game saves back whatever it loaded, so a 255 from another version survives.
+- **A saved city** has word 1 = 1, word 28 = 0, word 1042 = 0 and word 1040 = −1 ([general.md](segments/misc/general.md#disasters)). Word 3 should be 1900, 1950, 2000 or 2050, to match the starting national figures; the game does not check.
+- **Trusted counts.** The game never recounts the subway tiles (word 1018, keep it equal to the XUND count, [general.md § Counters](segments/misc/general.md#counters)) or the military counts (words 1002–1017, [tile-counts.md](segments/misc/tile-counts.md#military-counts-words-10021017)); military growth uses the latter.
+- **Rewards.** Keep word 8 at least the number of milestones word 1035 has passed, and word 30's bits within the levels reached; otherwise rewards are handed out again or never ([general.md § Rewards](segments/misc/general.md#rewards)).
+- **Population.** Keep the age groups' people adding up to word 1035, and word 1035 = 10 × word 380 ([population.md](segments/misc/population.md#age-groups)). Words 380–387 are rebuilt from the map every 25 days; `zone_population_from_map` in `sc2dump.py` gives the full-count values. Industry tax rates 0–20, demand 0–127, sizes ≥ 0.
+- **Bonds.** Word 6 ≤ 50, slots 0 to word 6 − 1 of words 388–437 hold rates 1–25, and budget entry 4 holds the same count and the average rate (Σ rates × 10 000 ÷ count). Only the sum of the rates is recomputed on load, so write the average consistently ([population.md § Bonds](segments/misc/population.md#bonds)).
+- **Budget.** Year to date = Σ count × rate over months 0 to the current month (all 12 if word 911 is set), and the current month's pair = count and rate. The counts of entries 3–15 are recounted at the start of each month and the tax bases on day 21; the rates are trusted: taxes 0–20, funding 0–100 in steps of 5, ordinances rate 1 ([budget.md](segments/misc/budget.md#layout)). Word 911 is 0 unless the city is saved between the month-11 update and the next month's start.
+- **Ordinances.** Write only bits 0–19 of word 1000 ([ordinances.md](segments/misc/ordinances.md#bits)).
+- **Neighbours.** Name ids 0–36, with 0 only for neighbour 0 on a coast map (word 913 set), and different non-zero ids; word 441 + 4*k* = 0 ([neighbours.md](segments/misc/neighbours.md#layout)).
+- **Demand** −2000 … +2000; words 457–461 = 0. **Technology**: 0 or a future year; 0 everywhere gives the player everything ([technology.md](segments/misc/technology.md#layout)).
+- **Newspapers.** Keep each column of words 916–945 a permutation as the game makes it (names, opinion and weather columns 0–5; layouts and price styles 0, 0, 1, 1, 2, 2); other values index string tables and are probably unsafe (**Inferred**). Story slot *s* = (type 11 + *s*, priority 0, parameter 0, 255, 255, 255) is the state of a new game ([newspapers.md](segments/misc/newspapers.md#stories-words-946999)).
 
 ## Text and labels
 

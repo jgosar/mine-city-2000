@@ -34,7 +34,7 @@ A 32-byte, uncompressed segment holding the city's name as a zero-terminated str
 | last | name length | zeros | 12 |
 | absent | — | — | 7 (all `.sc2`) |
 
-(**Verified (data)**, 114 files.) The `0x1F` form is what the Windows 95 version writes: its save routine `0x432350` writes CNAM first, through `0x432990` (**Confirmed (code)**). The other forms come from other versions or editions of the game (**Inferred**); which ones is **Unknown**. Name lengths in the corpus are 3 to 25 characters.
+(**Verified (data)**, 114 files.) The `0x1F` form is what the Windows 95 version writes: its save routine `0x432350` writes CNAM first, through `0x432990` (**Confirmed (code)**). The other forms come from another version or edition of the game: the same files, and only they, have data in MISC words 1044–1070, which the Windows 95 saver writes as zeros (**Verified (data)**, [general.md § Words 1044–1199](misc/general.md#words-10441199)). Which version that is, is **Unknown**. Name lengths in the corpus are 3 to 25 characters.
 
 Example, `0x1F` form (city "Flarange"): `1F` `46 6C 61 72 61 6E 67 65` `00`, then 22 bytes of whatever was in memory.
 

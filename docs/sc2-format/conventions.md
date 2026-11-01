@@ -20,7 +20,7 @@ The game was written for the big-endian Macintosh first. The Windows version swa
 ## Integer types
 
 - A **byte** is unsigned (0–255) unless a segment page says otherwise.
-- MISC holds 1200 **32-bit words**. The loader copies each word into a game variable. Some of those variables are 8- or 16-bit, so the game keeps only the low bits; the MISC pages give the effective type of each field. Values that can go negative, such as funds, are two's-complement **Inferred**, to be confirmed per field.
+- MISC holds 1200 **32-bit words**. The loader copies each word into a game variable. Some of those variables are 8- or 16-bit, so the game keeps only the low bits; read a 16-bit word as the signed value of its low 16 bits and an 8-bit word as its low byte (**Confirmed (code)**, [misc/README.md § Widths](segments/misc/README.md#widths)). Values that can go negative, such as funds, are two's-complement.
 
 ## The city map: 128 × 128 tiles
 
@@ -150,7 +150,7 @@ Some **values** change with each turn too. A normaliser must repeat the followin
 
 The reference decoder implements these steps as `normalise()`; `sc2dump.py CITY.SC2 --normalise` dumps a city turned to compass 0.
 
-Everything else is **moved but not changed**: ALTM values, XZON bytes (including their corner bits: [xzon.md](segments/xzon.md#corner-bits)), XTXT, overlay values, the XBIT bits other than above, and the 0x02 flag of runways, piers and all other buildings. The game also turns the moving objects in XTHG (`0x466410`; page planned). Of MISC, only the compass changes for real. The per-code tile counts in words 124–379 are recomputed on load anyway ([container.md § After the walk](container.md#after-the-walk)).
+Everything else is **moved but not changed**: ALTM values, XZON bytes (including their corner bits: [xzon.md](segments/xzon.md#corner-bits)), XTXT, overlay values, the XBIT bits other than above, and the 0x02 flag of runways, piers and all other buildings. The game also turns the moving objects in XTHG (`0x466410`; page planned). Of MISC, only the compass changes for real. The neighbour records stay as they are, because neighbour *k* belongs to a fixed edge of the land ([neighbours.md](segments/misc/neighbours.md#which-edge-each-neighbour-is-on)). The per-code tile counts in words 124–379 are recomputed on load anyway ([container.md § After the walk](container.md#after-the-walk)).
 
 **Verified (data)**: the corpus contains a city saved at compass 3 (`test-rotated.sc2`) and the same city at compass 0 (`test.sc2`). Normalising the first with the steps above reproduces the second byte for byte in all 15 grid segments, except 58 XBIT bytes that differ only in 0x08, 0x40 and 0x10, the bits the game recomputes ([xbit.md § What to trust](segments/xbit.md#what-to-trust)).
 

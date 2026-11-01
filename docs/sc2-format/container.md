@@ -158,11 +158,11 @@ When every segment has been read, the loader does the following (**Confirmed (co
 1. **City name.** If there was no CNAM, or it held an empty name, the name is taken from the file name (`0x431ee0`).
 2. **Derived values.** Three routines rebuild values from the map layers, overwriting what the file stored:
    - `0x434b70` recounts several statistics from XBLD, XZON and XTXT.
-   - `0x434f80` recounts how many tiles carry each XBLD code (a 256-entry table), leaving out tiles in the military zone (XZON zone 7, [xzon.md](segments/xzon.md#zone-7-the-military-base)). That table is loaded from **MISC words 124–379**, so those stored words are replaced on every load.
+   - `0x434f80` recounts how many tiles carry each XBLD code (a 256-entry table), leaving out tiles in the military zone (XZON zone 7, [xzon.md](segments/xzon.md#zone-7-the-military-base)). That table is loaded from **MISC words 124–379**, so those stored words are replaced on every load ([tile-counts.md](segments/misc/tile-counts.md#building-counts-words-124379)).
    - `0x431fd0` computes the y-axis maximum of each of the 16 XGRP graph series from its 52 values, with a floor per series ([xgrp.md § Graph scale](segments/xgrp.md#graph-scale-not-stored)).
 3. **Labels.** If XLAB was present, each 25-byte record is converted from a length-prefixed string to a zero-terminated one, with the length capped at 23 (`0x430c00`). If XLAB was missing, all labels are cleared (`0x430d50`).
 
-For a reader, step 2 means the stored copies of these values can be stale or wrong in a hand-edited file. The pages for MISC and XGRP (planned) say how to recompute them. For a writer, it means the game will recompute them anyway ([writing.md](writing.md)).
+For a reader, step 2 means the stored copies of these values can be stale or wrong in a hand-edited file. The [MISC](segments/misc/README.md#recomputed-and-trusted) and [XGRP](segments/xgrp.md) pages say how to recompute them. For a writer, it means the game will recompute them anyway ([writing.md](writing.md)).
 
 ## Checklist for a reader
 
