@@ -13,6 +13,52 @@ public class ReaderTests
   }
 
   [Fact]
+  public void rle_commandByteZero_copiesNothing()
+  {
+    var segment = new Segment("XBLD", new byte[] { 0x00, 0x02, 5, 6 });
+    Assert.Equal(new byte[] { 5, 6 }, segment.getContent());
+  }
+
+  [Fact]
+  public void rle_commandByte128_repeatsOnce()
+  {
+    var segment = new Segment("XBLD", new byte[] { 0x80, 9, 0x81, 7 });
+    Assert.Equal(new byte[] { 9, 7, 7 }, segment.getContent());
+  }
+
+  [Fact]
+  public void scenarioSegments_areStoredRaw()
+  {
+    // TEXT starts with the little-endian id 0x80; run through RLE, its 0x00 bytes would be read as commands
+    byte[] text = new byte[] { 0x80, 0, 0, 0, (byte)'H', (byte)'i', 0 };
+    Assert.Equal(text, new Segment("TEXT", text).getContent());
+  }
+
+  [Fact]
+  public void scenarioFile_isRead()
+  {
+    byte[] file = new IffBuilder()
+      .extraSegment("TEXT", new byte[] { 0x81, 0, 0, 0, (byte)'H', (byte)'i', 0 })
+      .extraSegment("SCEN", new byte[] { 0x80, 0, 0, 0, 0, 0 })
+      .build();
+    CityData city = Reader.read(file, "x");
+    Assert.Empty(city.getBuildings());
+  }
+
+  [Fact]
+  public void emptySegmentAtEndOfFile_isAccepted()
+  {
+    CityData city = Reader.read(new IffBuilder().extraSegment("XXXX", new byte[0]).build(), "x");
+    Assert.Empty(city.getBuildings());
+  }
+
+  [Fact]
+  public void readNumber_readsTheLastBytesOfAnArray()
+  {
+    Assert.Equal(0x0102, Reader.readNumber(new byte[] { 0, 0, 1, 2 }, 0, 4));
+  }
+
+  [Fact]
   public void emptyCity_hasNoBuildings()
   {
     CityData city = Reader.read(new IffBuilder().build(), "x");
