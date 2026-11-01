@@ -44,8 +44,11 @@ flowchart TD
 | [compression.md](compression.md) | The run-length encoding, exactly as the game decodes it | done |
 | **Map layers:** [altm.md](segments/altm.md), [xter.md](segments/xter.md), [xbld.md](segments/xbld.md), [xzon.md](segments/xzon.md), [xund.md](segments/xund.md), [xbit.md](segments/xbit.md) | Altitude and water, terrain shapes, buildings and their footprints, zones and corner bits, pipes and subways, per-tile flags | done |
 | **Code tables:** [tile-codes-xbld.md](reference/tile-codes-xbld.md), [terrain-codes-xter.md](reference/terrain-codes-xter.md), [underground-codes-xund.md](reference/underground-codes-xund.md) | Every XBLD, XTER and XUND code | done |
-| Other segment pages | XTXT, XLAB, CNAM, the minimaps, XGRP, MISC, XMIC, XTHG, scenario segments | planned |
-| Other code tables | Text codes, thing ids | planned |
+| **Text:** [xtxt.md](segments/xtxt.md), [xlab.md](segments/xlab.md), [cnam.md](segments/cnam.md) | What each tile's text value points to (sign, microsim, moving object, connection), the 256 label texts, the city name | done |
+| **Statistics:** [minimaps.md](segments/minimaps.md), [xgrp.md](segments/xgrp.md) | The eight overlays (traffic, pollution, land value, crime, police, fire, density, growth) and the graph history | done |
+| **Code tables:** [text-codes-xtxt.md](reference/text-codes-xtxt.md) | Every XTXT value | done |
+| Other segment pages | MISC, XMIC, XTHG, scenario segments | planned |
+| Other code tables | Thing ids | planned |
 | `cross-segment.md`, `implementing-a-reader.md` | How segments relate; a step-by-step parser recipe | planned |
 | [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | growing |
 | [corrections.md](corrections.md) | Where we differ from the older public documents, and why | growing |

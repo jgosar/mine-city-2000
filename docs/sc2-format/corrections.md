@@ -15,7 +15,7 @@ Both are good, and most of what they say holds. This page lists only where the W
 | Padding of odd-length segments | Neither says; standard IFF pads to even lengths | **No padding** | [container.md § Segment header](container.md#segment-header) |
 | Segment order | djm: segments come "in order" | Any order is accepted; CNAM is first, last or absent in practice | [container.md § Segment order](container.md#segment-order) |
 | Unknown segments | Not stated | Skipped | [container.md § Missing, repeated and unknown segments](container.md#missing-repeated-and-unknown-segments) |
-| CNAM | djm: "optional?"; OpenCity2k: byte 0 is `0x1F` | Optional: without it the name comes from the file name. The game ignores byte 0 and reads the name from byte 1. Byte 0 is `0x1F` or the name length, depending on the file | [container.md § After the walk](container.md#after-the-walk), [conventions.md § Strings](conventions.md#strings) |
+| CNAM | djm: "optional?"; OpenCity2k: byte 0 is `0x1F` | Optional: without it the name comes from the file name. The game ignores byte 0 and reads the name from byte 1. Byte 0 is `0x1F` or the name length, depending on the file | [cnam.md § Layout](segments/cnam.md#layout) |
 | MISC word 0 | OpenCity2k: "header, unknown" | **File version**: must be 0x122, otherwise the game refuses the file | [container.md § Version check](container.md#version-check) |
 | MISC words 124–379 (building counts) | djm: tile counts per building code | Correct, but the game **recomputes** them from XBLD and XZON on every load, so the stored values are never used. Tiles in the military zone are not counted | [container.md § After the walk](container.md#after-the-walk) |
 | Scenario segment order | Not stated | `TEXT`, `SCEN` and `PICT` are looked up by tag and id, so their position does not matter | [container.md § Scenario segments](container.md#scenario-segments) |
@@ -96,3 +96,39 @@ Both are good, and most of what they say holds. This page lists only where the W
 | `0x04` | djm: "covered with water?"; OpenCity2k: "Water" | Correct; only ever on tiles with a water XTER code | [xbit.md § 0x04](segments/xbit.md#0x04-covered-by-water) |
 | `0x02` | djm: "???"; OpenCity2k: "Rotation: rotate the tile by 90°" | A horizontal sprite mirror. For buildings (`0x70` and up: runways, piers) it is XORed with the compass parity; for roads, bridges and on-ramps it is used as it is. The game flips it on bridges and on-ramps when the view turns | [xbit.md § 0x02](segments/xbit.md#0x02-mirror-rotate) |
 | `0x01` | djm: "does placing water here give salt water?"; OpenCity2k: "Salt Water" | Correct, and it stays on dry land (160 000 of 268 000 salt tiles are dry) | [xbit.md § 0x01](segments/xbit.md#0x01-salt) |
+
+## Text and labels
+
+| Topic | Older document says | What the game does | Evidence |
+|---|---|---|---|
+| XTXT `0xFB`–`0xFF` | djm: sports team names (Llamas, Alpacas, …) | In XTXT they are temporary disaster markers. The team names are **XLAB slots** 251–255, which no XTXT value points to | [xtxt.md § Disaster markers](segments/xtxt.md#disaster-markers-0xfb0xff), [xlab.md § Label slots](segments/xlab.md#label-slots) |
+| XTXT `0xFB`–`0xFF` names | OpenCity2k: toxic cloud, flood, rioters, mass-riot rioters, fire | Fire (`0xFF`) and flood (`0xFC`) are confirmed in the code; the others fit the code's behaviour but are not tied to a disaster yet | [xtxt.md § Disaster markers](segments/xtxt.md#disaster-markers-0xfb0xff) |
+| XTXT `0xC9`–`0xF0` | djm: not listed; OpenCity2k: 39 values, "index to XTHG, probably" | Moving objects: XTHG record value − `0xC9`; 40 values, records 0–39 | [xtxt.md § Moving objects](segments/xtxt.md#moving-objects-0xc90xf0) |
+| XTXT `0x33` | djm: "??? microsimulator" | Never used: it would be XMIC record 0 and XLAB slot 51 | [xtxt.md § Values](segments/xtxt.md#values) |
+| XTXT and XLAB `0x3D`–`0xC8` | OpenCity2k: 139 microsim labels | 140 values (XMIC records 10–149); the corpus uses `0xC8` | [xtxt.md § Microsims](segments/xtxt.md#microsims-0x3d0xc8) |
+| XLAB padding | djm: padded with zeros to 24 bytes; OpenCity2k: text, then a zero terminator, padding sometimes garbage | There is no terminator: the save writes only the length and the text, so the rest of the record holds older text. Length 24 occurs; the game uses at most 23 | [xlab.md § Layout](segments/xlab.md#layout) |
+| XLAB slot 250 | OpenCity2k: text of the last connection sign | Correct: a scratch buffer that the drawing code rebuilds, not a city label | [xlab.md § Slot 250](segments/xlab.md#slot-250-connection-sign-scratch) |
+| CNAM byte 0 | djm: name length, zero padding; OpenCity2k: always `0x1F` | Both occur: `0x1F` in 50/107 files (the Windows 95 writer), the name length in 57/107. Zero padding is rare (12/107). The game ignores byte 0 | [cnam.md § Layout](segments/cnam.md#layout) |
+| Character set | OpenCity2k: ASCII | Windows ANSI: code page 1252 in the corpus | [conventions.md § Strings](conventions.md#strings) |
+
+## Overlays
+
+| Topic | Older document says | What the game does | Evidence |
+|---|---|---|---|
+| 32 × 32 overlay mapping | OpenCity2k: "show in city appears to split into 4x4 blocks" | Confirmed: tile (row, col) is in cell (row / 4, col / 4) | [minimaps.md § Cell mapping](segments/minimaps.md#cell-mapping) |
+| Overlay values | djm: meanings marked "(?)"; neither document gives formulas | Formulas for all eight, from simulation step 2 and the traffic routines | [minimaps.md § Values](segments/minimaps.md#values) |
+| XPOP | djm: "Population (?)" | A building density computed from XBLD alone: 4 × the summed per-code weights of the 4 × 4 tiles, capped at 255. Not people | [minimaps.md § XPOP](segments/minimaps.md#xpop-building-density) |
+| XROG | OpenCity2k: `7F` no change; values above mean growth, below decline | A running average of the change in XPOP; 127 and 128 both mean no change. The map view draws 131 and up as growth, below 125 as decline | [minimaps.md § XROG](segments/minimaps.md#xrog-rate-of-growth) |
+| XVAL | OpenCity2k: shown "human friendly 1 indexed" | Stored 0–255; 0 outside the developed-land mask | [minimaps.md § XVAL](segments/minimaps.md#xval-land-value) |
+| MISC word 12, "Traffic Count" (byte `0x30`) | OpenCity2k: not a sum of XTRF | The sum of XTRF right after the step-19 decay; trips added since then make XTRF larger (equal in 69/114 files) | [minimaps.md § XTRF](segments/minimaps.md#xtrf-traffic) |
+| MISC word 13, "Pollution" (byte `0x34`) | OpenCity2k: unknown | The sum of XPLT (114/114) | [minimaps.md § XPLT](segments/minimaps.md#xplt-pollution) |
+
+## XGRP
+
+| Topic | Older document says | What the game does | Evidence |
+|---|---|---|---|
+| Contents | djm: unknown; OpenCity2k: 16 series of 12 monthly, 20 half-yearly and 20 five-yearly values | Correct, and the exact rules are known: newest value first in each block; slot 12 takes a copy of slot 0 in months 0 and 6, slot 32 a copy of slot 12 in month 0 of years divisible by 5; the update runs on day 21 of the month | [xgrp.md § When samples are taken](segments/xgrp.md#when-samples-are-taken) |
+| Series 13 | OpenCity2k: "GNF (GNP?), in 1000s" | GNP. The game shows no unit | [xgrp.md § Graph series](segments/xgrp.md#graph-series) |
+| MISC words 18 and 19, "Work Force LE / EQ" | OpenCity2k: life expectancy and education quotient | Correct; they are also the newest Health and Education graph values (109/109) | [xgrp.md § Graph series](segments/xgrp.md#graph-series) |
+| MISC words 21 and 22, "National Value" and "National Tax" | OpenCity2k: unknown | GNP and the Fed Rate: the newest values of series 13 and 15 | [xgrp.md § Graph series](segments/xgrp.md#graph-series) |
+| MISC word 1001, "unemployed" (byte `0x0FA4`) | OpenCity2k: unknown | The unemployment **percentage**, a copy of the newest value of series 12 (109/109) | [xgrp.md § Graph series](segments/xgrp.md#graph-series) |

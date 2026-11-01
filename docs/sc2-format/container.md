@@ -95,7 +95,7 @@ What the city loader does with each tag (**Confirmed (code)**, `0x4302e0`). The 
 | `XPOP` | RLE | 1024 | — | `0x4ca448` |
 | `XROG` | RLE | 1024 | — | `0x4cb028` |
 | `XGRP` | RLE | 3328 | 32-bit swap (`0x42a7e0`) | `0x4cc470` |
-| `CNAM` | raw | `length` bytes (32 in practice) | name = C string starting at byte 1 | `0x4ca1a0` |
+| `CNAM` | raw | `length` bytes (32 in practice) | name = C string starting at byte 1 ([cnam.md](segments/cnam.md)) | `0x4ca1a0` |
 | anything else | — | — | read and discarded | — |
 
 "Game buffer" is the address of the variable that holds the buffer pointer (for the maps, the table of 128 row pointers). These are listed for cross-checking in [game-internals.md](game-internals.md).
@@ -117,6 +117,8 @@ The loader accepts segments in any order. It loops over them and dispatches on t
 | first, before MISC | 68/114 |
 | last, after XGRP | 39/114 |
 | absent | 7/114 |
+
+The Windows 95 game writes CNAM first; the files with CNAM last also differ in byte 0 ([cnam.md § Which files have which form](segments/cnam.md#which-files-have-which-form)).
 
 The scenario segments always come after the city segments, in one of three orders: `TEXT TEXT SCEN PICT` (13/18), `TMPL TEXT TEXT SCEN PICT` (4/18) or `TEXT TEXT PICT SCEN TMPL` (1/18).
 
@@ -157,7 +159,7 @@ When every segment has been read, the loader does the following (**Confirmed (co
 2. **Derived values.** Three routines rebuild values from the map layers, overwriting what the file stored:
    - `0x434b70` recounts several statistics from XBLD, XZON and XTXT.
    - `0x434f80` recounts how many tiles carry each XBLD code (a 256-entry table), leaving out tiles in the military zone (XZON zone 7, [xzon.md](segments/xzon.md#zone-7-the-military-base)). That table is loaded from **MISC words 124–379**, so those stored words are replaced on every load.
-   - `0x431fd0` computes the maximum of each XGRP graph series, used for scaling the graphs.
+   - `0x431fd0` computes the y-axis maximum of each of the 16 XGRP graph series from its 52 values, with a floor per series ([xgrp.md § Graph scale](segments/xgrp.md#graph-scale-not-stored)).
 3. **Labels.** If XLAB was present, each 25-byte record is converted from a length-prefixed string to a zero-terminated one, with the length capped at 23 (`0x430c00`). If XLAB was missing, all labels are cleared (`0x430d50`).
 
 For a reader, step 2 means the stored copies of these values can be stale or wrong in a hand-edited file. The pages for MISC and XGRP (planned) say how to recompute them. For a writer, it means the game will recompute them anyway ([writing.md](writing.md)).

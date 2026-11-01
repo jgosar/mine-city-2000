@@ -19,9 +19,10 @@ The game overwrites these after loading, so a writer does not need to get them r
 - MISC words 124–379 (tile count per XBLD code; military-zone tiles are not counted);
 - the statistics recounted by `0x434b70` (details on the MISC pages, planned);
 - XBIT `0x40` (powered), `0x10` (watered) and `0x08` (mask), which are rebuilt by `0x467860`, `0x464550` and the mask step, so they can be left 0 ([xbit.md § What to trust](segments/xbit.md#what-to-trust));
+- the road neighbour connection count, recounted from the XTXT `0xFA` tiles ([xtxt.md](segments/xtxt.md#neighbour-connections-0xfa));
 - the XGRP graph maxima (not stored in the file at all).
 
-The game does **not** recompute XTER, ALTM, XZON or XUND on load, and it does not redraw subway or pipe shapes until a neighbouring piece is laid. A writer has to make them consistent itself.
+The game does **not** recompute XTER, ALTM, XZON, XUND, the eight overlays or XGRP on load, and it does not redraw subway or pipe shapes until a neighbouring piece is laid. A writer has to make them consistent itself.
 
 ## Map layers
 
@@ -36,7 +37,30 @@ The game does **not** recompute XTER, ALTM, XZON or XUND on load, and it does no
 - **XBIT.** `0x80` (conducts power) and `0x20` (carries water) are trusted: a building or pipe without them never gets power or water. Runways and piers store their `0x02` flag as "along row XOR odd compass"; bridges as "along row" ([xbit.md](segments/xbit.md#0x02-mirror-rotate)).
 - **Codes to avoid.** XBLD `0x59` (raised drawbridge) never occurs in saved files.
 
+## Text and labels
+
+- **XTXT.** Write only 0, signs 1–50, microsim values that match XMIC records, and `0xFA` on transport tiles at the map edge. Never write `0x33`, `0xF1`–`0xF9` or the disaster markers `0xFB`–`0xFF`. Values `0xC9`–`0xF0` should match the XTHG records; 0 there is probably safe, because moving objects mark their tile again when they move (**Inferred**) ([xtxt.md](segments/xtxt.md#values)).
+- **Microsims.** Keep three things in step: value *v* on every tile of the building, XMIC record *v* − `0x33` whose byte 0 is the building's XBLD code, and a label in XLAB slot *v* ([xtxt.md § Microsims](segments/xtxt.md#microsims-0x3d0xc8)).
+- **XLAB.** Length at most 23, padded with zeros. Slot 0 is the mayor, slots 52–60 the city systems (the game always has them), slots 251–255 the team names; slot 250 may be empty ([xlab.md § Label slots](segments/xlab.md#label-slots)).
+- **CNAM.** Write `0x1F`, the name (at most 31 bytes, Windows ANSI), then zeros up to 32 bytes. That matches the Windows 95 writer without its leftover memory. Or leave CNAM out, and the game names the city after the file ([cnam.md](segments/cnam.md#layout)).
+- **Rail and highway connections.** Their count (`0x4ca3f0`) is not recounted on load; where it is stored is not known yet.
+
+## Overlays
+
+- The game uses the stored overlays until the next simulation step 2 (step 19 for XTRF), and step 2 builds on the stored XPLT, XROG, XTRF, XPOP and XCRM ([minimaps.md § What to trust](segments/minimaps.md#what-to-trust)).
+- Writing them all 0 is safe (11/114 corpus cities have all-zero 64 × 64 overlays), but the city then looks empty in the data views and grows as if land were worthless until step 2 runs.
+- XPOP can be computed exactly from XBLD ([minimaps.md § XPOP](segments/minimaps.md#xpop-building-density)).
+- XROG's neutral value is 127 or 128, not 0: an all-zero XROG reads as steep decline everywhere.
+- Keep MISC words 10, 11 and 13 equal to the sums of XVAL, XCRM and XPLT, and word 12 at most the sum of XTRF. The game recomputes them at the next step anyway.
+
+## XGRP
+
+- XGRP is trusted as stored: on load the game derives only the graph maxima from it, which are not saved ([xgrp.md](segments/xgrp.md#graph-scale-not-stored)).
+- A new city may write 832 zeros, as the game does (`0x40e250`); the blocks fill as the months pass.
+- A tool that changes MISC words 18–22 or 1001 changes only the next monthly sample; the history stays as it is.
+- When generating history, keep the block rules (slot 12 is an earlier slot 0, slot 32 an earlier slot 12); the game does not check them ([xgrp.md § When samples are taken](segments/xgrp.md#when-samples-are-taken)).
+
 ## Not yet known
 
 - Which other stored values the game trusts without checking, and which combinations of segments it needs to be consistent (for example XBLD with XZON, XBIT and XTXT).
-- What the save routine (`0x433030` writes the header) does differently from the loader, for example where it puts CNAM.
+- What else the save routine (`0x432350`; `0x433030` writes the header) does differently from the loader. Known so far: it writes CNAM first ([cnam.md](segments/cnam.md#how-the-game-uses-it)).

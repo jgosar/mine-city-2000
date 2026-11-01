@@ -81,7 +81,7 @@ Set by the water flood (`0x4649e0`). It starts from every powered pump (XBLD `0x
 
 This bit has two jobs.
 
-1. **A 64 × 64 mask, kept in the top-left quadrant.** After loading, `0x434b70` sets 0x08 on tile `(row / 2, col / 2)` for every tile whose XBLD code is above `0x1C` or whose XZON zone (low four bits) is not 0. Rows 0–63 and cols 0–63 of XBIT therefore hold one bit per 2 × 2 block: "this block has something built or zoned on it". Step 2 of the simulation cycle (`0x46a840`, which also computes XPLT) reads and rewrites the mask (**Confirmed (code)**; what it is used for there is **Inferred**: pollution and land value work on the same 64 × 64 grid).
+1. **A 64 × 64 mask, kept in the top-left quadrant.** After loading, `0x434b70` sets 0x08 on tile `(row / 2, col / 2)` for every tile whose XBLD code is above `0x1C` or whose XZON zone (low four bits) is not 0. Rows 0–63 and cols 0–63 of XBIT therefore hold one bit per 2 × 2 block: "this block has something built or zoned on it". Step 2 of the simulation cycle (`0x46a840`, which also computes XPLT) reads and rewrites the mask and gives every cell outside it a land value of 0 (**Confirmed (code)**, [minimaps.md § XVAL](minimaps.md#xval-land-value)).
 2. **A "visited" mark for searches.** The power and water floods set 0x08 on each tile they visit and clear it on a second pass. A recursive check over lower-lying tiles (`0x443cb0` / `0x4441c0`) does the same.
 
 The power reset (`0x467860`) and water reset (`0x464550`) clear 0x08 on every tile, so between steps 1 and 2 of a cycle the mask is empty. The floods also yield to Windows every 5000 tiles (`0x4570f0`), so a city can be saved partway through one.

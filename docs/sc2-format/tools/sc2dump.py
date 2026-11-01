@@ -232,6 +232,12 @@ def describe(value):
         return "%dx%d grid, %d distinct; most common: %s" % (
             len(value), len(value[0]), len(set(flat)),
             ", ".join("%s x%d" % (v, n) for v, n in common))
+    if isinstance(value, list) and value and isinstance(value[0], str):
+        used = [(i, s) for i, s in enumerate(value) if s]
+        return "%d strings, %d non-empty: %s%s" % (
+            len(value), len(used), ", ".join("%d=%r" % u for u in used[:6]), " ..." if len(used) > 6 else "")
+    if isinstance(value, list) and len(value) > 8:
+        return "%d values: %s ..." % (len(value), ", ".join(map(str, value[:8])))
     return repr(value)
 
 
@@ -424,6 +430,104 @@ def decode_xbit(data):
     """One 0/1 grid per flag."""
     g = grid(data)
     return {name: map_grid(lambda v, mask=mask: 1 if v & mask else 0, g) for mask, name in XBIT_FLAGS}
+
+
+# --- XTXT, XLAB, CNAM (docs/sc2-format/segments/xtxt.md, xlab.md, cnam.md) ----
+
+TEXT_ENCODING = "cp1252"  # Windows ANSI; the saving machine's code page (conventions.md#strings)
+
+
+def xtxt_kind(v):
+    """What an XTXT value points to (reference/text-codes-xtxt.md)."""
+    if v == 0:
+        return "none"
+    if v <= 0x32:
+        return "sign"              # XLAB slot v
+    if v == 0x33:
+        return "unused"
+    if v <= 0x3C:
+        return "builtin_microsim"  # XMIC record v - 0x33, XLAB slot v
+    if v <= 0xC8:
+        return "microsim"          # XMIC record v - 0x33, XLAB slot v
+    if v <= 0xF0:
+        return "thing"             # XTHG record v - 0xC9
+    if v == 0xFA:
+        return "connection"        # neighbour connection sign
+    if v >= 0xFB:
+        return "disaster"          # in-game only, never saved
+    return "unused"
+
+
+@decoder(b"XTXT")
+def decode_xtxt(data):
+    g = grid(data)
+    return {"code": g, "kind": map_grid(xtxt_kind, g)}
+
+
+@decoder(b"XLAB")
+def decode_xlab(data):
+    """256 labels; the game caps the length byte at 23 when it loads (0x430c00)."""
+    recs = [data[i * 25:(i + 1) * 25] for i in range(256)]
+    return {
+        "text": [r[1:1 + min(r[0], 23)].decode(TEXT_ENCODING, "replace") for r in recs],
+        "length_byte": [r[0] for r in recs],
+    }
+
+
+@decoder(b"CNAM")
+def decode_cnam(data):
+    """City name: the C string from byte 1. Byte 0 is 0x1F or the name length; the game ignores it."""
+    return {"name": data[1:].split(b"\0")[0].decode(TEXT_ENCODING, "replace"), "byte0": data[0]}
+
+
+# --- overlays (docs/sc2-format/segments/minimaps.md) --------------------------
+
+# Density weight per XBLD code used for XPOP (SIMCITY.EXE table 0x4e9648, codes 0x70-0xC5);
+# codes 0xC6 and up add 2 per tile (arcologies 0xFB-0xFE: 12); codes below 0x70 add nothing.
+XPOP_WEIGHT = {c: 0 for c in range(256)}
+for lo, hi, w in ((0x70, 0x89, 1), (0x8C, 0x8F, 2), (0x90, 0x93, 3), (0x94, 0x98, 2), (0x99, 0x9D, 3),
+                  (0x9E, 0xA1, 2), (0xA2, 0xA5, 3), (0xA6, 0xA7, 2), (0xA8, 0xA9, 3), (0xAE, 0xC3, 4)):
+    XPOP_WEIGHT.update({c: w for c in range(lo, hi + 1)})
+XPOP_WEIGHT.update({c: 2 for c in range(0xC6, 0x100)})
+XPOP_WEIGHT.update({c: 12 for c in range(0xFB, 0xFF)})
+
+
+def xpop_from_xbld(xbld):
+    """XPOP as step 2 (0x46a840) computes it: 4 x the summed weights of the 4 x 4 tiles of a cell,
+    capped at 255. Tiles in rows and columns 0 and 127 are not counted."""
+    total = [0] * 1024
+    for r in range(1, 127):
+        for c in range(1, 127):
+            total[(r // 4) * 32 + c // 4] += XPOP_WEIGHT[xbld[r * 128 + c]]
+    return [min(255, 4 * v) for v in total]
+
+
+def _overlay(size):
+    def decode(data):
+        return {"value": grid(data, size=size)}
+    return decode
+
+
+for _tag in (b"XTRF", b"XPLT", b"XVAL", b"XCRM"):
+    decoder(_tag)(_overlay(64))
+for _tag in (b"XPLC", b"XFIR", b"XPOP", b"XROG"):
+    decoder(_tag)(_overlay(32))
+
+
+# --- XGRP (docs/sc2-format/segments/xgrp.md) ----------------------------------
+
+XGRP_SERIES = ("city_size", "residents", "commerce", "industry", "traffic", "pollution", "land_value", "crime",
+               "power_percent", "water_percent", "health", "education", "unemployment", "gnp",
+               "national_population", "fed_rate")
+# slots of each 52-value series: newest first within each block
+XGRP_BLOCKS = {"months": (0, 12), "half_years": (12, 32), "five_years": (32, 52)}
+
+
+@decoder(b"XGRP")
+def decode_xgrp(data):
+    """16 graph series of 52 signed 32-bit values."""
+    values = struct.unpack(">832i", data)
+    return {name: list(values[i * 52:(i + 1) * 52]) for i, name in enumerate(XGRP_SERIES)}
 
 
 # --- normalising to compass 0 (docs/sc2-format/conventions.md#orientation) --
