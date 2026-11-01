@@ -18,6 +18,7 @@ public class IffBuilder
   private byte[]? _xbit;                            // 128 * 128 flag bytes, null until xbit() is called
   private byte[]? _cnam;
   private int? _altmLength;
+  private readonly List<(string name, byte[] content)> _extra = new();
 
   public IffBuilder altitude(int x, int z, byte altitude)
   {
@@ -80,6 +81,13 @@ public class IffBuilder
     return this;
   }
 
+  // Appends a segment stored exactly as given (no RLE) after all the others, like the TEXT/SCEN/PICT segments of a scenario.
+  public IffBuilder extraSegment(string name, byte[] content)
+  {
+    _extra.Add((name, content));
+    return this;
+  }
+
   public byte[] build()
   {
     var body = new List<byte>();
@@ -90,6 +98,7 @@ public class IffBuilder
     body.AddRange(segment("XTER", rle(_xter)));
     body.AddRange(segment("MISC", rle(_misc)));
     if (_xbit != null) body.AddRange(segment("XBIT", rle(_xbit)));
+    foreach (var (name, content) in _extra) body.AddRange(segment(name, content));
 
     var file = new List<byte>();
     file.AddRange(Encoding.ASCII.GetBytes("FORM"));
@@ -107,8 +116,9 @@ public class IffBuilder
     return result.ToArray();
   }
 
-  // Mirrors Segment.decompress: a command byte 1..127 copies that many literal bytes, a command byte c > 128
-  // repeats the following byte c - 127 times (so runs are 2..128 long); 128 itself is invalid.
+  // Encodes like the game's own saves: a command byte 1..127 copies that many literal bytes, a command byte c > 128
+  // repeats the following byte c - 127 times (so runs are 2..128 long). The game also decodes 0 (copy nothing)
+  // and 128 (repeat once) but never writes them; see docs/sc2-format/compression.md.
   public static byte[] rle(byte[] data)
   {
     var result = new List<byte>();

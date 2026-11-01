@@ -43,7 +43,7 @@ namespace com.mc2k.SimCityReader
             {
                 while (offset < fileBytes.Length)
                 {
-                    if (offset + 8 >= fileBytes.Length)
+                    if (offset + 8 > fileBytes.Length)
                     {
                         throw new InvalidDataException("City file is truncated or corrupt");
                     }
@@ -87,7 +87,7 @@ namespace com.mc2k.SimCityReader
             {
                 throw new Exception("Cannot read numbers larger than 8 bytes!");
             }
-            if (offset < 0 || len < 1 || (offset + len) >= bytes.Length)
+            if (offset < 0 || len < 1 || (offset + len) > bytes.Length)
             {
                 throw new Exception("Invalid parameters: offset=" + offset + ", len=" + len);
             }

@@ -12,3 +12,6 @@ MineCity2000.Wasm/node_modules
 MineCity2000.Wasm/wwwroot/app.js
 MineCity2000.Wasm/wwwroot/converter-client.js
 MineCity2000.Wasm/wwwroot/*.map
+
+# python
+__pycache__/
