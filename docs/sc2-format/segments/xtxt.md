@@ -144,7 +144,7 @@ For an `0xFA` tile the renderer builds a text in **XLAB slot 250**, used as a sc
 2. The neighbour's name is entry (compass + side) & 3 of the four 32-byte names at `0x4cad58`, cut to 20 characters.
 3. A space and the digit `'5'` + (*n* mod 5) are appended, where *n* is taken from the tile's position (giving signs such as "Cats Corner 5" or "Oak Creek 6").
 
-Because the neighbour is chosen with the compass, the same edge shows the same neighbour whichever way the view is turned (**Inferred**). The four neighbour names are saved as name ids in MISC ([neighbours.md](misc/neighbours.md#names)).
+Because the neighbour is chosen with the compass, the same edge shows the same neighbour whichever way the view is turned, as in the Neighbors window ([neighbours.md § Which edge each neighbour is on](misc/neighbours.md#which-edge-each-neighbour-is-on)). The four neighbour names are saved as name ids in MISC ([neighbours.md](misc/neighbours.md#names)).
 
 ## Rotation
 

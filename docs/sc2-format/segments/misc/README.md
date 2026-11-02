@@ -99,10 +99,11 @@ What the loader keeps of each word. Everything not listed is a full 32-bit signe
 
 | Kept | Words |
 |---|---|
-| low 16 bits, signed | 1–3, 7, 8, 22, 23, 28, 30, the first two words of each industry (91 + 3*k*, 92 + 3*k*), 124–437, the name ids 438, 442, 446, 450, 454–478, 912, the first two words of each story slot (946 + 6*s*, 947 + 6*s*), 1002–1019, 1027–1031, 1033, 1034, 1036–1041, 1043 |
+| low 16 bits, signed | 1–3, 7, 8, 22, 23, 28, 30, the first two words of each industry (91 + 3*k*, 92 + 3*k*), 124–379, 388–437, the name ids 438, 442, 446, 450, 454–478, 912, the first two words of each story slot (946 + 6*s*, 947 + 6*s*), 1002–1019, 1027–1031, 1033, 1034, 1036–1041, 1043 |
 | low 8 bits, unsigned | 24–27, 915–945, the last four words of each story slot (948 + 6*s* … 951 + 6*s*) |
+| 32 bits, unsigned | the neighbour population and economy words 439, 440, 443, 444, 447, 448, 451, 452 ([neighbours.md](neighbours.md#pitfalls-for-readers); 4/114 files have economy values of 2³¹ or more) |
 
-`sc2dump.py` applies this table (`misc_words`) before naming the fields.
+Words 380–387 are full 32-bit values although they sit between 16-bit groups (**Confirmed (code)**: `0x431330` copies them into the int32 array `0x4ca428`). `sc2dump.py` applies this table (`misc_words`) before naming the fields. It reports words 1044–1199, which the game does not load, as stored, and it does not apply the game's recounts on load (words 124–379 and the counters of `0x434b70`).
 
 ## Recomputed and trusted
 

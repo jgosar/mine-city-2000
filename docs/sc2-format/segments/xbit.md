@@ -57,7 +57,7 @@ flowchart LR
 
 ### 0x80: conducts power
 
-Power spreads from each power plant (XBLD `0xC6`–`0xCF`) to neighbouring tiles (up, down, left, right) **only through tiles with 0x80 set** (**Confirmed (code)**, power flood `0x4679b0`). The game sets 0x80, together with 0x40 and 0x20, on every tile of a building it places (`0x436e80`). It also sets 0x80 alone in a tool action that then recomputes power (`0x441400`, the power-line tool **Inferred**), and clears 0x80, 0x40 and 0x20 when a tile is cleared (`0x440c50`).
+Power spreads from each power plant (XBLD `0xC6`–`0xCF`) to neighbouring tiles (up, down, left, right) **only through tiles with 0x80 set** (**Confirmed (code)**, power flood `0x4679b0`). The game sets 0x80, together with 0x40 and 0x20, on every tile of a building it places (`0x436e80`). Some kinds come without them: parks, statues and piers have no 0x80, subway stations and most dams no 0x20, and military-base buildings neither (**Verified (data)**, [cross-segment.md § Power and water bits](../cross-segment.md#power-and-water-bits)). It also sets 0x80 alone in a tool action that then recomputes power (`0x441400`, the power-line tool **Inferred**), and clears 0x80, 0x40 and 0x20 when a tile is cleared (`0x440c50`).
 
 **Verified (data)**: every tile with 0x40 also has 0x80 (114/114 files). Every powered tile can be reached from a power plant through 0x80 tiles in 111/114 files. The remaining 55 tiles in 3 files are explained by saves taken partway through a simulation step (see [0x08](#0x08-developed-land-mask-and-scratch-mark)) **Inferred**. 41/114 files have 0x80 on some empty tiles (XBLD 0), which the game leaves behind and ignores.
 

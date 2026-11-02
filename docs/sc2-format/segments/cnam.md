@@ -43,7 +43,7 @@ Example, `0x1F` form (city "Flarange"): `1F` `46 6C 61 72 61 6E 67 65` `00`, the
 | Use | Function | What it does |
 |---|---|---|
 | Load | `0x4302e0` | Reads `length` bytes into a buffer one byte longer; length 0 gives an empty name. The name is the C string at byte 1 |
-| No name | `0x431ee0` | If CNAM is missing or the name is empty, the city is named after the file: the file name without its directory, upper-cased (`CharUpperA`) ([container.md](../container.md#after-the-walk)) |
+| No name | `0x431ee0` | If CNAM is missing or the name is empty, the city is named after the file: the file name without its directory, upper-cased (`CharUpperA`) ([container.md](../container.md#after-the-walk)). Whether the extension is part of it depends on what the caller passes (**Unknown**, [open-questions.md](../open-questions.md#text-and-labels)) |
 | Save | `0x432350` → `0x432990` | Writes the tag, length 32, byte `0x1F`, then the first 31 bytes starting at the name (`Left(name, 31)` via `0x49e9d8`, which does not clear what follows the name) |
 
 The mayor's name is not here: it is XLAB slot 0 ([xlab.md](xlab.md#slot-0-the-mayor)).

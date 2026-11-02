@@ -37,7 +37,7 @@ The two fields are independent. A zoned tile keeps its zone when a building, roa
 | 9 | seaport | **Verified (data)** | Found on seaport tiles (`0xE0`, `0xE3`, `0xF0`, `0xF2`) |
 | 10–15 | — | **Unknown** | Never seen (0/114 files) |
 
-Zone names follow the older documents. The data confirms the pairs: the light and dense versions of a zone share their smallest buildings, and the special zones sit on their own buildings. For building names see the [XBLD tile codes](../reference/tile-codes-xbld.md).
+Zone names follow the older documents. The data confirms the pairs: the light and dense versions of a zone share their smallest buildings, and the special zones sit on their own buildings. For building names see the [XBLD tile codes](../reference/tile-codes-xbld.md). Which codes stand on which zone, code by code, is in [cross-segment.md § Zones and buildings](../cross-segment.md#zones-and-buildings).
 
 For a zoned tile with no building, the renderer draws a ground sprite chosen as *base + zone* (base `0x50A` in one renderer, `0x316` in another; `0x43c730`, `0x43d620`). So each of the nine zone values has its own ground graphic (**Confirmed (code)**).
 

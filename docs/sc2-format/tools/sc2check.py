@@ -1391,6 +1391,152 @@ def misc_newspapers_stories(f):
             break
 
 
+# --- relations between segments (docs/sc2-format/cross-segment.md) ------------
+
+def _codes(*spans):
+    out = set()
+    for s in spans:
+        out.update(range(s[0], s[1] + 1) if isinstance(s, tuple) else (s,))
+    return out
+
+
+# XBLD code families and the XZON zones they stand on (cross-segment.md#zones-and-buildings)
+CROSS_ZONES = (
+    ("small homes", _codes((0x70, 0x7B)), {1, 2}),
+    ("dense homes", _codes((0x8C, 0x93), (0xAE, 0xB1)), {2}),
+    ("small shops and offices", _codes((0x7C, 0x83)), {3, 4}),
+    ("dense commercial", _codes((0x94, 0x9D), (0xB2, 0xBB)), {4}),
+    ("small industry", _codes((0x84, 0x87)), {5, 6}),
+    ("dense industry", _codes((0x9E, 0xA5), (0xBC, 0xC1)), {6}),
+    ("construction and abandoned", _codes((0x88, 0x8B), (0xA6, 0xAD), (0xC2, 0xC5)), {1, 2, 3, 4, 5, 6}),
+    ("airport", _codes(0xDD, 0xDE, 0xE1, (0xE4, 0xE6), 0xE8, 0xEA, 0xEE, 0xF6), {7, 8}),
+    ("military only", _codes(0xE2, 0xE7, 0xEF, 0xF1, 0xF9), {7}),
+    ("seaport", _codes(0xE0, 0xE3, 0xF0, 0xF2), {7, 9}),
+    ("other buildings", _codes((0xC6, 0xDC), 0xDF, 0xE9, (0xEB, 0xED), (0xF3, 0xF5), 0xF7, 0xF8, (0xFA, 0xFF)), {0}),
+    ("roads, rails, bridges, highways (not on-ramps)", _codes((0x1D, 0x5C), (0x61, 0x6B)), {0}),
+)
+CROSS_ON_WATER = _codes((0x51, 0x5C), 0x6A, 0x6B, 0xDF)        # bridges, elevated power lines, piers
+CROSS_ANY_GROUND = _codes(0xC6, 0xC7, 0xF8)                     # hydro dams, marinas
+
+
+def _footprint(bd):
+    return [(bd["row"] + a) * 128 + bd["col"] - c for a in range(bd["size"]) for c in range(bd["size"])]
+
+
+@check
+def cross_zones_buildings(f):
+    """Every XBLD code family stands on its own XZON zones."""
+    b, z = _seg(f, b"XBLD"), _seg(f, b"XZON")
+    for name, codes, zones in CROSS_ZONES:
+        tiles = [i for i in range(16384) if b[i] in codes]
+        if tiles:
+            yield "%s: XZON zone always %s: %s" % (
+                name, "/".join(map(str, sorted(zones))), all(z[i] & 0x0F in zones for i in tiles))
+
+
+@check
+def cross_footprint_layers(f):
+    """The tiles of one building share its zone and its microsim value."""
+    b, z, t = _seg(f, b"XBLD"), _seg(f, b"XZON"), _seg(f, b"XTXT")
+    found, _ = sc2.find_buildings(b, z, _compass(f))
+    big = [bd for bd in found if bd["size"] >= 2]
+    if big:
+        yield "multi-tile buildings: one XZON zone per footprint: %s" % all(
+            len({z[i] & 0x0F for i in _footprint(bd)}) == 1 for bd in big)
+    kinds = set()
+    for bd in found:
+        vals = [t[i] for i in _footprint(bd)]
+        mic = {v for v in vals if 0x34 <= v <= 0xC8}
+        if len(mic) > 1:
+            kinds.add("two microsim values")
+        elif mic:
+            v = mic.pop()
+            rest = {w for w in vals if w != v}
+            kinds.add("whole footprint" if not rest else
+                      "some tiles 0" if rest == {0} else
+                      "some tiles a moving-object marker" if all(0xC9 <= w <= 0xF0 for w in rest) else "other")
+    for k in sorted(kinds):
+        yield "microsim value covers: %s" % k
+
+
+@check
+def cross_terrain_buildings(f):
+    """Bridges and piers stand on water; other buildings on land, except dams and marinas."""
+    b, x = _seg(f, b"XBLD"), _seg(f, b"XTER")
+    water = [i for i in range(16384) if b[i] in CROSS_ON_WATER]
+    if water:
+        yield "bridges, elevated power lines, piers on water XTER (>= 0x10): %s" % all(x[i] >= 0x10 for i in water)
+    land = [i for i in range(16384) if b[i] >= 0x70 and b[i] not in CROSS_ANY_GROUND | CROSS_ON_WATER]
+    if land:
+        yield "other buildings (0x70+) on land XTER (< 0x10): %s" % all(x[i] < 0x10 for i in land)
+    dams = [i for i in range(16384) if b[i] in (0xC6, 0xC7)]
+    if dams:
+        yield "hydro dams on surface water 0x30-0x45 or the waterfall 0x3E: %s" % all(0x30 <= x[i] <= 0x45 for i in dams)
+        yield "hydro dams all on the waterfall 0x3E: %s" % all(x[i] == 0x3E for i in dams)
+
+
+CROSS_RAIL = _codes((0x2C, 0x3E), (0x45, 0x48), 0x5A, 0x5B, (0x6C, 0x6F), 0xED)
+
+
+@check
+def cross_things_ground(f):
+    """Ships and sailboats (types 3, 9) are on water; trains (10, 11) on rail tiles."""
+    th, b, x = _seg(f, b"XTHG"), _seg(f, b"XBLD"), _seg(f, b"XTER")
+    ships, trains = [], []
+    for k in range(1, 40):
+        kind, row, col = th[k * 12], th[k * 12 + 3], th[k * 12 + 4]
+        if row < 128 and col < 128:
+            (ships if kind in (3, 9) else trains if kind in (10, 11) else []).append(row * 128 + col)
+    if ships:
+        yield "ships and sailboats on water XTER: %s" % all(x[i] >= 0x10 for i in ships)
+    if trains:
+        yield "trains above ground on rail, rail bridges, rail stations, subway-to-rail: %s" % all(
+            b[i] in CROSS_RAIL for i in trains)
+
+
+@check
+def cross_microsim_labels(f):
+    """XLAB slot v, XMIC record v - 0x33 and XTXT value v describe the same microsim (v = 0x3D-0xC8)."""
+    lab, mic, t = _seg(f, b"XLAB"), _seg(f, b"XMIC"), _seg(f, b"XTXT")
+    on_map = set(t)
+    kinds = collections.Counter()
+    for v in range(0x3D, 0xC9):
+        kinds[(lab[v * 25] > 0, mic[(v - 0x33) * 8] != 0, v in on_map)] += 1
+    name = lambda k: "label %s, record %s, on map %s" % tuple("yes" if x else "no" for x in k)
+    for k in kinds:
+        if k[0] == k[1] == k[2]:
+            continue
+        yield "mismatch: " + name(k)
+    if all(k[0] == k[1] == k[2] for k in kinds):
+        yield "every microsim slot: label, record and map value agree"
+
+
+CROSS_UNPOWERED = _codes(0xC6, 0xC7, 0xD5, 0xDB, 0xDD, 0xDE, 0xDF, 0xE9)   # see cross-segment.md#power-and-water-bits
+
+
+@check
+def cross_building_conduct(f):
+    """Building tiles carry power (XBIT 0x80) and water (0x20), except a few kinds."""
+    b, z, bit = _seg(f, b"XBLD"), _seg(f, b"XZON"), _seg(f, b"XBIT")
+
+    def share(name, codes, mask, zone7=False):
+        tiles = [i for i in range(16384) if b[i] in codes and (z[i] & 0x0F == 7) == zone7]
+        if tiles:
+            n = sum(1 for i in tiles if bit[i] & mask == mask)
+            yield "%s: %s" % (name, "all" if n == len(tiles) else "none" if n == 0 else "some")
+
+    yield from share("zoned buildings 0x70-0xC5 with 0x80 and 0x20", _codes((0x70, 0xC5)), 0xA0)
+    yield from share("other buildings 0xC6+ outside zone 7 (not the kinds below) with 0x80 and 0x20",
+                     _codes((0xC6, 0xFF)) - CROSS_UNPOWERED, 0xA0)
+    yield from share("military-base buildings (zone 7) with 0x80 and 0x20", _codes((0x70, 0xFF)), 0xA0, True)
+    yield from share("parks 0xD5 with 0x80", {0xD5}, 0x80)
+    yield from share("statues 0xDB with 0x80", {0xDB}, 0x80)
+    yield from share("piers 0xDF with 0x80", {0xDF}, 0x80)
+    yield from share("runways 0xDD-0xDE with 0x80", {0xDD, 0xDE}, 0x80)
+    yield from share("subway stations 0xE9 with 0x20", {0xE9}, 0x20)
+    yield from share("hydro dams 0xC6-0xC7 with 0x20", {0xC6, 0xC7}, 0x20)
+
+
 # --- driver ----------------------------------------------------------------
 
 class Parsed:

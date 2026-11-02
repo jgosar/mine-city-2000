@@ -46,7 +46,7 @@ Story slot *s* (0–8) is words 946 + 6*s* … 951 + 6*s*.
 |---|---|
 | 0–6 | The story queue, sorted by priority, highest first |
 | 7 | The weather item: type 0, parameter = the weather (MISC word 27) |
-| 8 | The opinion item: type 42–45 from the paper's opinion column (0 → 42, 1–2 → 43, 3–4 → 44, 5 → 45), parameter = the top problem in the latest opinion poll (0 traffic, 1 pollution, 2 crime, 3 taxes, 4 unemployment, 5 education, 6 health) |
+| 8 | The opinion item: type 42–45 from the paper's opinion column (0 → 42, 1–2 → 43, 3–4 → 44, 5 → 45), parameter = the top problem in the latest opinion poll (`0x472510`; 0 traffic, 1 pollution, 2 crime, 3 taxes, 4 unemployment, 5 education, 6 health) |
 
 Slots 7 and 8 are rewritten each time a paper is opened (`0x477880`), so they describe the last paper read. Their priority is 0.
 

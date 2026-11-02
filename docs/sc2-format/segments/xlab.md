@@ -23,7 +23,7 @@ Record *s* (slot *s*, 0–255) is bytes `s * 25` to `s * 25 + 24`.
 | 1 … *n* | The characters, no terminator | **Confirmed (code)** `0x430c00`, `0x430c90` |
 | *n* + 1 … 24 | Not part of the text: zeros or leftovers of an older, longer text | **Confirmed (code)**: the save conversion writes only the length and the text; **Verified (data)** |
 
-A record is **empty** when its length byte is 0.
+A record is **empty** when its length byte is 0. A zero byte inside the first min(length, 23) bytes ends the label as the game shows it, because the game keeps labels as C strings (`0x430c00`). This happens only in garbage records in the corpus (3 records, `BAYVIEW.SC2` slots 192–194, none on the map); the reference decoder cuts the label there too.
 
 In memory the game keeps each label as a zero-terminated string. After loading, `0x430c00` turns every record into one, capping the length at 23. Before saving, `0x430c90` turns it back into length + characters (**Confirmed (code)**). Neither writes byte 24, and neither clears the bytes after the text. So these bytes hold whatever was there before: in the corpus, 4 170 non-empty records have non-zero bytes after their text, and byte 24 is 0 in 15 623 records, `0xCD` in 1 232, 1 in 611, `0xFF` in 605 and `0x0A` in 402 (**Verified (data)**).
 
@@ -139,4 +139,4 @@ The text is in the **Windows ANSI** code page of the machine that saved it (code
 - **Stop at the length, not at a zero byte.** The bytes after the text are often leftovers of a longer, older name.
 - **Not every non-empty slot is in use.** Sign labels can be orphaned (53), slot 250 is scratch, and a few unused slots hold garbage. To list the labels a player sees, start from the XTXT values on the map.
 - **Slot 0 is the mayor, not the city.** The city name is in [CNAM](cnam.md).
-- **Decode as Windows ANSI**, not UTF-8 and not the DOS code page.
+- **Decode as Windows ANSI**, not UTF-8 and not the DOS code page, but expect Mac Roman labels in some shipped cities ([conventions.md § Strings](../conventions.md#strings)).

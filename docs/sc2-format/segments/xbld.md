@@ -113,7 +113,7 @@ for each tile (r, c):
         building at rows r..r+n-1, cols c-n+1..c
 ```
 
-Check that the block holds `code` throughout. Tiles of multi-tile codes that no anchor covers are [fragments](#fragments).
+Check that the block holds `code` throughout. Tiles of multi-tile codes that no anchor covers are [fragments](#fragments). A tile with a 1×1 code from `0x70` whose corner bits are not `0xF0` (7 tiles in 2 files) is neither a building nor a fragment; the reference decoder skips it. If two well-formed blocks overlap (possible only in damaged files), it keeps both.
 
 ### Highways
 

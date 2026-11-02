@@ -11,7 +11,7 @@ Every rule here comes from the game's own load code (decompiled with Ghidra), fr
 | If you want to… | Read |
 |---|---|
 | Get the big picture of what is in a file | [overview.md](overview.md) |
-| Write a parser | [container.md](container.md), then [compression.md](compression.md), then the segment pages |
+| Write a parser | [implementing-a-reader.md](implementing-a-reader.md), which walks through [container.md](container.md), [compression.md](compression.md) and the segment pages in order |
 | Know how numbers, coordinates and grids work | [conventions.md](conventions.md) |
 | Check a claim against the game | [game-internals.md](game-internals.md) |
 | See where these pages disagree with older documents | [corrections.md](corrections.md) |
@@ -28,6 +28,8 @@ flowchart TD
     container --> segments["segments/*.md<br/>one page per segment"]
     segments --> reference["reference/*.md<br/>code tables"]
     conventions --> segments
+    segments --> cross["cross-segment.md<br/>how segments relate"]
+    README --> reader["implementing-a-reader.md<br/>step-by-step reader"]
     README --> internals["game-internals.md<br/>SIMCITY.EXE address map"]
     README --> corrections["corrections.md"]
     README --> open["open-questions.md"]
@@ -51,11 +53,12 @@ flowchart TD
 | **Microsims and moving objects:** [xmic.md](segments/xmic.md), [xthg.md](segments/xthg.md) | The 150 microsim records and the 40 moving objects | done |
 | **Code tables:** [microsim-kinds-xmic.md](reference/microsim-kinds-xmic.md), [thing-ids-xthg.md](reference/thing-ids-xthg.md) | What each microsim's figures mean; every moving-object type | done |
 | **Scenarios:** [text.md](segments/text.md), [scen.md](segments/scen.md), [pict.md](segments/pict.md) | The list description and briefing, the goals, disaster and time limit (and the unused TMPL), the picture | done |
-| `cross-segment.md`, `implementing-a-reader.md` | How segments relate; a step-by-step parser recipe | planned |
-| [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | growing |
-| [corrections.md](corrections.md) | Where we differ from the older public documents, and why | growing |
-| [open-questions.md](open-questions.md) | Everything not yet settled | growing |
-| [writing.md](writing.md) | Notes for writers, collected along the way | stub |
+| [cross-segment.md](cross-segment.md) | How the segments relate: references, layers that must agree, derived values, what the game trusts | done |
+| [implementing-a-reader.md](implementing-a-reader.md) | A step-by-step recipe for a complete reader, with pseudocode and the traps that break naive readers | done |
+| [game-internals.md](game-internals.md) | Functions and variables in `SIMCITY.EXE` that these pages cite | done |
+| [corrections.md](corrections.md) | Where we differ from the older public documents, and why | done |
+| [open-questions.md](open-questions.md) | Everything not yet settled | up to date |
+| [writing.md](writing.md) | Notes for writers, collected along the way | notes only (writing is out of scope) |
 
 ## How sure is each statement?
 
@@ -67,7 +70,9 @@ Every field and rule carries one of these tags:
 | **Verified (data)** | Holds in N of the M files in the corpus. The page gives N/M. |
 | **Inferred** | Our best reading; consistent with the evidence but not proven. |
 | **Unused** | The game loads it but nothing reads it afterwards. |
-| **Unknown** | Not understood yet. Listed in [open-questions.md](open-questions.md). |
+| **Unknown** | Not understood yet. |
+
+Every **Inferred** and **Unknown** statement has a row in [open-questions.md](open-questions.md).
 
 When a rule is both, it is tagged **Confirmed (code), Verified (data)**.
 
@@ -75,14 +80,16 @@ When a rule is both, it is tagged **Confirmed (code), Verified (data)**.
 
 "Verified (data)" numbers come from **114 distinct files** (identical files counted once):
 
-- 96 `.sc2` cities: the ones shipped with the Windows 95 edition, plus cities that players saved with it,
+- 96 `.sc2` cities: the ones shipped with the Windows 95 edition, plus cities that players saved,
 - the 18 `.scn` scenarios shipped with the game.
+
+60 of the 114 files were last saved by another version of the game, not by this `SIMCITY.EXE`. They differ in small, documented ways: the CNAM form ([cnam.md § Which files have which form](segments/cnam.md#which-files-have-which-form)) and MISC words 1044–1070 ([general.md § Words 1044–1199](segments/misc/general.md#words-10441199)). Where a tally depends on the version, the page says so.
 
 The game files are not part of this repository. To repeat any tally, point the checker at your own SimCity 2000 folder:
 
 ```
-py -3 -I docs/sc2-format/tools/sc2check.py "C:\Program Files\Maxis\SimCity 2000"
-py -3 -I docs/sc2-format/tools/sc2dump.py  SOMECITY.SC2 [--json]
+py -3 -I docs/sc2-format/tools/sc2check.py "C:\Program Files\Maxis\SimCity 2000" [more folders]
+py -3 -I docs/sc2-format/tools/sc2dump.py  SOMECITY.SC2 [--json] [--normalise]
 ```
 
 [`tools/sc2dump.py`](tools/sc2dump.py) is the reference decoder: it implements every rule on these pages. [`tools/sc2check.py`](tools/sc2check.py) prints the tallies. [`tools/linkcheck.py`](tools/linkcheck.py) checks that every link in these pages resolves. All three use only the Python standard library.

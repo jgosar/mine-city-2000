@@ -102,4 +102,4 @@ flowchart TB
     tiles -. "each cell covers 2×2 / 4×4 tiles" .- mini
 ```
 
-The XTXT relations are confirmed on [xtxt.md](segments/xtxt.md#values) and the overlay grids on [minimaps.md](segments/minimaps.md#cell-mapping). All relations will be brought together in `cross-segment.md` (planned).
+The XTXT relations are confirmed on [xtxt.md](segments/xtxt.md#values) and the overlay grids on [minimaps.md](segments/minimaps.md#cell-mapping). All relations are brought together in [cross-segment.md](cross-segment.md).

@@ -12,7 +12,7 @@ The scalar words of MISC: the file version, the date, money, the game's difficul
 | Loader / saver | `0x431330` / `0x433a40`, one variable per word |
 | Recomputed on load | none of these words, except that `0x434b70` restarts some counters ([container.md](../../container.md#after-the-walk)) |
 
-The saver writes every value sign-extended from the variable's width, and the loader keeps only that width (16 or 8 bits where the table says so). Read every word as a signed int32.
+The saver writes every value sign-extended from the variable's width, and the loader keeps only that width (16 or 8 bits where the table says so). Read every word as a big-endian int32, then keep the width given in [README.md § Widths](README.md#widths): 16-bit signed, 8-bit unsigned, or the unsigned neighbour words.
 
 ## Layout
 
@@ -92,8 +92,8 @@ Word 0 is the version check ([container.md § Version check](../../container.md#
 
 ```
 year         = word 3 + word 4 / 300
-month index  = (word 4 / 25) mod 12      (0 = January, Inferred)
-day of month = word 4 mod 25
+month index  = (word 4 / 25) mod 12      (0 = January)
+day of month = word 4 mod 25      (0-based: 0-24)
 ```
 
 Starting a city (`0x42e460`) sets word 3 to 1900, 1950, 2000 or 2050 and word 4 to 0. Word 4 counts up by one every simulation tick; the simulation step is word 4 mod 25 ([game-internals.md](../../game-internals.md#simulation-cycle)).
@@ -135,7 +135,7 @@ Neighbouring cities' populations follow the same trend ([README.md](README.md), 
 
 Every month `0x468150` moves the weather to a new type picked at random from a per-type, per-season table (`0x4dbeb8`), then moves heat, wind and humidity halfway towards the new type's values. A new city starts at heat 150, wind 10, humidity 15, weather 4 (`0x40e250`).
 
-| Weather (word 27) | Name (**Inferred**) | Heat target | Wind target | Humidity target |
+| Weather (word 27) | Name | Heat target | Wind target | Humidity target |
 |---|---|---|---|---|
 | 0 | cold | 80 | 15 | 0 |
 | 1 | clear | 165 | 30 | 0 |
@@ -150,7 +150,7 @@ Every month `0x468150` moves the weather to a new type picked at random from a p
 | 10 | hurricane | 140 | 100 | 60 |
 | 11 | tornado | 175 | 100 | 60 |
 
-The targets are the tables at `0x4dc038`, `0x4dc048` and `0x4dc058` (**Confirmed (code)**). The names are OpenCity2k's; they fit the targets, and two are confirmed by the disaster code: weather 10 on a coastal map can start a hurricane, weather 11 a tornado (`0x471bc0`).
+The targets are the tables at `0x4dc038`, `0x4dc048` and `0x4dc058` (**Confirmed (code)**). The names are OpenCity2k's. They fit the targets and are the game's own strings 33200–33211 in this order (**Inferred** that the strings are indexed by the type: no code that shows them was found). Weather 9–11 are **Confirmed (code)**: `0x471bc0` shows "Blizzard Warning", "Hurricane Warning" or "Tornado Warning" for them, and weather 10 on a coastal map can start a hurricane, weather 11 a tornado.
 
 What the weather does (**Confirmed (code)**):
 
@@ -161,17 +161,19 @@ What the weather does (**Confirmed (code)**):
 
 ## Disasters
 
-| Value | Disaster (**Inferred** names, OpenCity2k) | Value | Disaster |
-|---|---|---|---|
-| 1 | fire | 10 | microwave beam |
-| 2 | flood | 11 | volcano |
-| 3 | riot | 12 | firestorm |
-| 4 | toxic spill | 13 | mass riots |
-| 5 | air crash | 14 | major flood |
-| 6 | earthquake | 15 | pollution accident |
-| 7 | tornado | 16 | hurricane |
-| 8 | monster | 17 | helicopter crash |
-| 9 | meltdown | 18 | plane crash |
+| Value | Game string | OpenCity2k | Value | Game string | OpenCity2k |
+|---|---|---|---|---|---|
+| 1 | Fire | fire | 10 | Microwave | microwave beam |
+| 2 | Flood | flood | 11 | Volcano | volcano |
+| 3 | Riots | riot | 12 | Fire Storm | firestorm |
+| 4 | Pollution | toxic spill | 13 | Mass Riots | mass riots |
+| 5 | Crash | air crash | 14 | Major Flood | major flood |
+| 6 | Earthquake | earthquake | 15 | Chemical Spill | pollution accident |
+| 7 | Tornado | tornado | 16 | — | hurricane |
+| 8 | Monster | monster | 17 | — | helicopter crash |
+| 9 | Meltdown | meltdown | 18 | — | plane crash |
+
+The game strings are 33212 + value for 0–7 (0 is "None") and 33232 + value − 8 for 8–15, in this order in `SIMCITY.EXE`; no code that indexes them was found, so the names are **Inferred**. The code fits them: the dispatcher `0x45cf10` starts firestorm 12 with the fire routine `0x460e10`, mass riots 13 with the riot starter `0x45e5f0` of disaster 3, and major flood 14 with the flood starter `0x45db00` of disaster 2; 4 and 15 write the `0xFB` marker, 16 the `0xFC` flood marker; 5 and 17 start nothing (**Confirmed (code)**; [game-internals.md § Disasters](../../game-internals.md#disasters)).
 
 The dispatcher `0x45cf10` handles the cases 1–18; the codes that are confirmed by other code are 7 (tornado: started by tornado weather; moves an XTHG object) and 16 (hurricane: started by hurricane weather on a coast), and 8 (the monster: moves an XTHG object). 5 (air crash) and 17 (helicopter crash) are the numbers a crashing airplane and helicopter give their explosion, and 18 creates a crashing airplane (`0x45e7d0`). The flying rescuer (`0x452fa0`) groups 1, 5, 6, 9–12 as fires, 2 and 14 as floods, 3 and 13 as riots, 4 and 15 as toxic ([thing-ids-xthg.md](../../reference/thing-ids-xthg.md#16-flying-rescuer)).
 
@@ -221,9 +223,9 @@ The player's options are saved with the city and restored on load (**Confirmed (
 | 1020 | Auto budget | 0 / 1 |
 | 1021 | Auto goto: the disaster routines scroll the view to the disaster when it is set | 1 / 255 |
 | 1022 | Sound effects | 0 / 1 |
-| 1023 | Music; on load, 0 calls `0x402be4` (**Inferred**: stops the music) | 0 / 1 |
+| 1023 | Music; on load, 0 stops the music (`0x480ae0` closes the MCI device) | 0 / 1 |
 | 1024 | No disasters (1 = off) | 0 / 1 |
-| 1025 | Newspaper subscription: the paper comes in months 3 and 7 (April and August if 0 is January) | 0 / 1 |
+| 1025 | Newspaper subscription: the paper comes in months 3 and 7 (April and August) | 0 / 1 |
 | 1026 | Newspaper extras: the paper comes with big news (story types 3–5 and `0x24`) | 0 / 1 |
 | 1027 | Which newspaper: index into the newspaper list in words 916–945 ([README.md](README.md)); the menu offers one paper per reward level, at most six | 0–5 |
 
@@ -311,7 +313,7 @@ Run `sc2check.py … --only misc_general` to repeat the tallies.
 ## Pitfalls for readers
 
 - **Booleans can be 255.** The other version wrote "true" as 255 in some option words (1020–1023, 1026, 911, 914): 36/114 files, 11 of them re-saved by the Windows 95 game, which keeps the value. Treat any non-zero value as true.
-- **Read words as signed.** Funds can be negative, word 1040 is −1, word 1028 can be −1, and word 16 overflows.
+- **Read words as signed**, after the width rule ([README.md § Widths](README.md#widths)). Funds can be negative, word 1040 is −1, word 1028 can be −1, and word 16 overflows.
 - **Words 1044–1070 are not from this game.** Do not give them meanings from the Windows 95 code; they come from another version and are ignored by this one.
 - **Words 10–13, 17–23, 29, 1030–1039 are snapshots.** They were true at the last monthly or step-2 update, not necessarily at the moment of saving.
 - **Word 1035 is not the whole population.** The City Size graph adds word 1032 (and an arcology bonus); see [xgrp.md](../xgrp.md#graph-series).
