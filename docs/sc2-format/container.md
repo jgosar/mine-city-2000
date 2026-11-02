@@ -67,7 +67,7 @@ while consumed < S:
     pos += 8 + L;  consumed += 8 + L
 ```
 
-Bytes after the walk ends (beyond `8 + S`) are never read. The corpus has none (**Verified (data)** 114/114).
+Bytes after the walk ends (beyond `8 + S`) are never read. The loader tests `consumed` only between segments, so if the last segment ends past `8 + S` it is still read whole, and the walk ends after it; the reference decoder then counts trailing bytes from the end of that segment. The corpus has none (**Verified (data)** 114/114).
 
 ## Segment table
 
@@ -76,7 +76,7 @@ What the city loader does with each tag (**Confirmed (code)**, `0x4302e0`). The 
 | Tag | Storage | Decoded size | Fix-up after decoding | Game buffer |
 |---|---|---|---|---|
 | `MISC` | RLE | 4800 | 32-bit swap; version check; values copied into variables (`0x431330`) | temporary |
-| `ALTM` | raw | `length` bytes (32768 in practice) | 16-bit swap (`0x42a880`) | `0x4cae10` |
+| `ALTM` | raw (`0x430d90`) | `length` bytes (32768 in practice) | 16-bit swap (`0x42a880`) | `0x4cae10` |
 | `XTER` | RLE | 16384 | — | `0x4c9f58` |
 | `XBLD` | RLE | 16384 | — | `0x4cc4f0` |
 | `XZON` | RLE | 16384 | — | `0x4ca1f0` |
@@ -127,7 +127,7 @@ The scenario segments always come after the city segments, in one of three order
 | Situation | What the game does | Confidence |
 |---|---|---|
 | Unknown tag | Reads its `length` bytes and discards them | **Confirmed (code)** `0x4310c0` |
-| Repeated tag | Each occurrence is decoded into the same buffer; the last one wins | **Confirmed (code)** (follows from the dispatch loop) |
+| Repeated tag | Each occurrence is decoded into the same buffer; the last one wins. A later copy that decodes short overwrites only the bytes it produces, so the rest of the earlier copy stays ([compression.md](compression.md#running-out-of-input-or-space)); the reference decoder does not model this, and no file in the corpus repeats a tag | **Confirmed (code)** (follows from the dispatch loop) |
 | Missing CNAM, or an empty name | City name = the file name without its directory, upper-cased | **Confirmed (code)** `0x431ee0` |
 | Missing XLAB | All 256 labels are cleared | **Confirmed (code)** `0x430d50` |
 | Any other segment missing | The loader leaves that buffer as it was. Whether the caller clears it beforehand is **Unknown** | **Confirmed (code)** for the loader |
@@ -173,6 +173,7 @@ For a reader, step 2 means the stored copies of these values can be stale or wro
 5. Check MISC word 0 == 0x122.
 6. Swap MISC/XGRP as 32-bit, ALTM as 16-bit and XMIC as described in [conventions.md](conventions.md#byte-order).
 7. For scenario segments, read the little-endian id after the length and apply the TEXT and PICT limits.
+8. Check the relations between segments that you rely on ([cross-segment.md § Checks for a reader](cross-segment.md#checks-for-a-reader)).
 
 ## Evidence
 

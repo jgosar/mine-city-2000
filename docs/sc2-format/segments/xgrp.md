@@ -45,7 +45,7 @@ flowchart TB
     e -- yes --> f["five-year block: move slots 32–50 to 33–51,<br/>copy slot 0 to slot 32"]
 ```
 
-So slot 12 and slot 32 are copies of a monthly value, taken in January and July (month index 0 and 6, **Inferred** that index 0 is January) and in January of every fifth year. The oldest sample of each block is dropped. A new city starts with all 832 values at 0 (`0x40e250`), so the blocks fill up over the first 1, 10 and 100 years.
+So slot 12 and slot 32 are copies of a monthly value, taken in January and July (month index 0 and 6; index 0 is January: the game's month-name table starts with "January", **Confirmed (code)** `0x405650`, `0x477c12`) and in January of every fifth year. The oldest sample of each block is dropped. A new city starts with all 832 values at 0 (`0x40e250`), so the blocks fill up over the first 1, 10 and 100 years.
 
 ### How the graph window reads it
 

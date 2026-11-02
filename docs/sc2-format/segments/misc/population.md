@@ -134,7 +134,7 @@ Once a month, `0x468d30` does the following (**Confirmed (code)** except where m
    | 2100 | 10 | 20 | 10 | 10 | 20 | 20 | 50 | 30 | 20 | 80 | 50 |
 
    (Tables at `0x4e9458`, 11 int32 per row, and `0x4e9508` for era 4 and later.)
-2. **Demand.** It sums four random numbers of 0–127, multiplies by the ratio and divides by 256. The result is averaged into the stored demand as (3 × old + new) ÷ 4, so the stored demand hovers around the ratio.
+2. **Demand.** It sums four random numbers of 0–127 (`0x47fcb0`), multiplies by the ratio and divides by 256. The result is averaged into the stored demand as (3 × old + new) ÷ 4, so the stored demand hovers around the ratio.
 3. **Attractiveness.** Demand minus the tax rate, at least 0. Before the subtraction the code adjusts the demands. The adjustments depend on the Pollution Controls ordinance (bit `0x80000` of word 1000), on whether the population grew this month, and on the work force's EQ (word 19: 131 and up, 101–130, below 60). The decompile does not show which industries each adjustment touches (**Inferred**).
 4. **Sizes.** The target total is the city's industrial population units: light plus dense industrial, words 385 + 386 as summed in step 21 (`0x4ca930[2]`).
    - If the sizes add up to more, each shrinks by its share of the excess.

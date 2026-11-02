@@ -67,7 +67,7 @@ row + 1 side   (row+, col−) ─────── (row+, col+)
 | `C` | (row−, col+) | one corner up | 1000 |
 | `D` | all four | flat, one level higher than the altitude | 1111 |
 
-**Confirmed (code)**: the terraforming routine `0x447020` builds this nibble from which neighbours are higher ([§ Slope and altitude](#slope-and-altitude)). The highway routine `0x463f60` counts any tile with a non-zero code as reaching `altitude + 1`. The OpenCity2k column uses its own corner letters, which match these as a = (row−, col+), b = (row−, col−), x = (row+, col+), y = (row+, col−). **Verified**: these letters reproduce all 14 rows. Which screen corner each one is depends on the compass ([conventions.md § Orientation](../conventions.md#orientation)).
+**Confirmed (code)**: the terraforming routine `0x447020` builds this nibble from which neighbours are higher ([§ Slope and altitude](#slope-and-altitude)). The highway routine `0x463f60` counts any tile with a non-zero code as reaching `altitude + 1`. The OpenCity2k column uses its own corner letters, which match these as a = (row−, col+), b = (row−, col−), x = (row+, col+), y = (row+, col−). These letters reproduce all 14 rows. Which screen corner each one is depends on the compass ([conventions.md § Orientation](../conventions.md#orientation)).
 
 There is no shape for a saddle, where only two opposite corners are raised. The game uses `D` instead.
 
@@ -138,7 +138,7 @@ Water tiles are those with code `0x10` or higher. For each kind, the [ALTM](altm
 How tiles become water (**Confirmed (code)**):
 
 - **Terraforming** (`0x447020`). A tile whose altitude ends up below the sea level (MISC word 912; see [altm.md § Sea level](altm.md#sea-level)) becomes `0x20 + shape` if it is exactly one level below, otherwise `0x10 + shape`. Its water height becomes the sea level and XBIT bit 2 is set. A tile at or above the sea level keeps its plain shape and has XBIT bit 2 cleared.
-- **Flooding to a level** (`0x4460b0`). Each tile below the level gets water height = level and XBIT bit 2. A land tile becomes `0x10 + shape`, or `0x20 + shape` if it is exactly one level below and not flat (flat tiles always become `0x10`). Surface water becomes `0x10`. Tiles at or above the level that were water lose XBIT bit 2 and go back to their plain shape.
+- **Flooding to a level** (`0x4460b0`). The sea-level controls call it after raising (`0x446360`, at most 31) or lowering (`0x4463d0`, at least 0) MISC word 912 by one. Each tile below the level gets water height = level and XBIT bit 2. A land tile becomes `0x10 + shape`, or `0x20 + shape` if it is exactly one level below and not flat (flat tiles always become `0x10`). Surface water becomes `0x10`. Tiles at or above the level that were water lose XBIT bit 2 and go back to their plain shape.
 - **Placing water** (`0x446650`). A flat land tile becomes surface water (`0x30`–`0x45`, chosen as in [§ Surface water](#surface-water)). A sloped land tile becomes `0x3E`. The water height becomes the altitude, XBIT bit 2 is set, and the neighbouring water tiles are re-evaluated.
 - **Bulldozing water** (`0x443270`). `0x3E` is re-shaped from the neighbours (`0x447020`). Other surface water becomes `0x00`.
 

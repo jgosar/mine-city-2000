@@ -25,7 +25,6 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | How do dry tiles one level below sea level arise? | Unknown | 192 tiles in 37 files, always exactly sea level − 1, mostly empty | Same approach; check `0x45b930` (bridges) and the dam code |
 | Is the tunnel altitude the portals' altitude? | Inferred | Portals always have tunnel depth 1 | Read where `0x44bea0` gets its altitude parameter |
 | What is XTER `0x2E`? | Inferred | Handled like `0x3E`, drawn with the waterfall sprite, never created | Search for writes of `0x2E` through pointers |
-| Who calls `0x4460b0` (flood to a level)? | Inferred: the terrain editor's sea-level control | — | Follow its callers |
 
 ## XBLD
 
@@ -35,6 +34,7 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Which code picks the query tool's name string? | Inferred | Strings 594–753 match the code ranges in order; `0x42b520` (category 2000 → 593 + index) is the likely entry, but no caller passing 2000 was found | Find indirect callers of `0x42b520`, or the code → index table of the query dialog |
 | Do seaport and airport pieces `0xF0` / `0xF2` use other corner bits? | Open | JUNETOWN, LAKEVIEW and SIMCITY have 2 × 2 port blocks whose corner bits break the compass pattern | Read the seaport and airport growth code |
 | Which way do the power line, road and rail shapes run? | Inferred | From djm's screen descriptions; the rotation cycles confirm their order | Render a test city at compass 0 |
+| Is the multi-tile building drawn twice or not at all when its corner bits are wrong? | Inferred | `0x43c730` draws a building only at the corner whose bit matches `0x4dc4c8` for the compass ([writing.md](writing.md#map-layers)) | Load a city with edited corner bits |
 
 ## XZON and XUND
 
@@ -51,6 +51,7 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Why do one prison, one water treatment plant and one empty tile carry `0x02`? | Unknown | 3 files | Look for other writers of `0x02` (`0x4417b0` sets it) |
 | What does `0x43c730` draw when `XBIT & 0xC0 == 0x80` on a building? | Inferred: the "no power" symbol | The condition is confirmed | Identify the sprite id |
 | Why are some powered or watered tiles not reachable from a source (3 and 1 files)? | Inferred: saved in the middle of a flood | The floods yield to Windows every 5000 tiles | Check whether saving is possible in the middle of a simulation step |
+| Is `0x441400` the power-line tool? | Inferred | It sets XBIT `0x80` alone and then recomputes power ([xbit.md § 0x80](segments/xbit.md#0x80-conducts-power)) | Find the tool dispatch that calls it |
 
 ## Text and labels
 
@@ -61,13 +62,16 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Which routine fills XLAB slots 251–255 (team names), and where are they shown? | Open | The defaults are Llamas, Alpacas, Camels, Dromedaries and Army ants | Search for writes to the label buffer `0x4ca198` at + 251 × 25 |
 | Which version writes CNAM with the name length in byte 0, and which puts CNAM last? | Open | 57/107 files; 39 have CNAM last ([cnam.md](segments/cnam.md#which-files-have-which-form)). The same files have data in MISC words 1044–1070 ([general.md](segments/misc/general.md#words-10441199)) | Compare saves from the DOS, Mac and Network editions |
 | Does a 31-character city name get a terminator? | Inferred | The segment has none; the loader copies 32 bytes into a larger buffer | Read the CNAM branch of `0x4302e0` |
+| Which sports do teams 1–5 play, and where are the team names (XLAB 251–255) shown? | Inferred: as named by djm and OpenCity2k; the newspaper's sports stories | Not traced in the code ([xlab.md](segments/xlab.md#label-slots)) | Find the readers of the label buffer `0x4ca198` at + 251 × 25 |
+| Does the city name taken from the file name keep the extension? | Unknown | `0x431ee0` keeps everything after the last `\` and upper-cases it | Read the callers of `0x431ee0` (open-city paths), or load a city without CNAM |
+| Which shipped cities were saved on a Macintosh? | Inferred: LONDON, PARIS, VENICE, PARIS.SCN and BARCELON.SCN | They have Mac Roman labels; FLARANGE has code page 1252 ([conventions.md § Strings](conventions.md#strings)) | Tally the high bytes of each file against both code pages; compare with the CNAM form and MISC words 1044–1070 |
 
 ## Overlays
 
 | Question | Status | What we know | How to settle it |
 |---|---|---|---|
 | What exactly do the land-value scores start from? | Inferred | Step 2 reuses a scratch grid (`0x4cc6f8`) that is not fully cleared first, so leftovers of the pollution pass leak in | Trace the scratch grid through `0x46a840` in a debugger |
-| Which disaster starts at the most polluted cell (case 4 of `0x471bc0`)? | Inferred: the toxic spill | It picks the largest XPLT above 149; 4 is the toxic spill in OpenCity2k's disaster list | Match the disaster numbers to the disaster menu strings |
+| Are the disaster names indexed by number (4 "Pollution", 5 "Crash", 15 "Chemical Spill")? | Inferred | Strings 33212–33219 and 33232–33239 list 16 names in OpenCity2k's order; case 4 of `0x471bc0` starts at the most polluted 64 × 64 cell above 149, which fits "Pollution"; the rescuer treats 4 and 15 alike | Find the code that loads string 33212 + n or 33232 + n − 8 ([general.md § Disasters](segments/misc/general.md#disasters)) |
 | How does the fire code use XFIR? | Inferred | `0x45f760` uses XFIR + 8 as a random threshold | Read `0x45f760` fully |
 
 ## XGRP
@@ -76,7 +80,6 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 |---|---|---|---|
 | Why do 17/109 files break the five-year rule and 4/109 the half-year rule? | Unknown | 11 and 3 of them are scenarios | Compare with saves from other versions; check the scenarios' MISC word 3 (founding year) |
 | What unit is GNP in? | Unknown | MISC word 21; the help text gives none | Look for GNP display strings in the Industry and budget windows |
-| Is month index 0 January? | Inferred | The calendar and budget code only use the index (the budget months are the same index) | Find the month-name table (`0x4c71f8`, used by `0x4731e0` for the Budget window title) |
 | Why are the Health and Education floors swapped between a new city and a loaded one? | Unknown (probably a game bug) | `0x4e6750` has 90 and 150, `0x4e72b0` 150 and 90 | — |
 | Why do old Power % samples go negative in 3 files? | Inferred: an earlier version had no 100 cap | `CAPE.SC2`, `PETER2.SC2`, `CHICAGO.SCN`: −5 to −8 | — |
 
@@ -87,8 +90,11 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Which version wrote MISC words 1044–1070, and what are words 1045–1047, 1050–1052, 1056, 1065, 1066, 1069 and 1070? | Unknown | Exactly the 60 files with a non-Windows-95 CNAM; 1048 = power %, 1049 = water %, 1067 = developed tiles, 1044 = connection tiles in 27/60 ([general.md](segments/misc/general.md#words-10441199)) | Compare with a DOS or Mac save; check 1050–1052 against the scenarios' goals (SCEN page) |
 | Which version writes 255 for "true" in the option words, and non-zero words 380–387 in steps 0–2? | Unknown | 255 in 36/114 files (25 from the other version, 11 re-saved by Windows 95); non-zero 380–387 at steps 0–2 in 15/16 files of the other version | Same |
 | Which half of word 1028 is the row? | Inferred | Low 7 bits and high byte; both 10–127 in the corpus | Read `0x412570`, or set the view in the game and save |
+| What are the zoom values of word 1029 and the speed names of word 1019? | Inferred | Zoom 0–2 and speed 1–5 are confirmed; the names (turtle, llama, cheetah, African swallow) come from the menu ([general.md § Game options](segments/misc/general.md#game-options)) | Read the menu handlers |
+| Which service does budget entry 12 stand for in the storm damage of `0x4358b0`? | Inferred: bridges | Wind raises the chance that a tile of an underfunded service is destroyed ([general.md § Weather](segments/misc/general.md#weather)) | Read the transport branch of `0x4358b0` |
+| Which reward does each bit of word 30 unlock? | Inferred (names from the help text) | The bit order follows the milestones ([general.md § Rewards](segments/misc/general.md#rewards)) | Read `0x43f220` per reward |
 | Who writes military base value 4 (navy)? | Inferred | No direct write found; 3 corpus files have it | Search for indirect writes to `0x4cc4e4`, or read the seaport code |
-| What do the weather types and the second index of the weather table (`0x4cb3e8`) mean? | Inferred (names from OpenCity2k) | The targets fit the names; 10 hurricane and 11 tornado are confirmed by the disaster code | Read the strings of the ids in `0x4e98d4`; find the writers of `0x4cb3e8` |
+| Are weather types 0–8 named as the game's strings 33200–33208, and what is the second index of the weather table (`0x4cb3e8`)? | Inferred | The strings 33200–33211 are OpenCity2k's names in the same order; 9–11 are confirmed by the warnings `0x471bc0` shows | Find the code that loads string 33200 + type; find the writers of `0x4cb3e8` |
 | Which industries does each demand adjustment in `0x468d30` touch? | Inferred | They depend on Pollution Controls, on this month's population growth and on the education quotient | Read the disassembly of `0x468d30` around the floating-point stores the decompile loses |
 | What exactly changes the R, C, I demand each month? | Inferred | The tax-rate table `0x4e9328` and the ordinances are confirmed; the floating-point part of `0x468150` is only partly readable | Read the disassembly of `0x468150` around the demand loop |
 | Does the Industry window show these words exactly? | Inferred | Its drawing code was not found | Find the window's paint routine (an indirect call) |
@@ -99,6 +105,10 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | What is story type `0x29`, queued when the game enacts a random ordinance? | Open | Queued by `0x4734a0` with the ordinance number | Decode the story templates (next row) |
 | What are the newspaper story types 1, 6, 8, `0x10`–`0x12`, `0x15`, `0x3D`–`0x3F`, `0x42`, and what do the story templates and per-type tables hold? | Inferred: monthly statistics news | Posted by `0x468150`; templates loaded by `0x4791d0` from records 1000–1005 of the `DATA` file | Parse `DATA_USA.DAT` and its index |
 | Does anything use the neighbours' economy figure? | Inferred: nothing | Only `0x468d30` updates it | — |
+| How exactly do the neighbours' populations and figures change each month? | Inferred | `0x468d30` grows them with the nation and scales them by a random event about once in 64 months; the floating-point code is only partly readable ([neighbours.md](segments/misc/neighbours.md#how-the-game-uses-it)) | Read the disassembly of `0x468d30` |
+| What does the industry bonus (word 1036) do? | Inferred | `0x468150` adds word 1036 ÷ 100 to a difficulty factor in one demand term ([population.md](segments/misc/population.md#industries)) | Read the disassembly of `0x468150` |
+| Is the bit order of the technology words the submenu order? | Inferred | The submenu strings (96–99 and 129–133 for power, …) follow the bit order ([technology.md](segments/misc/technology.md#layout)) | Map the bits in `0x46a080` to the menu items |
+| Is `0x40ca30` the keyboard cheat handler? | Inferred | It calls `0x412290` (all technology, reward level 6, 500 000) and issues a bond at 25 % ([technology.md](segments/misc/technology.md#how-the-game-uses-it)) | Read its callers |
 | Which ratios does military growth keep, and why do 9 files have military counts that differ from the base on the map? | Inferred / Open | `0x4358b0` compares the military counts per base type; the counts are not recomputed on load | Read `0x4358b0` cases 2–5; check whether those files were edited or saved by the other version |
 
 ## XMIC and XTHG
@@ -115,6 +125,11 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Where does a cargo ship's first target (bytes 8, 9) come from? | Unknown | `0x452d00` does not set them | Read `0x456760` state 0 and `0x456c70` |
 | Why do 25 files hold more than 4 trains? | Inferred: the other game version allows more | `0x453600` refuses a fifth engine; 19 of the 25 files are from the other version | Compare with a DOS or Mac executable |
 | Are type 16 and sailboat byte 2 = 1 what players call "Maxis Man" and "Nessie"? | Inferred | No names in the game's strings; sprites 495/496 and 379 | Look at the sprites |
+| Is the record 0 cursor sprite (390) a bulldozer? | Inferred | Used for the bulldozer and level-terrain drag ([thing-ids-xthg.md](reference/thing-ids-xthg.md#4-bulldozer)) | Look at the sprite |
+| Is the one military unit of a city without a base the National Guard? | Inferred | `0x44f910` allows one military unit when the city has no army, air force or navy base (MISC word 915) ([thing-ids-xthg.md](reference/thing-ids-xthg.md#7-8-14-emergency-units)) | Read the dispatch messages |
+| Why do 30 fire units in 8 files have no marker? | Inferred: units left over after a disaster | The cleanup removes units through their markers ([xthg.md § The XTXT marker](segments/xthg.md#the-xtxt-marker)) | Watch a disaster end with a unit whose marker was burnt over |
+| Why does `UTOPIA.SC2` have a train car in record 0? | Inferred: the train code takes a car record without checking | `0x450850` returns 0 when all records are taken ([xthg.md § Record 0](segments/xthg.md#record-0)) | Read `0x453600` |
+| Is `0x427c10` the query window's tile picture? | Inferred | It draws the sailboat sprite on a tile with a sailboat ([xthg.md](segments/xthg.md#how-the-game-uses-it)) | Find its callers |
 
 ## Scenarios
 
@@ -126,5 +141,17 @@ Everything these pages tag **Inferred** or **Unknown**, with what has been tried
 | Does the game state 7 after a lost scenario end the game? | Inferred | `0x4149b0(0)` sets `0x4c7334` to 7 | Trace state 7 |
 | What does the scenario list draw for a file without `PICT 0x80` or `TEXT 0x80`? | Unknown | `0x425e40` does not check the result of the lookup | Try an edited copy in the game, or trace `0x426180` |
 | Does the TEXT conversion still give Mac Roman with other OEM code pages (850, 852, …)? | Inferred: no | The fix-up table in `0x42a080` is fixed and assumes code page 437 | Call `OemToCharA` on all 256 bytes under other code pages |
+| Which source bytes do two of the `0x42a080` fix-ups serve? | Inferred / Unknown | Windows `0x2D` before `!:?;,.` is dropped, probably the Mac no-break space `0xCA`; Windows `0xA6` → `0xC3` cannot be tied to a source byte ([text.md § Character set](segments/text.md#character-set)) | Call `OemToCharA` on all 256 bytes under code page 437 |
+| Is TMPL a Mac OS ResEdit template? | Inferred | Pascal-string labels and the four-letter types `DBYT`, `DWRD`, `DLNG` ([scen.md § TMPL](segments/scen.md#tmpl)) | — |
+| Is `PAL_MAC.BMP` the Mac version's palette? | Inferred from the name | The scenario pictures use it ([pict.md § Colours](segments/pict.md#colours)) | Compare with the Mac version's palette |
 | Which date does `0x426260` see for a file without a creation time (CD, some FAT volumes)? | Unknown | The date picks whether colours 0 and 255 are swapped | Read `0x426260` fully; test from a CD image |
-| Are OpenCity2k's odd colours (127, 127, 17) and (159, 159, 159) from the nearest-colour remap? | Inferred | `0x476d60` maps each `PAL_MAC` colour to the nearest colour of the game palette | Compute the remap of `PAL_MAC` against `0x4c7010` |
+| Are OpenCity2k's odd colours (127, 127, 17) and (159, 159, 159) from the nearest-colour remap? | Inferred | `0x476d60` maps each `PAL_MAC` colour to the nearest colour of the game palette | Compute the remap of `PAL_MAC` against the game palette (`PAL_MSTR.BMP`) |
+
+## Cross-segment
+
+| Question | Status | What we know | How to settle it |
+|---|---|---|---|
+| Which routines place parks (`0xD5`), statues (`0xDB`), piers (`0xDF`), subway stations (`0xE9`), dams and military-base buildings without XBIT `0x80` or `0x20`? | Unknown | `0x436e80` sets `0x80`, `0x40` and `0x20` on every tile; the data shows these kinds without some of them ([cross-segment.md § Power and water bits](cross-segment.md#power-and-water-bits)) | Find the placement routines: runways and piers `0x4382b0`, the military base `0x4142c0`, the subway station and park tools |
+| Why do 194 microsim buildings have 0 on some of their tiles? | Inferred: a moving object that is removed writes 0 instead of the value in its byte 10 | 50 files; no building has two different values | Check whether the zero tiles lie on the paths of helicopters, the monster or tornadoes |
+| Why do train engines and cars stand on houses or highway pieces in 11 files? | Unknown | 14 engines and a few cars; houses may have grown on the rail after the train stopped (**Inferred**) | Look at the files' origin (the other game version?), or watch a stalled train in the game |
+| Why do 49 tiles of 2×2 factories stand on light industrial zone (4 files), and a 3×3 condominium on light residential? | Inferred: the zone was changed under an existing building | — | Re-zone under a building in the game and save |

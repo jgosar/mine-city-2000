@@ -251,7 +251,8 @@ def describe(value):
 
 # --- ALTM and XTER (docs/sc2-format/segments/altm.md, xter.md) ---------------
 
-XTER_KINDS = ((0x00, 0x0E, "land"), (0x10, 0x1E, "underwater"), (0x20, 0x2F, "shore"),
+XTER_KINDS = ((0x00, 0x0E, "land"), (0x10, 0x1E, "underwater"), (0x20, 0x2E, "shore"),
+              (0x2E, 0x2F, "surface water"),  # never created; handled like the waterfall 0x3E
               (0x30, 0x3F, "surface water"), (0x40, 0x46, "surface water"))
 
 
@@ -280,7 +281,7 @@ def decode_xter(data):
         "code": g,
         "kind": map_grid(xter_kind, g),
         # slope shape 0x0-0xD for land/underwater/shore; None for surface water (low bits = water edges)
-        "slope": map_grid(lambda v: v & 0x0F if v < 0x30 else None, g),
+        "slope": map_grid(lambda v: v & 0x0F if v < 0x30 and v != 0x2E else None, g),
     }
 
 
@@ -474,10 +475,10 @@ def decode_xtxt(data):
 
 @decoder(b"XLAB")
 def decode_xlab(data):
-    """256 labels; the game caps the length byte at 23 when it loads (0x430c00)."""
+    """256 labels; the game caps the length byte at 23 when it loads and keeps them as C strings (0x430c00)."""
     recs = [data[i * 25:(i + 1) * 25] for i in range(256)]
     return {
-        "text": [r[1:1 + min(r[0], 23)].decode(TEXT_ENCODING, "replace") for r in recs],
+        "text": [r[1:1 + min(r[0], 23)].split(b"\0")[0].decode(TEXT_ENCODING, "replace") for r in recs],
         "length_byte": [r[0] for r in recs],
     }
 
@@ -831,7 +832,7 @@ def _words(*spans):
 
 
 # Words the game loads into 16-bit variables (read as signed) and 8-bit ones (unsigned)
-MISC_16_BIT = _words((1, 3), (7, 8), (22, 23), (28, 28), (30, 30), (124, 437), (454, 478),
+MISC_16_BIT = _words((1, 3), (7, 8), (22, 23), (28, 28), (30, 30), (124, 379), (388, 437), (454, 478),
                      (912, 912), (1002, 1019), (1027, 1031), (1033, 1034), (1036, 1041),
                      (1043, 1043)) | frozenset(
     w for k in range(11) for w in (91 + 3 * k, 92 + 3 * k)) | frozenset(
@@ -839,10 +840,12 @@ MISC_16_BIT = _words((1, 3), (7, 8), (22, 23), (28, 28), (30, 30), (124, 437), (
     w for s in range(9) for w in (946 + 6 * s, 947 + 6 * s))
 MISC_8_BIT = _words((24, 27), (915, 945)) | frozenset(
     w for s in range(9) for w in range(948 + 6 * s, 952 + 6 * s))
+# Neighbour population and economy: full 32 bits, unsigned (neighbours.md)
+MISC_UNSIGNED = frozenset(w for k in range(4) for w in (439 + 4 * k, 440 + 4 * k))
 
 
 def misc_words(data):
-    """The 1200 MISC words as the game loads them (see MISC_16_BIT and MISC_8_BIT)."""
+    """The 1200 MISC words as the game loads them (see MISC_16_BIT, MISC_8_BIT, MISC_UNSIGNED)."""
     out = []
     for i, v in enumerate(struct.unpack(">1200i", data)):
         if i in MISC_16_BIT:
@@ -850,6 +853,8 @@ def misc_words(data):
             v -= 0x10000 if v & 0x8000 else 0
         elif i in MISC_8_BIT:
             v &= 0xFF
+        elif i in MISC_UNSIGNED:
+            v &= 0xFFFFFFFF
         out.append(v)
     return tuple(out)
 
@@ -1270,17 +1275,20 @@ def print_text(c):
 
 
 def main(argv):
+    # Labels can hold characters the console's code page lacks; print those escaped.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
     args = [a for a in argv if not a.startswith("--")]
     if len(args) != 1:
         print(__doc__.strip(), file=sys.stderr)
         return 2
     c = read_file(args[0])
     if "--normalise" in argv:
-        # Only tags that occur once: a scenario's two TEXT segments are not turned anyway.
-        once = [t for t, n in collections.Counter(s.tag for s in c.segments).items() if n == 1]
-        turned = normalise({s.tag: s.data for s in c.segments if s.tag in once})
-        for s in c.segments:
-            s.data = turned.get(s.tag, s.data)
+        # The last occurrence of a repeated tag is the one the game uses; TEXT is never turned.
+        used = {s.tag: s for s in c.segments if s.tag != b"TEXT"}
+        turned = normalise({tag: s.data for tag, s in used.items()})
+        for tag, s in used.items():
+            s.data = turned[tag]
     if "--json" in argv:
         json.dump(to_dict(c), sys.stdout, indent=2)
         print()

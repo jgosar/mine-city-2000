@@ -62,7 +62,7 @@ The game reads both with the 52-byte structure: it copies the whole body, whatev
 
 **Verified (data)**: `LASVEGAS.SCN` (52 bytes) has 18 375 at offset 38. Read with the 52-byte layout this is a crime limit, and its briefing says "bring crime back down … to win this scenario"; with the 48-byte layout it would be a traffic limit. The three 52-byte files are `BARCELON.SCN`, `LASVEGAS.SCN` and `PARIS.SCN`; their bytes 48–51 are zero.
 
-**For a reader:** decode a 52-byte body with the 52-byte layout. For a 48-byte body, the TMPL layout gives what the author meant; it differs from what the Windows 95 game reads only if bytes 30–47 are not all zero.
+**For a reader:** decode a 52-byte body with the 52-byte layout. For a 48-byte body, the TMPL layout gives what the author meant; it differs from what the Windows 95 game reads only if bytes 30–47 are not all zero. `sc2dump.py` does this and leaves out the life expectancy and education goals, which the 48-byte form does not have (read them as 0).
 
 ### The disaster spot
 
