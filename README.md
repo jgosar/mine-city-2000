@@ -36,6 +36,28 @@ The first conversion downloads about 24 MB of building models, so the first run 
 
 It has been tested in current versions of Chrome and Firefox, and in the WebKit engine that Safari is built on (Safari itself has not been tested yet).
 
+## Building the app from source code
+
+- Install the Microsoft .NET SDK 10
+- In the repo root run `dotnet workload restore`
+- Install Node.js 22.18 or newer (24 recommended). Check with `node -v` and `npm -v`: npm should be version 10 or newer, because older versions rewrite `package-lock.json` in an outdated format
+- In the repo root run `dotnet build`. The first build runs `npm ci` in `MineCity2000.Wasm` to download the web page's dependencies, so you don't need to run `npm install` yourself (`npm install` can change `package-lock.json`; `npm ci` never does)
+
+## Developing in Visual Studio Code
+
+The repository has a `.vscode` folder with settings that let you build, run and debug the CLI from VS Code without typing any commands:
+- `.vscode/launch.json` defines the "Launch CLI" debug configuration. This is what VS Code runs when you press F5 (or click the green play button in the "Run and Debug" view).
+- `.vscode/tasks.json` defines the build tasks. "Launch CLI" runs the `build-cli` task before every start, so you always debug your latest code. The other tasks (`build` for the whole solution, `publish` and `watch`) can be started from "Terminal -> Run Task...".
+- `.vscode/settings.json` tells VS Code to use the C# extension for the projects.
+
+To get started:
+1. Install the .NET SDK 10 and, in VS Code, the C# extension (`ms-dotnettools.csharp`). It provides the debugger that "Launch CLI" uses.
+2. Open the repository root folder in VS Code ("File -> Open Folder..."). Open the root itself, not a subfolder, because the settings refer to paths relative to it (`${workspaceFolder}`).
+3. Set the city file you want to convert in `.vscode/launch.json` (see below).
+4. Open the "Run and Debug" view (Ctrl+Shift+D), choose "Launch CLI" and press F5.
+
+"Launch CLI" only builds the CLI and the libraries it uses, so it doesn't need the `wasm-tools` workload or Node.js that the web app needs. You can set breakpoints in any of the C# projects it uses (SimCityReader, MineCity2000, MinecraftEditor, AnvilFile); the program's output appears in VS Code's terminal panel.
+
 ## Downloads
 
 The easiest way to use MineCity 2000 is the web app, which needs no installation: https://jgosar.github.io/mine-city-2000/ (see "Using the web app" above).
@@ -72,28 +94,6 @@ Options that you want to use on every run can be put into the `default_args.txt`
 On macOS the first run may be blocked because the program is downloaded from the internet and is not signed. Either remove the quarantine flag once with `xattr -dr com.apple.quarantine .` in the unzipped folder (or `xattr -d com.apple.quarantine MineCity2000` for the program alone), or right-click the program in Finder and choose Open. On Linux you might need to make it executable first: `chmod +x MineCity2000`.
 
 Your antivirus might think that MineCity 2000 is a virus. It's not. If Windows SmartScreen warns about an unsigned app, choose "More info" and then "Run anyway".
-
-## Building the app from source code
-
-- Install the Microsoft .NET SDK 10
-- In the repo root run `dotnet workload restore`
-- Install Node.js 22.18 or newer (24 recommended). Check with `node -v` and `npm -v`: npm should be version 10 or newer, because older versions rewrite `package-lock.json` in an outdated format
-- In the repo root run `dotnet build`. The first build runs `npm ci` in `MineCity2000.Wasm` to download the web page's dependencies, so you don't need to run `npm install` yourself (`npm install` can change `package-lock.json`; `npm ci` never does)
-
-## Developing in Visual Studio Code
-
-The repository has a `.vscode` folder with settings that let you build, run and debug the CLI from VS Code without typing any commands:
-- `.vscode/launch.json` defines the "Launch CLI" debug configuration. This is what VS Code runs when you press F5 (or click the green play button in the "Run and Debug" view).
-- `.vscode/tasks.json` defines the build tasks. "Launch CLI" runs the `build-cli` task before every start, so you always debug your latest code. The other tasks (`build` for the whole solution, `publish` and `watch`) can be started from "Terminal -> Run Task...".
-- `.vscode/settings.json` tells VS Code to use the C# extension for the projects.
-
-To get started:
-1. Install the .NET SDK 10 and, in VS Code, the C# extension (`ms-dotnettools.csharp`). It provides the debugger that "Launch CLI" uses.
-2. Open the repository root folder in VS Code ("File -> Open Folder..."). Open the root itself, not a subfolder, because the settings refer to paths relative to it (`${workspaceFolder}`).
-3. Set the city file you want to convert in `.vscode/launch.json` (see below).
-4. Open the "Run and Debug" view (Ctrl+Shift+D), choose "Launch CLI" and press F5.
-
-"Launch CLI" only builds the CLI and the libraries it uses, so it doesn't need the `wasm-tools` workload or Node.js that the web app needs. You can set breakpoints in any of the C# projects it uses (SimCityReader, MineCity2000, MinecraftEditor, AnvilFile); the program's output appears in VS Code's terminal panel.
 
 ### The command-line arguments in launch.json
 
